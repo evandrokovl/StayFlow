@@ -146,9 +146,6 @@
     const accessRestrictionTitle = document.getElementById('accessRestrictionTitle');
     const accessRestrictionText = document.getElementById('accessRestrictionText');
     const accessRestrictionCta = document.getElementById('accessRestrictionCta');
-    const activationAssistant = document.getElementById('activationAssistant');
-    const activationAssistantToggle = document.getElementById('activationAssistantToggle');
-    const assistantPrimaryCta = document.getElementById('assistantPrimaryCta');
     const activationNextCta = document.getElementById('activationNextCta');
     const reservationDetailsCard = document.getElementById('reservationDetailsCard');
     const reservationDetailsContent = document.getElementById('reservationDetailsContent');
@@ -450,16 +447,16 @@
       return [
         {
           key: 'property',
-          title: 'Criar o imÃ³vel',
-          description: 'Cadastre o imÃ³vel principal para o sistema ter um contexto de operaÃ§Ã£o.',
+          title: 'Criar o im\u00f3vel',
+          description: 'Cadastre o im\u00f3vel principal para o sistema ter um contexto de opera\u00e7\u00e3o.',
           done: status.hasProperty,
           section: 'properties',
-          cta: 'Cadastrar imÃ³vel'
+          cta: 'Cadastrar im\u00f3vel'
         },
         {
           key: 'ical',
           title: 'Configurar iCal',
-          description: 'Cole ao menos um link iCal para manter o calendÃ¡rio sincronizado.',
+          description: 'Cole ao menos um link iCal para manter o calend\u00e1rio sincronizado.',
           done: status.hasIcal,
           section: 'properties',
           cta: 'Conectar iCal'
@@ -467,18 +464,18 @@
         {
           key: 'email',
           title: 'Cadastrar e-mail do StayFlow',
-          description: 'Use o e-mail de integraÃ§Ã£o nas plataformas para receber reservas e alteraÃ§Ãµes.',
+          description: 'Use o e-mail de integra\u00e7\u00e3o nas plataformas para receber reservas e altera\u00e7\u00f5es.',
           done: status.notificationsUnderstood,
           section: 'my-info',
           cta: 'Copiar e-mail'
         },
         {
           key: 'automation',
-          title: 'Configurar automaÃ§Ã£o',
+          title: 'Configurar automa\u00e7\u00e3o',
           description: 'Ative uma mensagem inicial para reduzir trabalho manual no atendimento.',
           done: hasAutomation,
           section: 'messages',
-          cta: 'Criar automaÃ§Ã£o'
+          cta: 'Criar automa\u00e7\u00e3o'
         }
       ];
     }
@@ -490,7 +487,7 @@
     }
 
     function activationStepStatusLabel(step, index, firstPendingIndex) {
-      if (step.done) return 'ConcluÃ­do';
+      if (step.done) return 'Conclu\u00eddo';
       if (index === firstPendingIndex) return 'Em progresso';
       return 'Pendente';
     }
@@ -502,9 +499,9 @@
       const firstPendingIndex = steps.findIndex(step => !step.done);
       const nextStep = firstPendingIndex >= 0 ? steps[firstPendingIndex] : {
         title: 'StayFlow pronto para operar',
-        description: 'Sua configuraÃ§Ã£o principal estÃ¡ concluÃ­da. Agora acompanhe reservas, mensagens e resultados.',
+        description: 'Sua configura\u00e7\u00e3o principal est\u00e1 conclu\u00edda. Agora acompanhe reservas, mensagens e resultados.',
         section: 'operations',
-        cta: 'Ver operaÃ§Ã£o'
+        cta: 'Ver opera\u00e7\u00e3o'
       };
 
       const setText = (id, value) => {
@@ -517,30 +514,21 @@
       };
 
       setText('activationProgressPercent', `${percent}%`);
-      setText('activationProgressText', `${completed} de ${steps.length} concluÃ­dos`);
+      setText('activationProgressText', `${completed} de ${steps.length} conclu\u00eddos`);
       setText('activationNextTitle', nextStep.title);
       setText('activationNextDescription', nextStep.description);
-      setText('assistantNextTitle', nextStep.title);
-      setText('assistantNextDescription', nextStep.description);
-      setText('assistantProgressText', `${completed} de ${steps.length} concluÃ­dos`);
-      setText('assistantProgressPercent', `${percent}%`);
       setWidth('activationProgressBar', percent);
-      setWidth('assistantProgressBar', percent);
 
       if (activationNextCta) {
         activationNextCta.textContent = nextStep.cta || 'Continuar';
         activationNextCta.dataset.activationSection = nextStep.section;
-      }
-      if (assistantPrimaryCta) {
-        assistantPrimaryCta.textContent = nextStep.cta || 'Continuar';
-        assistantPrimaryCta.dataset.activationSection = nextStep.section;
       }
 
       const stepsHtml = steps.map((step, index) => {
         const state = getStepStateClass(step, index, firstPendingIndex);
         return `
           <button type="button" class="activation-step-card ${state}" data-activation-section="${step.section}">
-            <span class="activation-step-number">${step.done ? '✓' : index + 1}</span>
+            <span class="activation-step-number">${step.done ? '&check;' : index + 1}</span>
             <span>
               <strong>${step.title}</strong>
               <small>${step.description}</small>
@@ -552,20 +540,6 @@
 
       const activationStepsGrid = document.getElementById('activationStepsGrid');
       if (activationStepsGrid) activationStepsGrid.innerHTML = stepsHtml;
-
-      const assistantStepList = document.getElementById('assistantStepList');
-      if (assistantStepList) {
-        assistantStepList.innerHTML = steps.map((step, index) => `
-          <button type="button" class="${getStepStateClass(step, index, firstPendingIndex)}" data-activation-section="${step.section}">
-            <span>${step.done ? '✓' : index + 1}</span>
-            <strong>${step.title}</strong>
-          </button>
-        `).join('');
-      }
-
-      if (activationAssistant) {
-        activationAssistant.classList.toggle('hidden', !token || !hasFullBillingAccess());
-      }
     }
 
     function goToActivationSection(section) {
@@ -580,7 +554,7 @@
     }
 
     async function copyTextToClipboard(text) {
-      if (!text || text.includes('não carregado') || text.includes('não disponível')) return false;
+      if (!text || text.includes('n\u00e3o carregado') || text.includes('n\u00e3o dispon\u00edvel')) return false;
       try {
         await navigator.clipboard.writeText(text);
         return true;
@@ -600,7 +574,11 @@
       const success = await copyTextToClipboard(integrationEmail);
       if (success) updateOnboardingProgress({ email_copied: true, notifications_seen: true });
       if (targetMessageId) {
-        showMessage(targetMessageId, success ? 'E-mail do StayFlow copiado para a área de transferência.' : 'Não foi possível copiar o e-mail agora.', success ? 'success' : 'error');
+        showMessage(
+          targetMessageId,
+          success ? 'E-mail do StayFlow copiado para a \u00e1rea de transfer\u00eancia.' : 'N\u00e3o foi poss\u00edvel copiar o e-mail agora.',
+          success ? 'success' : 'error'
+        );
       }
       return success;
     }
@@ -4288,13 +4266,9 @@ function renderPropertyList() {
     cancelBillingBtn?.addEventListener('click', cancelBilling);
     recalculateBillingBtn?.addEventListener('click', recalculateBilling);
     accessRestrictionCta?.addEventListener('click', () => showSection('billing'));
-    activationAssistantToggle?.addEventListener('click', () => {
-      activationAssistant?.classList.toggle('is-minimized');
-      const minimized = activationAssistant?.classList.contains('is-minimized');
-      if (activationAssistantToggle) activationAssistantToggle.textContent = minimized ? '+' : '-';
-    });
-    [activationNextCta, assistantPrimaryCta].forEach(button => {
-      button?.addEventListener('click', () => goToActivationSection(button.dataset.activationSection));
+    activationNextCta?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      goToActivationSection(activationNextCta.dataset.activationSection);
     });
     document.addEventListener('click', (event) => {
       const activationButton = event.target.closest('[data-activation-section]');
