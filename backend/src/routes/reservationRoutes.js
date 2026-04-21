@@ -3,6 +3,7 @@ const router = express.Router();
 
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const validate = require('../middlewares/validate');
 const { createReservationSchema } = require('../schemas/reservationSchemas');
 
@@ -32,7 +33,7 @@ function normalizeMoney(value) {
 }
 
 // LISTAR RESERVAS
-router.get('/', async (req, res, next) => {
+router.get('/', requireFullBilling, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
@@ -67,7 +68,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // CRIAR RESERVA OU BLOQUEIO
-router.post('/', validate(createReservationSchema), async (req, res, next) => {
+router.post('/', requireWritableBilling, validate(createReservationSchema), async (req, res, next) => {
   let connection;
 
   try {

@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 
 router.use(authMiddleware);
 
 // LISTAR LANÇAMENTOS
-router.get('/', async (req, res) => {
+router.get('/', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { property_id, type, status, month, reservation_id } = req.query;
@@ -73,7 +74,7 @@ router.get('/', async (req, res) => {
 });
 
 // RESUMO GERAL
-router.get('/summary', async (req, res) => {
+router.get('/summary', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { property_id, month } = req.query;
@@ -124,7 +125,7 @@ router.get('/summary', async (req, res) => {
 });
 
 // RESUMO POR RESERVA
-router.get('/by-reservation/:id', async (req, res) => {
+router.get('/by-reservation/:id', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const reservationId = Number(req.params.id);
@@ -213,7 +214,7 @@ router.get('/by-reservation/:id', async (req, res) => {
 });
 
 // CRIAR LANÇAMENTO
-router.post('/', async (req, res) => {
+router.post('/', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -342,7 +343,7 @@ router.post('/', async (req, res) => {
 });
 
 // ATUALIZAR LANÇAMENTO
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -490,7 +491,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // EXCLUIR LANÇAMENTO
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;

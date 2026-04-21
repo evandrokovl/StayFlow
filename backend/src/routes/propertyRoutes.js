@@ -2,6 +2,9 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
+const billingService = require('../services/billingService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -92,8 +95,20 @@ async function buildPropertyResponse(property) {
 
 router.use(authMiddleware);
 
+async function recalculateBillingSafely(userId) {
+  try {
+    await billingService.recalculateUserPlan(userId);
+  } catch (error) {
+    logger.warn('Falha ao recalcular billing apos alteracao de imovel', {
+      service: 'billing',
+      userId,
+      error
+    });
+  }
+}
+
 // LISTAR IMÓVEIS
-router.get('/', async (req, res) => {
+router.get('/', requireFullBilling, async (req, res) => {
   try {
     const [properties] = await pool.query(
       `
@@ -131,7 +146,7 @@ router.get('/', async (req, res) => {
 });
 
 // BUSCAR IMÓVEL POR ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireFullBilling, async (req, res) => {
   try {
     const [properties] = await pool.query(
       `
@@ -168,7 +183,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // CRIAR IMÓVEL
-router.post('/', async (req, res) => {
+router.post('/', requireWritableBilling, async (req, res) => {
   let connection;
 
   try {
@@ -253,6 +268,7 @@ router.post('/', async (req, res) => {
     );
 
     await connection.commit();
+    await recalculateBillingSafely(req.user.id);
 
     const [rows] = await pool.query(
       `
@@ -299,7 +315,7 @@ router.post('/', async (req, res) => {
 });
 
 // ATUALIZAR IMÓVEL
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireWritableBilling, async (req, res) => {
   let connection;
 
   try {
@@ -428,6 +444,7 @@ router.put('/:id', async (req, res) => {
     }
 
     await connection.commit();
+    await recalculateBillingSafely(req.user.id);
 
     const [rows] = await pool.query(
       `
@@ -474,7 +491,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // EXCLUIR IMÓVEL
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireWritableBilling, async (req, res) => {
   try {
     const [existing] = await pool.query(
       `
@@ -497,6 +514,8 @@ router.delete('/:id', async (req, res) => {
       `,
       [req.params.id, req.user.id]
     );
+
+    await recalculateBillingSafely(req.user.id);
 
     return res.json({ message: 'Imóvel excluído com sucesso' });
   } catch (error) {

@@ -154,6 +154,56 @@ async function addMessageLogAutomationIndex(connection) {
   }
 }
 
+async function addUserCpfAndPasswordResetTokens(connection) {
+  if (!(await hasColumn(connection, 'users', 'cpf'))) {
+    await connection.query(`
+      ALTER TABLE users
+        ADD COLUMN cpf VARCHAR(11) NULL AFTER email
+    `);
+  }
+
+  await connection.query(`
+    UPDATE users
+    SET cpf = LPAD(CAST(id AS CHAR), 11, '0')
+    WHERE cpf IS NULL OR cpf = ''
+  `);
+
+  await connection.query(`
+    ALTER TABLE users
+      MODIFY cpf VARCHAR(11) NOT NULL
+  `);
+
+  if (!(await hasIndex(connection, 'users', 'uq_users_cpf'))) {
+    await connection.query(`
+      ALTER TABLE users
+        ADD UNIQUE KEY uq_users_cpf (cpf)
+    `);
+  }
+
+  const [tables] = await connection.query(`
+    SELECT COUNT(*) AS total
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'password_reset_tokens'
+  `);
+
+  if (Number(tables[0]?.total || 0) === 0) {
+    await connection.query(`
+      CREATE TABLE password_reset_tokens (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        token_hash CHAR(64) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used_at DATETIME NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_password_reset_tokens_hash (token_hash),
+        KEY idx_password_reset_tokens_user_active (user_id, used_at, expires_at)
+      )
+    `);
+  }
+}
+
 async function main() {
   const connection = await mysql.createConnection({
     host: env.DB_HOST,
@@ -167,6 +217,7 @@ async function main() {
     await runStep('Applying inbound fingerprint idempotency', () => addInboundFingerprint(connection));
     await runStep('Applying reservation external_id index', () => addReservationExternalIdIndex(connection));
     await runStep('Applying message log automation index', () => addMessageLogAutomationIndex(connection));
+    await runStep('Applying user CPF and password reset tokens', () => addUserCpfAndPasswordResetTokens(connection));
   } finally {
     await connection.end();
   }

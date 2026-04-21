@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const { processMessageAutomations } = require('../services/messageAutomationService');
 
 router.use(authMiddleware);
 
 // LISTAR automações
-router.get('/', async (req, res) => {
+router.get('/', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -45,7 +46,7 @@ router.get('/', async (req, res) => {
 });
 
 // CRIAR automação
-router.post('/', async (req, res) => {
+router.post('/', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const {
@@ -159,7 +160,7 @@ router.post('/', async (req, res) => {
 });
 
 // ATUALIZAR automação
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -290,7 +291,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // EXCLUIR automação
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -335,7 +336,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // PROCESSAR automações manualmente
-router.post('/process/run', async (req, res) => {
+router.post('/process/run', requireWritableBilling, async (req, res) => {
   try {
     const result = await processMessageAutomations(req.user.id);
 

@@ -33,16 +33,36 @@
     let editingFinancialId = null;
     let selectedReservationId = null;
     let messageAutomations = [];
+    let messageAutomationLogs = [];
     let messageLogs = [];
     let messageLogSummary = { total: 0, pending: 0, needs_contact: 0, sent: 0, failed: 0 };
     let currentMessageLogFilter = 'all';
     let editingMessageAutomationId = null;
+    let operationMessageLogs = [];
+    let operationInboundEmails = [];
+    let operationDashboardLoading = false;
+    let operationCurrentActionButton = null;
+    let currentUserDetails = null;
+    let onboardingStep = 1;
+    let onboardingPropertyId = null;
+    let billingOverview = null;
+    let billingPayments = [];
+    let billingAccessState = {
+      billingStatus: 'TRIAL',
+      accessStatus: 'FULL'
+    };
 
     const authCard = document.getElementById('authCard');
     const app = document.getElementById('app');
 
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
+    const showForgotPasswordBtn = document.getElementById('showForgotPasswordBtn');
+    const hideForgotPasswordBtn = document.getElementById('hideForgotPasswordBtn');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+    const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+    const forgotPasswordPanel = document.getElementById('forgotPasswordPanel');
+    const registerCpfInput = document.getElementById('registerCpf');
     const logoutBtn = document.getElementById('logoutBtn');
     const createPropertyBtn = document.getElementById('createPropertyBtn');
     const createReservationBtn = document.getElementById('createReservationBtn');
@@ -90,6 +110,50 @@
     const messageAutomationFormTitle = document.getElementById('messageAutomationFormTitle');
     const messageAutomationFormCard = document.getElementById('messageAutomationFormCard');
 
+    const operationRefreshBtn = document.getElementById('operationRefreshBtn');
+    const operationStatusFilter = document.getElementById('operationStatusFilter');
+    const operationPropertyFilter = document.getElementById('operationPropertyFilter');
+    const operationFromFilter = document.getElementById('operationFromFilter');
+    const operationToFilter = document.getElementById('operationToFilter');
+    const operationApplyFiltersBtn = document.getElementById('operationApplyFiltersBtn');
+    const operationClearFiltersBtn = document.getElementById('operationClearFiltersBtn');
+    const operationMessagesTableBody = document.getElementById('operationMessagesTableBody');
+    const operationInboundTableBody = document.getElementById('operationInboundTableBody');
+    const operationAttentionList = document.getElementById('operationAttentionList');
+    const operationDetailsCard = document.getElementById('operationDetailsCard');
+    const operationDetailsContent = document.getElementById('operationDetailsContent');
+    const operationCloseDetailsBtn = document.getElementById('operationCloseDetailsBtn');
+    const onboardingShell = document.getElementById('onboardingShell');
+    const onboardingTitle = document.getElementById('onboardingTitle');
+    const onboardingSubtitle = document.getElementById('onboardingSubtitle');
+    const onboardingStepText = document.getElementById('onboardingStepText');
+    const onboardingProgressPercent = document.getElementById('onboardingProgressPercent');
+    const onboardingProgressBar = document.getElementById('onboardingProgressBar');
+    const onboardingBackBtn = document.getElementById('onboardingBackBtn');
+    const onboardingNextBtn = document.getElementById('onboardingNextBtn');
+    const onboardingSkipBtn = document.getElementById('onboardingSkipBtn');
+    const onboardingIntegrationEmailText = document.getElementById('onboardingIntegrationEmailText');
+    const refreshMyInfoBtn = document.getElementById('refreshMyInfoBtn');
+    const copyMyIntegrationEmailBtn = document.getElementById('copyMyIntegrationEmailBtn');
+    const openOnboardingBtn = document.getElementById('openOnboardingBtn');
+    const refreshBillingBtn = document.getElementById('refreshBillingBtn');
+    const activateBillingBtn = document.getElementById('activateBillingBtn');
+    const cancelBillingBtn = document.getElementById('cancelBillingBtn');
+    const recalculateBillingBtn = document.getElementById('recalculateBillingBtn');
+    const billingPaymentsTableBody = document.getElementById('billingPaymentsTableBody');
+    const billingTypeSelect = document.getElementById('billingTypeSelect');
+    const accessRestrictionBanner = document.getElementById('accessRestrictionBanner');
+    const accessRestrictionTitle = document.getElementById('accessRestrictionTitle');
+    const accessRestrictionText = document.getElementById('accessRestrictionText');
+    const accessRestrictionCta = document.getElementById('accessRestrictionCta');
+    const activationAssistant = document.getElementById('activationAssistant');
+    const activationAssistantToggle = document.getElementById('activationAssistantToggle');
+    const assistantPrimaryCta = document.getElementById('assistantPrimaryCta');
+    const activationNextCta = document.getElementById('activationNextCta');
+    const reservationDetailsCard = document.getElementById('reservationDetailsCard');
+    const reservationDetailsContent = document.getElementById('reservationDetailsContent');
+    const closeReservationDetailsBtn = document.getElementById('closeReservationDetailsBtn');
+
     const pageTitle = document.getElementById('pageTitle');
     const selectedPropertyBadge = document.getElementById('selectedPropertyBadge');
     const navButtons = document.querySelectorAll('[data-section-btn]');
@@ -104,21 +168,43 @@
     function sectionTitle(section) {
       const titles = {
         dashboard: 'Dashboard',
+        operations: 'Operação',
         properties: 'Imóveis',
         reservations: 'Reservas',
         calendar: 'Calendário',
         messages: 'Automação de mensagens',
-        financial: 'Financeiro'
+        financial: 'Financeiro',
+        billing: 'Assinatura e Cobrança',
+        'message-status': 'Status das mensagens',
+        'my-info': 'Minhas informações'
       };
       return titles[section] || 'Painel';
     }
 
     function showSection(section) {
+      if (!canAccessSection(section)) {
+        showSection('billing');
+        return;
+      }
+
       document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
       const target = document.getElementById(`section-${section}`);
       if (target) target.classList.remove('hidden');
       if (pageTitle) pageTitle.textContent = sectionTitle(section);
       setActiveNav(section);
+      if (section === 'operations' && hasFullBillingAccess()) {
+        loadOperationalDashboard();
+      }
+      if (section === 'message-status' && hasFullBillingAccess()) {
+        loadMessageLogs(currentMessageLogFilter);
+      }
+      if (section === 'my-info' && canAccessMyInfo()) {
+        loadMyInfo();
+      }
+      if (section === 'billing') {
+        loadBillingDashboard();
+      }
+      renderActivationGuide();
     }
 
     function updateSummaryMirrors(data) {
@@ -141,6 +227,382 @@
 
     function clearMessage(targetId) {
       document.getElementById(targetId).innerHTML = '';
+    }
+
+    function setButtonLoading(button, isLoading, loadingText) {
+      if (!button) return;
+
+      if (isLoading) {
+        button.dataset.originalText = button.textContent;
+        button.textContent = loadingText || 'Processando...';
+        button.disabled = true;
+        button.classList.add('is-loading');
+        return;
+      }
+
+      button.textContent = button.dataset.originalText || button.textContent;
+      button.disabled = false;
+      button.classList.remove('is-loading');
+      delete button.dataset.originalText;
+    }
+
+    function extractApiError(data, fallback) {
+      if (data?.error) return data.error;
+      if (data?.message) return data.message;
+      if (Array.isArray(data?.errors) && data.errors.length) {
+        return data.errors.map(item => item.message).join(' ');
+      }
+      return fallback;
+    }
+
+    function onlyDigits(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function formatCpf(value) {
+      const digits = onlyDigits(value).slice(0, 11);
+      return digits
+        .replace(/^(\d{3})(\d)/, '$1.$2')
+        .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+    }
+
+    function isValidCpf(value) {
+      const cpf = onlyDigits(value);
+      if (cpf.length !== 11) return false;
+      if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+      let sum = 0;
+      for (let i = 0; i < 9; i += 1) {
+        sum += Number(cpf[i]) * (10 - i);
+      }
+      let firstDigit = (sum * 10) % 11;
+      if (firstDigit === 10) firstDigit = 0;
+      if (firstDigit !== Number(cpf[9])) return false;
+
+      sum = 0;
+      for (let i = 0; i < 10; i += 1) {
+        sum += Number(cpf[i]) * (11 - i);
+      }
+      let secondDigit = (sum * 10) % 11;
+      if (secondDigit === 10) secondDigit = 0;
+      return secondDigit === Number(cpf[10]);
+    }
+
+    function toggleForgotPasswordPanel(show) {
+      if (!forgotPasswordPanel) return;
+      forgotPasswordPanel.classList.toggle('hidden', !show);
+      if (show) {
+        const loginEmail = document.getElementById('loginEmail')?.value.trim();
+        const forgotEmail = document.getElementById('forgotPasswordEmail');
+        if (forgotEmail && loginEmail && !forgotEmail.value) forgotEmail.value = loginEmail;
+        forgotPasswordPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function onboardingStorageKey(suffix) {
+      const userId = loggedUser?.id || currentUserDetails?.id || 'anonymous';
+      return `stayflow:${suffix}:${userId}`;
+    }
+
+    function getOnboardingState() {
+      return localStorage.getItem(onboardingStorageKey('onboardingState')) || 'not_started';
+    }
+
+    function setOnboardingState(state) {
+      localStorage.setItem(onboardingStorageKey('onboardingState'), state);
+    }
+
+    function getOnboardingProgress() {
+      try {
+        return JSON.parse(localStorage.getItem(onboardingStorageKey('onboardingProgress')) || '{}');
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function updateOnboardingProgress(patch = {}) {
+      const progress = { ...getOnboardingProgress(), ...patch };
+      localStorage.setItem(onboardingStorageKey('onboardingProgress'), JSON.stringify(progress));
+      renderMyInfo();
+      renderActivationGuide();
+      return progress;
+    }
+
+    function isOnboardingDone() {
+      const completed = getOnboardingState() === 'completed' || localStorage.getItem(onboardingStorageKey('onboardingDone')) === '1';
+      return completed && canCompleteOnboarding();
+    }
+
+    function isOnboardingSkipped() {
+      return getOnboardingState() === 'skipped' || localStorage.getItem(onboardingStorageKey('onboardingSkipped')) === '1';
+    }
+
+    function markOnboardingDone() {
+      setOnboardingState('completed');
+      localStorage.setItem(onboardingStorageKey('onboardingDone'), '1');
+      localStorage.removeItem(onboardingStorageKey('onboardingSkipped'));
+    }
+
+    function markOnboardingSkipped() {
+      setOnboardingState('skipped');
+      localStorage.setItem(onboardingStorageKey('onboardingSkipped'), '1');
+    }
+
+    function hasConnectedIcal() {
+      return properties.some(property => property.airbnb_ical_url || property.booking_ical_url);
+    }
+
+    function getOnboardingActivationStatus() {
+      const progress = getOnboardingProgress();
+      return {
+        hasProperty: properties.length > 0 || Boolean(progress.property_created),
+        hasIcal: hasConnectedIcal() || Boolean(progress.calendar_connected),
+        notificationsUnderstood: Boolean(progress.notifications_seen && progress.email_copied),
+        automationStepCompleted: Boolean(progress.automation_step_completed) || hasActiveAutomation()
+      };
+    }
+
+    function canCompleteOnboarding() {
+      const status = getOnboardingActivationStatus();
+      return status.hasProperty && status.hasIcal && status.notificationsUnderstood && status.automationStepCompleted;
+    }
+
+    function shouldShowOnboarding() {
+      return token && !isOnboardingDone() && !isOnboardingSkipped() && !canCompleteOnboarding();
+    }
+
+    function updateOnboardingIntegrationEmail() {
+      const integrationEmail = currentUserDetails?.inbound_alias || loggedUser?.inbound_alias || 'E-mail ainda não carregado';
+      if (onboardingIntegrationEmailText) onboardingIntegrationEmailText.textContent = integrationEmail;
+      const myInfoIntegrationEmail = document.getElementById('myInfoIntegrationEmail');
+      if (myInfoIntegrationEmail) myInfoIntegrationEmail.textContent = integrationEmail;
+    }
+
+    function renderOnboardingStep() {
+      if (!onboardingShell) return;
+
+      const titles = {
+        1: ['Bem-vindo ao StayFlow', 'Um setup rápido para chegar ao primeiro valor sem se perder no sistema.'],
+        2: ['Primeiro imóvel', 'Cadastre o imóvel principal para ativar calendário, reservas e automações.'],
+        3: ['Calendário e e-mail do StayFlow', 'Use o iCal para sincronizar agenda e o e-mail do StayFlow para receber eventos das plataformas.'],
+        4: ['Automação inicial', 'Prepare uma mensagem simples para começar a operar com menos trabalho manual.'],
+        5: ['Tudo pronto', 'Sua conta já tem o caminho principal configurado.']
+      };
+
+      document.querySelectorAll('[data-onboarding-step]').forEach(step => {
+        step.classList.toggle('hidden', Number(step.dataset.onboardingStep) !== onboardingStep);
+      });
+
+      const progress = Math.round((onboardingStep / 5) * 100);
+      if (onboardingTitle) onboardingTitle.textContent = titles[onboardingStep][0];
+      if (onboardingSubtitle) onboardingSubtitle.textContent = titles[onboardingStep][1];
+      if (onboardingStepText) onboardingStepText.textContent = `Etapa ${onboardingStep} de 5`;
+      if (onboardingProgressPercent) onboardingProgressPercent.textContent = `${progress}%`;
+      if (onboardingProgressBar) onboardingProgressBar.style.width = `${progress}%`;
+      if (onboardingBackBtn) onboardingBackBtn.classList.toggle('hidden', onboardingStep === 1);
+      if (onboardingNextBtn) {
+        onboardingNextBtn.textContent = onboardingStep === 1
+          ? 'Começar configuração'
+          : onboardingStep === 5
+            ? 'Ir para o painel'
+            : onboardingStep === 3
+              ? 'Salvar e sincronizar'
+              : 'Continuar';
+      }
+      updateOnboardingIntegrationEmail();
+    }
+
+    function openOnboarding(step = 1) {
+      onboardingStep = step;
+      if (!isOnboardingDone()) setOnboardingState('in_progress');
+      if (onboardingShell) onboardingShell.classList.remove('hidden');
+      renderOnboardingStep();
+    }
+
+    function closeOnboarding() {
+      if (onboardingShell) onboardingShell.classList.add('hidden');
+      clearMessage('onboardingMessage');
+    }
+
+    function maybeOpenOnboarding() {
+      if (shouldShowOnboarding()) {
+        openOnboarding(getSuggestedOnboardingStep());
+      }
+    }
+
+    function getSuggestedOnboardingStep() {
+      const status = getOnboardingActivationStatus();
+      if (!status.hasProperty) return 1;
+      if (!status.hasIcal || !status.notificationsUnderstood) return 3;
+      if (!status.automationStepCompleted) return 4;
+      return 5;
+    }
+
+    function hasActiveAutomation() {
+      return messageAutomations.some(item => item.is_active || item.status === 'active');
+    }
+
+    function getActivationSteps() {
+      const status = getOnboardingActivationStatus();
+      const hasAutomation = hasActiveAutomation() || status.automationStepCompleted;
+
+      return [
+        {
+          key: 'property',
+          title: 'Criar o imÃ³vel',
+          description: 'Cadastre o imÃ³vel principal para o sistema ter um contexto de operaÃ§Ã£o.',
+          done: status.hasProperty,
+          section: 'properties',
+          cta: 'Cadastrar imÃ³vel'
+        },
+        {
+          key: 'ical',
+          title: 'Configurar iCal',
+          description: 'Cole ao menos um link iCal para manter o calendÃ¡rio sincronizado.',
+          done: status.hasIcal,
+          section: 'properties',
+          cta: 'Conectar iCal'
+        },
+        {
+          key: 'email',
+          title: 'Cadastrar e-mail do StayFlow',
+          description: 'Use o e-mail de integraÃ§Ã£o nas plataformas para receber reservas e alteraÃ§Ãµes.',
+          done: status.notificationsUnderstood,
+          section: 'my-info',
+          cta: 'Copiar e-mail'
+        },
+        {
+          key: 'automation',
+          title: 'Configurar automaÃ§Ã£o',
+          description: 'Ative uma mensagem inicial para reduzir trabalho manual no atendimento.',
+          done: hasAutomation,
+          section: 'messages',
+          cta: 'Criar automaÃ§Ã£o'
+        }
+      ];
+    }
+
+    function getStepStateClass(step, index, firstPendingIndex) {
+      if (step.done) return 'completed';
+      if (index === firstPendingIndex) return 'current';
+      return 'pending';
+    }
+
+    function activationStepStatusLabel(step, index, firstPendingIndex) {
+      if (step.done) return 'ConcluÃ­do';
+      if (index === firstPendingIndex) return 'Em progresso';
+      return 'Pendente';
+    }
+
+    function renderActivationGuide() {
+      const steps = getActivationSteps();
+      const completed = steps.filter(step => step.done).length;
+      const percent = Math.round((completed / steps.length) * 100);
+      const firstPendingIndex = steps.findIndex(step => !step.done);
+      const nextStep = firstPendingIndex >= 0 ? steps[firstPendingIndex] : {
+        title: 'StayFlow pronto para operar',
+        description: 'Sua configuraÃ§Ã£o principal estÃ¡ concluÃ­da. Agora acompanhe reservas, mensagens e resultados.',
+        section: 'operations',
+        cta: 'Ver operaÃ§Ã£o'
+      };
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      const setWidth = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = `${value}%`;
+      };
+
+      setText('activationProgressPercent', `${percent}%`);
+      setText('activationProgressText', `${completed} de ${steps.length} concluÃ­dos`);
+      setText('activationNextTitle', nextStep.title);
+      setText('activationNextDescription', nextStep.description);
+      setText('assistantNextTitle', nextStep.title);
+      setText('assistantNextDescription', nextStep.description);
+      setText('assistantProgressText', `${completed} de ${steps.length} concluÃ­dos`);
+      setText('assistantProgressPercent', `${percent}%`);
+      setWidth('activationProgressBar', percent);
+      setWidth('assistantProgressBar', percent);
+
+      if (activationNextCta) {
+        activationNextCta.textContent = nextStep.cta || 'Continuar';
+        activationNextCta.dataset.activationSection = nextStep.section;
+      }
+      if (assistantPrimaryCta) {
+        assistantPrimaryCta.textContent = nextStep.cta || 'Continuar';
+        assistantPrimaryCta.dataset.activationSection = nextStep.section;
+      }
+
+      const stepsHtml = steps.map((step, index) => {
+        const state = getStepStateClass(step, index, firstPendingIndex);
+        return `
+          <button type="button" class="activation-step-card ${state}" data-activation-section="${step.section}">
+            <span class="activation-step-number">${step.done ? '✓' : index + 1}</span>
+            <span>
+              <strong>${step.title}</strong>
+              <small>${step.description}</small>
+            </span>
+            <em>${activationStepStatusLabel(step, index, firstPendingIndex)}</em>
+          </button>
+        `;
+      }).join('');
+
+      const activationStepsGrid = document.getElementById('activationStepsGrid');
+      if (activationStepsGrid) activationStepsGrid.innerHTML = stepsHtml;
+
+      const assistantStepList = document.getElementById('assistantStepList');
+      if (assistantStepList) {
+        assistantStepList.innerHTML = steps.map((step, index) => `
+          <button type="button" class="${getStepStateClass(step, index, firstPendingIndex)}" data-activation-section="${step.section}">
+            <span>${step.done ? '✓' : index + 1}</span>
+            <strong>${step.title}</strong>
+          </button>
+        `).join('');
+      }
+
+      if (activationAssistant) {
+        activationAssistant.classList.toggle('hidden', !token || !hasFullBillingAccess());
+      }
+    }
+
+    function goToActivationSection(section) {
+      if (!section || !canAccessSection(section)) {
+        showSection(preferredSectionForBillingAccess());
+        return;
+      }
+      showSection(section);
+      if (section === 'my-info') {
+        copyIntegrationEmail('myInfoMessage');
+      }
+    }
+
+    async function copyTextToClipboard(text) {
+      if (!text || text.includes('não carregado') || text.includes('não disponível')) return false;
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (error) {
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        const success = document.execCommand('copy');
+        input.remove();
+        return success;
+      }
+    }
+
+    async function copyIntegrationEmail(targetMessageId = 'myInfoMessage') {
+      const integrationEmail = currentUserDetails?.inbound_alias || loggedUser?.inbound_alias || '';
+      const success = await copyTextToClipboard(integrationEmail);
+      if (success) updateOnboardingProgress({ email_copied: true, notifications_seen: true });
+      if (targetMessageId) {
+        showMessage(targetMessageId, success ? 'E-mail do StayFlow copiado para a área de transferência.' : 'Não foi possível copiar o e-mail agora.', success ? 'success' : 'error');
+      }
+      return success;
     }
 
     function authHeaders() {
@@ -228,6 +690,210 @@
       });
     }
 
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function normalizeDateString(value) {
+      if (!value) return '';
+      return String(value).slice(0, 10);
+    }
+
+    function formatBillingDate(value) {
+      const date = normalizeDateString(value);
+      return date ? formatDateBR(date) : '-';
+    }
+
+    function billingStatusLabel(status) {
+      const normalized = String(status || '').toUpperCase();
+      const labels = {
+        TRIAL: 'Trial',
+        ACTIVE: 'Ativo',
+        PAST_DUE: 'Em atraso',
+        CANCELED: 'Cancelado',
+        CANCELLED: 'Cancelado',
+        BLOCKED: 'Bloqueado',
+        EXPIRED: 'Expirado',
+        PENDING: 'Pendente',
+        FULL: 'Acesso total',
+        READ_ONLY: 'Somente leitura'
+      };
+      return labels[normalized] || status || '-';
+    }
+
+    function billingStatusClass(status) {
+      const normalized = String(status || '').toUpperCase();
+      if (['ACTIVE', 'FULL', 'CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'].includes(normalized)) return 'status-active';
+      if (['TRIAL', 'PENDING'].includes(normalized)) return 'tag-pending';
+      if (['PAST_DUE', 'OVERDUE', 'READ_ONLY'].includes(normalized)) return 'billing-warning';
+      if (['CANCELED', 'CANCELLED', 'BLOCKED', 'EXPIRED', 'REFUNDED'].includes(normalized)) return 'status-inactive';
+      return 'billing-muted';
+    }
+
+    function getBillingStatusFromOverview(overview = {}) {
+      return overview.access?.billingStatus
+        || overview.billing?.subscription_status
+        || overview.subscription?.status
+        || '-';
+    }
+
+    function getBillingAccessFromOverview(overview = {}) {
+      return overview.access?.accessStatus
+        || overview.billing?.access_status
+        || '-';
+    }
+
+    function normalizeBillingAccessFromOverview(overview = {}) {
+      const billingStatus = String(getBillingStatusFromOverview(overview) || 'TRIAL').toUpperCase();
+      const accessStatus = String(getBillingAccessFromOverview(overview) || '').toUpperCase();
+
+      if (['CANCELED', 'CANCELLED', 'INACTIVE', 'BLOCKED', 'EXPIRED'].includes(billingStatus) || accessStatus === 'BLOCKED') {
+        return { billingStatus, accessStatus: 'BLOCKED' };
+      }
+
+      if (billingStatus === 'PAST_DUE' || accessStatus === 'READ_ONLY') {
+        return { billingStatus, accessStatus: 'READ_ONLY' };
+      }
+
+      return { billingStatus, accessStatus: 'FULL' };
+    }
+
+    function hasFullBillingAccess() {
+      return billingAccessState.accessStatus === 'FULL';
+    }
+
+    function canAccessMyInfo() {
+      return billingAccessState.accessStatus !== 'BLOCKED';
+    }
+
+    function canAccessSection(section) {
+      if (billingAccessState.accessStatus === 'BLOCKED') {
+        return section === 'billing';
+      }
+
+      if (billingAccessState.accessStatus === 'READ_ONLY') {
+        return ['billing', 'my-info'].includes(section);
+      }
+
+      return true;
+    }
+
+    function preferredSectionForBillingAccess() {
+      if (billingAccessState.accessStatus === 'FULL') return 'dashboard';
+      return 'billing';
+    }
+
+    function clearSensitiveFrontendData() {
+      if (hasFullBillingAccess()) return;
+
+      properties = [];
+      reservations = [];
+      financialEntries = [];
+      allFinancialEntries = [];
+      messageAutomations = [];
+      messageAutomationLogs = [];
+      messageLogs = [];
+      operationMessageLogs = [];
+      operationInboundEmails = [];
+      selectedPropertyId = null;
+      selectedReservationId = null;
+
+      const sensitiveCounters = [
+        'summaryIncome',
+        'summaryExpense',
+        'summaryProfit',
+        'summaryPending',
+        'operationSentToday',
+        'operationPendingCount',
+        'operationFailedCount',
+        'operationNeedsContactCount',
+        'messageAutomationCount',
+        'messageAutomationActiveCount',
+        'messageAutomationInactiveCount',
+        'messageAutomationGeneratedCount',
+        'messageAutomationFailureCount',
+        'messageLogTotalCount',
+        'messageLogPendingCount',
+        'messageLogNeedsContactCount',
+        'messageLogFailedCount',
+        'messageLogSentCount',
+        'financialSummaryIncomeMirror',
+        'financialSummaryExpenseMirror',
+        'financialSummaryProfitMirror',
+        'financialSummaryPendingMirror',
+        'reservationIncome',
+        'reservationExpense',
+        'reservationPending',
+        'reservationProfit'
+      ];
+
+      sensitiveCounters.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const isMoney = /(income|expense|profit|summary|reservation)/i.test(id);
+        el.textContent = isMoney ? 'R$ 0,00' : '0';
+      });
+
+      const emptyStates = [
+        ['propertyList', 'Área indisponível até a regularização da assinatura.'],
+        ['reservationsTableBody', '<tr><td colspan="8">Área indisponível até a regularização da assinatura.</td></tr>'],
+        ['financialTableBody', '<tr><td colspan="10">Área indisponível até a regularização da assinatura.</td></tr>'],
+        ['messageAutomationTableBody', '<tr><td colspan="8">Área indisponível até a regularização da assinatura.</td></tr>'],
+        ['messageLogsList', 'Área indisponível até a regularização da assinatura.'],
+        ['operationMessagesTableBody', '<tr><td colspan="6">Área indisponível até a regularização da assinatura.</td></tr>'],
+        ['operationInboundTableBody', '<tr><td colspan="6">Área indisponível até a regularização da assinatura.</td></tr>']
+      ];
+
+      emptyStates.forEach(([id, html]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      });
+
+      if (selectedPropertyBadge) selectedPropertyBadge.textContent = 'Nenhum imóvel selecionado';
+    }
+
+    function renderAccessRestrictionBanner() {
+      if (!accessRestrictionBanner) return;
+
+      if (billingAccessState.accessStatus === 'FULL') {
+        accessRestrictionBanner.classList.add('hidden');
+        return;
+      }
+
+      accessRestrictionBanner.classList.remove('hidden');
+
+      if (billingAccessState.accessStatus === 'READ_ONLY') {
+        accessRestrictionBanner.className = 'access-restriction-banner access-readonly';
+        if (accessRestrictionTitle) accessRestrictionTitle.textContent = 'Acesso reduzido por pendência de pagamento';
+        if (accessRestrictionText) accessRestrictionText.textContent = 'Reservas, financeiro, automações e dados operacionais ficam temporariamente indisponíveis. Regularize a assinatura na aba de cobrança.';
+        return;
+      }
+
+      accessRestrictionBanner.className = 'access-restriction-banner access-blocked';
+      if (accessRestrictionTitle) accessRestrictionTitle.textContent = 'Conta bloqueada por status de cobrança';
+      if (accessRestrictionText) accessRestrictionText.textContent = 'Apenas a área de pagamento está disponível. Regularize a assinatura para voltar a usar o StayFlow.';
+    }
+
+    function applyBillingAccessControls() {
+      navButtons.forEach(button => {
+        const section = button.dataset.sectionBtn;
+        button.classList.toggle('hidden', !canAccessSection(section));
+      });
+
+      document.querySelectorAll('[data-section-jump]').forEach(button => {
+        button.classList.toggle('hidden', !canAccessSection(button.dataset.sectionJump));
+      });
+
+      clearSensitiveFrontendData();
+      renderAccessRestrictionBanner();
+
+      const activeSection = document.querySelector('.section:not(.hidden)')?.id?.replace('section-', '');
+      if (activeSection && !canAccessSection(activeSection)) {
+        showSection('billing');
+      }
+    }
+
     function formatMonthLabel(monthKey) {
       const [year, month] = monthKey.split('-');
       const names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -255,11 +921,14 @@
     function resetReservationFinanceCard() {
       selectedReservationId = null;
       messageAutomations = [];
+      messageAutomationLogs = [];
       messageLogs = [];
       editingMessageAutomationId = null;
       document.getElementById('reservationFinanceInfo').innerHTML = 'Selecione uma reserva para ver o resultado financeiro.';
       updateReservationFinanceSummary();
       document.getElementById('reservationFinanceTableBody').innerHTML = '<tr><td colspan="6">Nenhum lançamento vinculado.</td></tr>';
+      if (reservationDetailsCard) reservationDetailsCard.classList.add('hidden');
+      if (reservationDetailsContent) reservationDetailsContent.innerHTML = '';
     }
 
     function renderDashboardChartPropertyOptions() {
@@ -341,11 +1010,15 @@
       const total = messageAutomations.length;
       const active = messageAutomations.filter(item => item.is_active || item.status === 'active').length;
       const inactive = total - active;
+      const generated = messageAutomationLogs.length;
+      const failures = messageAutomationLogs.filter(log => String(log.status || '') === 'failed').length;
 
       const pairs = [
         ['messageAutomationCount', total],
         ['messageAutomationActiveCount', active],
-        ['messageAutomationInactiveCount', inactive]
+        ['messageAutomationInactiveCount', inactive],
+        ['messageAutomationGeneratedCount', generated],
+        ['messageAutomationFailureCount', failures]
       ];
 
       pairs.forEach(([id, value]) => {
@@ -354,12 +1027,81 @@
       });
     }
 
+    function getAutomationStats(automationId) {
+      const logs = messageAutomationLogs.filter(log => Number(log.automation_id) === Number(automationId));
+      return {
+        total: logs.length,
+        sent: logs.filter(log => String(log.status || '') === 'sent').length,
+        pending: logs.filter(log => ['pending', 'queued'].includes(String(log.status || ''))).length,
+        failed: logs.filter(log => String(log.status || '') === 'failed').length,
+        needsContact: logs.filter(log => String(log.status || '') === 'needs_contact').length,
+        nextLog: logs
+          .filter(log => log.scheduled_for && timelineDateValue(log.scheduled_for) >= Date.now() - 60000)
+          .sort((a, b) => timelineDateValue(a.scheduled_for) - timelineDateValue(b.scheduled_for))[0] || null
+      };
+    }
+
+    function addDaysToDate(dateStr, days) {
+      if (!dateStr) return null;
+      const date = new Date(String(dateStr) + 'T00:00:00');
+      if (Number.isNaN(date.getTime())) return null;
+      date.setDate(date.getDate() + Number(days || 0));
+      return date;
+    }
+
+    function getAutomationBaseDate(reservation, trigger) {
+      if (trigger === 'check_out' || trigger === 'post_check_out') return reservation.end_date;
+      return reservation.start_date;
+    }
+
+    function estimateNextAutomationDate(automation) {
+      const propertyId = Number(automation.property_id);
+      const trigger = automation.trigger_type || automation.automation_type;
+      const offsetDays = Number(automation.offset_days ?? automation.days_offset ?? 0);
+      const sendTime = automation.send_time || '09:00';
+      const upcoming = reservations
+        .filter(reservation => Number(reservation.property_id) === propertyId)
+        .filter(reservation => reservation.source !== 'blocked' && !isReservationCancelled(reservation))
+        .map(reservation => {
+          const baseDate = getAutomationBaseDate(reservation, trigger);
+          const effectiveOffset = trigger === 'pre_check_in' ? -Math.abs(offsetDays) : offsetDays;
+          const date = addDaysToDate(baseDate, effectiveOffset);
+          if (!date) return null;
+          const [hours = '09', minutes = '00'] = String(sendTime).split(':');
+          date.setHours(Number(hours) || 9, Number(minutes) || 0, 0, 0);
+          return date;
+        })
+        .filter(date => date && date.getTime() >= Date.now() - 60000)
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      return upcoming[0] || null;
+    }
+
+    function automationOperationHtml(automation) {
+      const stats = getAutomationStats(automation.id);
+      const nextDate = stats.nextLog?.scheduled_for
+        ? formatDateTimeBR(stats.nextLog.scheduled_for)
+        : (estimateNextAutomationDate(automation) ? estimateNextAutomationDate(automation).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Sem próximo disparo estimado');
+
+      return '<div class="automation-health">' +
+        '<div><span>Próximo</span><strong>' + escapeHtml(nextDate) + '</strong></div>' +
+        '<div class="automation-health-grid">' +
+          '<span class="mini-pill">Logs ' + stats.total + '</span>' +
+          '<span class="mini-pill status-active">Enviadas ' + stats.sent + '</span>' +
+          '<span class="mini-pill tag-pending">Pendentes ' + stats.pending + '</span>' +
+          '<span class="mini-pill status-inactive">Falhas ' + stats.failed + '</span>' +
+          '<span class="mini-pill tag-neutral">Sem contato ' + stats.needsContact + '</span>' +
+        '</div>' +
+      '</div>';
+    }
+
     function renderMessageAutomationTable() {
       if (!messageAutomationTableBody) return;
 
       if (!messageAutomations.length) {
-        messageAutomationTableBody.innerHTML = '<tr><td colspan="7">Nenhuma automação cadastrada</td></tr>';
+        messageAutomationTableBody.innerHTML = '<tr><td colspan="8">Nenhuma automação cadastrada</td></tr>';
         updateMessageAutomationSummary();
+        renderActivationGuide();
         return;
       }
 
@@ -369,10 +1111,11 @@
           <tr>
             <td>${item.property_name || properties.find(property => String(property.id) === String(item.property_id))?.name || '-'}</td>
             <td>${triggerLabel(item.trigger_type || item.automation_type)}</td>
-            <td>${item.offset_days ?? item.days_offset ?? 0}</td>
-            <td>${item.send_time || '-'}</td>
-            <td><span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Ativa' : 'Inativa'}</span></td>
-            <td><div style="max-width: 320px; white-space: pre-wrap;">${item.template_text || item.message_template || '-'}</div></td>
+          <td>${item.offset_days ?? item.days_offset ?? 0}</td>
+          <td>${item.send_time || '-'}</td>
+          <td><span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Ativa' : 'Inativa'}</span></td>
+            <td>${automationOperationHtml(item)}</td>
+            <td><div style="max-width: 320px; white-space: pre-wrap;">${escapeHtml(item.template_text || item.message_template || '-')}</div></td>
             <td>
               <div class="actions-inline">
                 <button type="button" data-action="edit-message-automation" data-id="${item.id}">Editar</button>
@@ -385,6 +1128,7 @@
       }).join('');
 
       updateMessageAutomationSummary();
+      renderActivationGuide();
     }
 
     function messageLogStatusLabel(status) {
@@ -410,7 +1154,8 @@
 
     function formatDateTimeBR(dateTime) {
       if (!dateTime) return '-';
-      const [datePart, timePart = ''] = String(dateTime).split(' ');
+      const normalized = String(dateTime).replace('T', ' ');
+      const [datePart, timePart = ''] = normalized.split(' ');
       return `${formatDateBR(datePart)} ${timePart.slice(0, 5)}`.trim();
     }
 
@@ -542,29 +1287,42 @@
 
     async function loadMessageAutomations() {
       if (!token) return;
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        return;
+      }
 
       try {
-        const response = await fetch(`${API_URL}/message-automations`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const [response, logsResponse] = await Promise.all([
+          fetch(`${API_URL}/message-automations`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/message-logs`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
 
         const data = await response.json();
+        const logsData = await logsResponse.json().catch(() => []);
 
         if (!response.ok) {
           messageAutomations = [];
+          messageAutomationLogs = [];
           renderMessageAutomationTable();
           return;
         }
 
         messageAutomations = Array.isArray(data) ? data : [];
+        messageAutomationLogs = logsResponse.ok && Array.isArray(logsData) ? logsData : [];
         renderMessageAutomationTable();
       } catch (error) {
         messageAutomations = [];
+        messageAutomationLogs = [];
         renderMessageAutomationTable();
       }
     }
 
-    async function loadMessageLogs() {
+    async function loadRecentMessageLogsLegacy() {
       if (!token) return;
 
       try {
@@ -585,6 +1343,418 @@
       } catch (error) {
         messageLogs = [];
         renderMessageLogs();
+      }
+    }
+
+
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setOperationFeedback(text, type = 'success') {
+      const target = document.getElementById('operationFeedback');
+      if (!target) return;
+      target.innerHTML = text ? '<div class="message ' + type + '">' + escapeHtml(text) + '</div>' : '';
+    }
+
+    function getOperationFilters() {
+      return {
+        status: operationStatusFilter?.value || '',
+        propertyId: operationPropertyFilter?.value || '',
+        from: operationFromFilter?.value || '',
+        to: operationToFilter?.value || ''
+      };
+    }
+
+    function hasOperationFilters(filters = getOperationFilters()) {
+      return Boolean(filters.status || filters.propertyId || filters.from || filters.to);
+    }
+
+    function updateOperationPropertyOptions() {
+      if (!operationPropertyFilter) return;
+      const current = operationPropertyFilter.value;
+      operationPropertyFilter.innerHTML = '<option value="">Todos os imóveis</option>' + properties.map(property => '<option value="' + property.id + '">' + escapeHtml(property.name || 'Imóvel') + '</option>').join('');
+      operationPropertyFilter.value = current;
+    }
+
+    function setOperationLoadingState(isLoading) {
+      operationDashboardLoading = isLoading;
+      [operationRefreshBtn, operationApplyFiltersBtn, operationClearFiltersBtn].forEach(button => {
+        if (button) button.disabled = isLoading;
+      });
+      if (operationRefreshBtn) {
+        operationRefreshBtn.textContent = isLoading ? 'Atualizando...' : 'Atualizar operação';
+      }
+    }
+
+    function getItemDateOnly(value) {
+      if (!value) return '';
+      return String(value).slice(0, 10);
+    }
+
+    function getOperationMessageDate(log) {
+      return getItemDateOnly(log.scheduled_for || log.sent_at || log.processed_at || log.created_at);
+    }
+
+    function getOperationInboundDate(item) {
+      return getItemDateOnly(item.created_at || item.updated_at);
+    }
+
+    function matchesOperationStatus(itemStatus, filterStatus, type) {
+      const status = String(itemStatus || '').toLowerCase();
+      const filter = String(filterStatus || '').toLowerCase();
+      if (!filter) return true;
+
+      if (type === 'inbound') {
+        if (filter === 'sent') return status === 'processed';
+        if (filter === 'failed') return status === 'failed' || status === 'error';
+        if (filter === 'queued' || filter === 'needs_contact') return false;
+        return status === filter;
+      }
+
+      return status === filter;
+    }
+
+    function matchesOperationDate(date, filters) {
+      if (filters.from && date && date < filters.from) return false;
+      if (filters.to && date && date > filters.to) return false;
+      return true;
+    }
+
+    function isTodayDate(value) {
+      if (!value) return false;
+      return getItemDateOnly(value) === new Date().toISOString().slice(0, 10);
+    }
+
+    function filterOperationMessageLogs(logs) {
+      const filters = getOperationFilters();
+      return logs.filter(log => {
+        if (!matchesOperationStatus(log.status, filters.status, 'message')) return false;
+        if (filters.propertyId && String(log.property_id || '') !== String(filters.propertyId)) return false;
+        return matchesOperationDate(getOperationMessageDate(log), filters);
+      });
+    }
+
+    function filterOperationInboundEmails(emails) {
+      const filters = getOperationFilters();
+      return emails.filter(item => {
+        if (!matchesOperationStatus(item.parsing_status, filters.status, 'inbound')) return false;
+        if (filters.propertyId && String(item.property_id || '') !== String(filters.propertyId)) return false;
+        return matchesOperationDate(getOperationInboundDate(item), filters);
+      });
+    }
+
+    function updateOperationSummary(logs) {
+      const sentToday = logs.filter(log => String(log.status || '') === 'sent' && isTodayDate(log.sent_at || log.processed_at || log.created_at)).length;
+      const pending = logs.filter(log => ['pending', 'queued'].includes(String(log.status || ''))).length;
+      const failed = logs.filter(log => String(log.status || '') === 'failed').length;
+      const needsContact = logs.filter(log => String(log.status || '') === 'needs_contact').length;
+      [['operationSentToday', sentToday], ['operationPendingCount', pending], ['operationFailedCount', failed], ['operationNeedsContactCount', needsContact]].forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(value);
+      });
+    }
+
+    function renderOperationLoading() {
+      if (operationMessagesTableBody) operationMessagesTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-loading-row">Carregando mensagens...</div></td></tr>';
+      if (operationInboundTableBody) operationInboundTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-loading-row">Carregando inbound emails...</div></td></tr>';
+    }
+
+    function renderOperationMessagesTable() {
+      if (!operationMessagesTableBody) return;
+      const rows = filterOperationMessageLogs(operationMessageLogs).slice(0, 100);
+      if (!rows.length) {
+        const message = hasOperationFilters()
+          ? 'Nenhuma mensagem encontrada para os filtros aplicados.'
+          : 'Nenhuma mensagem operacional encontrada.';
+        operationMessagesTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + message + '</div></td></tr>';
+        return;
+      }
+      operationMessagesTableBody.innerHTML = rows.map(log => '<tr>' +
+        '<td><span class="status-badge ' + messageLogStatusClass(log.status) + '">' + messageLogStatusLabel(log.status) + '</span></td>' +
+        '<td>' + escapeHtml(log.guest_name || 'Hóspede') + '</td>' +
+        '<td>' + escapeHtml(log.property_name || '-') + '</td>' +
+        '<td>' + escapeHtml(formatDateTimeBR(log.scheduled_for)) + '</td>' +
+        '<td>' + escapeHtml(log.channel || 'email') + '</td>' +
+        '<td><div class="row-actions">' +
+          '<button type="button" class="btn-secondary" data-operation-action="reprocess-message" data-id="' + log.id + '">Reprocessar</button>' +
+          '<button type="button" class="btn-success" data-operation-action="force-message" data-id="' + log.id + '">Enviar</button>' +
+          '<button type="button" data-operation-action="details-message" data-id="' + log.id + '">Ver</button>' +
+        '</div></td></tr>').join('');
+    }
+
+    function inboundStatusClass(status) {
+      if (status === 'processed') return 'status-active';
+      if (status === 'ignored') return 'tag-neutral';
+      if (status === 'failed' || status === 'error') return 'status-inactive';
+      return 'tag-pending';
+    }
+
+    function inboundStatusLabel(status) {
+      if (status === 'processed') return 'Processado';
+      if (status === 'ignored') return 'Ignorado';
+      if (status === 'failed' || status === 'error') return 'Erro';
+      return status || 'Pendente';
+    }
+
+    function actionLabel(action) {
+      if (action === 'new' || action === 'created') return 'Nova';
+      if (action === 'modified' || action === 'updated') return 'Alterada';
+      if (action === 'cancelled') return 'Cancelada';
+      return action || 'Desconhecida';
+    }
+
+    function renderOperationInboundTable() {
+      if (!operationInboundTableBody) return;
+      const rows = filterOperationInboundEmails(operationInboundEmails).slice(0, 100);
+      if (!rows.length) {
+        const message = hasOperationFilters()
+          ? 'Nenhum inbound encontrado para os filtros aplicados.'
+          : 'Nenhum inbound email encontrado.';
+        operationInboundTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + message + '</div></td></tr>';
+        return;
+      }
+      operationInboundTableBody.innerHTML = rows.map(item => '<tr>' +
+        '<td><span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + inboundStatusLabel(item.parsing_status) + '</span></td>' +
+        '<td>' + escapeHtml(item.platform || 'unknown') + '</td>' +
+        '<td>' + escapeHtml(actionLabel(item.action)) + '</td>' +
+        '<td><span class="confidence-pill">' + (item.confidence == null ? '-' : item.confidence + '%') + '</span></td>' +
+        '<td>' + escapeHtml(item.property_name || 'Não identificado') + '</td>' +
+        '<td><div class="row-actions">' +
+          '<button type="button" class="btn-secondary" data-operation-action="reprocess-inbound" data-id="' + item.id + '">Reprocessar</button>' +
+          '<button type="button" data-operation-action="details-inbound" data-id="' + item.id + '">Ver</button>' +
+        '</div></td></tr>').join('');
+    }
+
+    function getOperationAttentionItems() {
+      const items = [];
+      const filteredLogs = filterOperationMessageLogs(operationMessageLogs);
+      const filteredInbound = filterOperationInboundEmails(operationInboundEmails);
+
+      filteredLogs
+        .filter(log => String(log.status || '') === 'failed')
+        .slice(0, 8)
+        .forEach(log => items.push({
+          severity: 'danger',
+          type: 'message',
+          id: log.id,
+          title: 'Mensagem com erro',
+          detail: (log.guest_name || 'Hóspede') + ' · ' + (log.property_name || '-') + ' · ' + (log.error_message || 'Falha no envio')
+        }));
+
+      filteredLogs
+        .filter(log => String(log.status || '') === 'needs_contact')
+        .slice(0, 8)
+        .forEach(log => items.push({
+          severity: 'warning',
+          type: 'message',
+          id: log.id,
+          title: 'Mensagem sem contato',
+          detail: (log.guest_name || 'Hóspede') + ' · ' + (log.property_name || '-') + ' · confira email/telefone da reserva'
+        }));
+
+      filteredInbound
+        .filter(item => ['failed', 'error'].includes(String(item.parsing_status || '')) || Number(item.confidence || 0) < 70)
+        .slice(0, 8)
+        .forEach(item => items.push({
+          severity: Number(item.confidence || 0) < 70 ? 'warning' : 'danger',
+          type: 'inbound',
+          id: item.id,
+          title: Number(item.confidence || 0) < 70 ? 'Inbound com baixa confiança' : 'Inbound com erro',
+          detail: (item.subject || 'Email recebido') + ' · ' + (item.property_name || 'imóvel não identificado') + ' · score ' + (item.confidence ?? '-')
+        }));
+
+      reservations
+        .filter(reservation => reservation.source !== 'blocked' && !isReservationCancelled(reservation))
+        .filter(reservation => !reservation.guest_email && !reservation.guest_phone)
+        .slice(0, 8)
+        .forEach(reservation => items.push({
+          severity: 'warning',
+          type: 'reservation',
+          id: reservation.id,
+          title: 'Reserva sem contato',
+          detail: (reservation.guest_name || 'Hóspede') + ' · ' + (reservation.property_name || '-') + ' · ' + formatDateBR(reservation.start_date)
+        }));
+
+      const duplicateMap = new Map();
+      reservations.forEach(reservation => {
+        if (!reservation.guest_name || reservation.source === 'blocked') return;
+        const key = [reservation.property_id, reservation.guest_name.toLowerCase().trim(), reservation.start_date, reservation.end_date].join('|');
+        const list = duplicateMap.get(key) || [];
+        list.push(reservation);
+        duplicateMap.set(key, list);
+      });
+      duplicateMap.forEach(list => {
+        if (list.length > 1) {
+          const reservation = list[0];
+          items.push({
+            severity: 'warning',
+            type: 'reservation',
+            id: reservation.id,
+            title: 'Possível reserva duplicada',
+            detail: (reservation.guest_name || 'Hóspede') + ' · ' + formatDateBR(reservation.start_date) + ' até ' + formatDateBR(reservation.end_date)
+          });
+        }
+      });
+
+      return items.slice(0, 12);
+    }
+
+    function renderOperationAttentionPanel() {
+      if (!operationAttentionList) return;
+      const items = getOperationAttentionItems();
+      if (!items.length) {
+        operationAttentionList.innerHTML = '<div class="operation-empty-row">Nenhum item crítico encontrado para os filtros atuais.</div>';
+        return;
+      }
+
+      operationAttentionList.innerHTML = items.map(item =>
+        '<div class="operation-attention-item ' + item.severity + '">' +
+          '<div><strong>' + escapeHtml(item.title) + '</strong><div class="small">' + escapeHtml(item.detail) + '</div></div>' +
+          '<button type="button" class="btn-secondary" data-attention-type="' + item.type + '" data-id="' + item.id + '">Abrir</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    async function loadOperationalDashboard() {
+      if (!token || operationDashboardLoading) return;
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        showSection('billing');
+        return;
+      }
+      setOperationLoadingState(true);
+      setOperationFeedback('');
+      updateOperationPropertyOptions();
+      renderOperationLoading();
+      try {
+        const filters = getOperationFilters();
+        const inboundParams = new URLSearchParams();
+        if (filters.propertyId) inboundParams.set('property_id', filters.propertyId);
+        if (filters.from) inboundParams.set('from', filters.from);
+        if (filters.to) inboundParams.set('to', filters.to);
+        inboundParams.set('limit', '100');
+        const responses = await Promise.all([
+          fetch(API_URL + '/message-logs', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch(API_URL + '/inbound-emails?' + inboundParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } })
+        ]);
+        const messageData = await responses[0].json();
+        const inboundData = await responses[1].json();
+        if (!responses[0].ok) throw new Error(messageData.message || messageData.error || 'Erro ao carregar mensagens.');
+        if (!responses[1].ok) throw new Error(inboundData.message || inboundData.error || 'Erro ao carregar inbound emails.');
+        operationMessageLogs = Array.isArray(messageData) ? messageData : [];
+        operationInboundEmails = Array.isArray(inboundData.emails) ? inboundData.emails : [];
+        updateOperationSummary(filterOperationMessageLogs(operationMessageLogs));
+        renderOperationAttentionPanel();
+        renderOperationMessagesTable();
+        renderOperationInboundTable();
+      } catch (error) {
+        operationMessageLogs = [];
+        operationInboundEmails = [];
+        updateOperationSummary([]);
+        renderOperationAttentionPanel();
+        renderOperationMessagesTable();
+        renderOperationInboundTable();
+        setOperationFeedback(error.message || 'Não foi possível carregar o dashboard operacional.', 'error');
+      } finally {
+        setOperationLoadingState(false);
+      }
+    }
+
+    function operationField(label, value) {
+      const displayValue = value === undefined || value === null || value === '' ? '-' : value;
+      return '<div class="operation-detail-field"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(displayValue) + '</strong></div>';
+    }
+
+    function operationDetailJson(item) {
+      return '<details class="operation-technical-details"><summary>Ver dados técnicos</summary><pre>' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre></details>';
+    }
+
+    function renderMessageOperationDetails(item) {
+      const status = '<span class="status-badge ' + messageLogStatusClass(item.status) + '">' + messageLogStatusLabel(item.status) + '</span>';
+      return '<div class="operation-detail-layout">' +
+        '<div class="operation-detail-summary">' +
+          '<div><div class="summary-label">Mensagem</div><h3>' + escapeHtml(item.subject || 'Mensagem sem assunto') + '</h3></div>' +
+          status +
+        '</div>' +
+        '<div class="operation-detail-grid">' +
+          operationField('Hóspede', item.guest_name || 'Hóspede') +
+          operationField('Imóvel', item.property_name) +
+          operationField('Canal', item.channel || 'email') +
+          operationField('Agendada para', formatDateTimeBR(item.scheduled_for)) +
+          operationField('Reserva', item.reservation_id ? '#' + item.reservation_id : '-') +
+          operationField('Automação', item.automation_name || (item.automation_id ? '#' + item.automation_id : '-')) +
+          operationField('Contato', item.guest_contact) +
+          operationField('Criada em', formatDateTimeBR(item.created_at)) +
+        '</div>' +
+        (item.error_message ? '<div class="operation-detail-alert">' + escapeHtml(item.error_message) + '</div>' : '') +
+        (item.body_rendered ? '<div class="operation-detail-block"><span>Mensagem renderizada</span><p>' + escapeHtml(item.body_rendered) + '</p></div>' : '') +
+        operationDetailJson(item) +
+      '</div>';
+    }
+
+    function renderInboundOperationDetails(item) {
+      const status = '<span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + inboundStatusLabel(item.parsing_status) + '</span>';
+      return '<div class="operation-detail-layout">' +
+        '<div class="operation-detail-summary">' +
+          '<div><div class="summary-label">Inbound email</div><h3>' + escapeHtml(item.subject || 'Email sem assunto') + '</h3></div>' +
+          status +
+        '</div>' +
+        '<div class="operation-detail-grid">' +
+          operationField('Plataforma', item.platform || item.provider || 'unknown') +
+          operationField('Ação detectada', actionLabel(item.action)) +
+          operationField('Confiança', item.confidence == null ? '-' : item.confidence + '%') +
+          operationField('Imóvel identificado', item.property_name || 'Não identificado') +
+          operationField('Email de origem', item.from_email) +
+          operationField('Email de destino', item.to_email) +
+          operationField('Reserva criada', item.created_reservation_id ? '#' + item.created_reservation_id : '-') +
+          operationField('Recebido em', formatDateTimeBR(item.created_at)) +
+        '</div>' +
+        (item.parsing_notes ? '<div class="operation-detail-block"><span>Notas do parser</span><p>' + escapeHtml(item.parsing_notes) + '</p></div>' : '') +
+        operationDetailJson(item) +
+      '</div>';
+    }
+
+    function showOperationDetails(type, id) {
+      const item = type === 'message'
+        ? operationMessageLogs.find(log => Number(log.id) === Number(id))
+        : operationInboundEmails.find(email => Number(email.id) === Number(id));
+      if (!item || !operationDetailsCard || !operationDetailsContent) return;
+      operationDetailsContent.innerHTML = type === 'message'
+        ? renderMessageOperationDetails(item)
+        : renderInboundOperationDetails(item);
+      operationDetailsCard.classList.remove('hidden');
+      operationDetailsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function runOperationAction(url, successMessage, button) {
+      if (operationCurrentActionButton) return;
+      operationCurrentActionButton = button || null;
+      const originalText = button ? button.textContent : '';
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Processando...';
+      }
+      setOperationFeedback('Processando ação operacional...');
+
+      try {
+        const response = await fetch(url, { method: 'POST', headers: authHeaders() });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || data.error || 'A ação não pôde ser concluída.');
+        setOperationFeedback(data.message || successMessage, 'success');
+        await loadOperationalDashboard();
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+        operationCurrentActionButton = null;
       }
     }
 
@@ -659,6 +1829,11 @@
     async function toggleMessageAutomation(id) {
       const item = messageAutomations.find(automation => Number(automation.id) === Number(id));
       if (!item) return;
+      const isActive = item.is_active || item.status === 'active';
+      const confirmed = confirm(isActive
+        ? 'Deseja desativar esta automação? Novas mensagens podem deixar de ser agendadas.'
+        : 'Deseja ativar esta automação? Ela poderá gerar novos disparos automáticos.');
+      if (!confirmed) return;
 
       try {
         const response = await fetch(`${API_URL}/message-automations/${id}`, {
@@ -670,7 +1845,7 @@
             offset_days: item.offset_days ?? item.days_offset ?? 0,
             send_time: item.send_time || '09:00',
             template_text: item.template_text || item.message_template || '',
-            is_active: !(item.is_active || item.status === 'active')
+            is_active: !isActive
           })
         });
 
@@ -756,6 +1931,16 @@
       });
     }
 
+    const CHART_THEME = {
+      background: '#0f172a',
+      grid: '#263449',
+      axis: '#475569',
+      label: '#94a3b8',
+      income: '#38bdf8',
+      expense: '#fb7185',
+      profit: '#a78bfa'
+    };
+
     function buildLineChartSvg(monthKeys, monthsMap) {
       const width = 760;
       const height = 280;
@@ -770,7 +1955,9 @@
         monthsMap[key].profit
       ]);
 
+      const minValue = Math.min(0, ...values);
       const maxValue = Math.max(1, ...values);
+      const range = Math.max(1, maxValue - minValue);
 
       const plotWidth = width - paddingLeft - paddingRight;
       const plotHeight = height - paddingTop - paddingBottom;
@@ -781,7 +1968,7 @@
       }
 
       function getY(value) {
-        return paddingTop + plotHeight - ((value / maxValue) * plotHeight);
+        return paddingTop + plotHeight - (((value - minValue) / range) * plotHeight);
       }
 
       function buildPath(seriesName) {
@@ -801,18 +1988,19 @@
       const yLabels = [];
 
       for (let i = 0; i <= yTicks; i++) {
-        const value = (maxValue / yTicks) * i;
+        const value = minValue + ((range / yTicks) * i);
         const y = getY(value);
-        gridLines.push(`<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />`);
+        gridLines.push(`<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="${CHART_THEME.grid}" stroke-width="1" stroke-opacity="0.72" />`);
         yLabels.push(`
-          <text x="${paddingLeft - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7280">
+          <text x="${paddingLeft - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${CHART_THEME.label}">
             ${Math.round(value).toLocaleString('pt-BR')}
           </text>
         `);
       }
 
+      const zeroY = getY(0);
       const xLabels = monthKeys.map((key, index) => `
-        <text x="${getX(index)}" y="${height - 14}" text-anchor="middle" font-size="11" fill="#6b7280">
+        <text x="${getX(index)}" y="${height - 14}" text-anchor="middle" font-size="11" fill="${CHART_THEME.label}">
           ${formatMonthLabel(key)}
         </text>
       `).join('');
@@ -824,23 +2012,24 @@
         const profitY = getY(monthsMap[key].profit);
 
         return `
-          <circle cx="${x}" cy="${incomeY}" r="4" fill="#059669"></circle>
-          <circle cx="${x}" cy="${expenseY}" r="4" fill="#dc2626"></circle>
-          <circle cx="${x}" cy="${profitY}" r="4" fill="#2563eb"></circle>
+          <circle cx="${x}" cy="${incomeY}" r="4" fill="${CHART_THEME.income}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
+          <circle cx="${x}" cy="${expenseY}" r="4" fill="${CHART_THEME.expense}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
+          <circle cx="${x}" cy="${profitY}" r="4" fill="${CHART_THEME.profit}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
         `;
       }).join('');
 
       return `
         <svg viewBox="0 0 ${width} ${height}" width="100%" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico financeiro em linhas">
-          <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>
+          <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="${CHART_THEME.background}"></rect>
           ${gridLines.join('')}
           ${yLabels.join('')}
-          <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="#9ca3af" stroke-width="1.2"></line>
-          <line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" stroke="#9ca3af" stroke-width="1.2"></line>
+          <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="${CHART_THEME.axis}" stroke-width="1.2"></line>
+          <line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" stroke="${CHART_THEME.axis}" stroke-width="1.2"></line>
+          <line x1="${paddingLeft}" y1="${zeroY}" x2="${width - paddingRight}" y2="${zeroY}" stroke="${CHART_THEME.axis}" stroke-width="1" stroke-dasharray="4 5" stroke-opacity="0.78"></line>
 
-          <path d="${incomePath}" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-          <path d="${expensePath}" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-          <path d="${profitPath}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="${incomePath}" fill="none" stroke="${CHART_THEME.income}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="${expensePath}" fill="none" stroke="${CHART_THEME.expense}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="${profitPath}" fill="none" stroke="${CHART_THEME.profit}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
 
           ${pointCircles}
           ${xLabels}
@@ -902,8 +2091,8 @@
 
     function getPropertyChartColors(count) {
       const palette = [
-        '#2563eb', '#059669', '#dc2626', '#d97706', '#7c3aed',
-        '#0f766e', '#db2777', '#4f46e5', '#0891b2', '#65a30d'
+        '#38bdf8', '#34d399', '#fb7185', '#fbbf24', '#a78bfa',
+        '#2dd4bf', '#f472b6', '#818cf8', '#22d3ee', '#bef264'
       ];
 
       return Array.from({ length: count }, (_, index) => palette[index % palette.length]);
@@ -949,9 +2138,9 @@
       for (let i = 0; i <= yTicks; i++) {
         const value = minValue + ((range / yTicks) * i);
         const y = getY(value);
-        gridLines.push(`<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="#e5e7eb" stroke-width="1" />`);
+        gridLines.push(`<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="${CHART_THEME.grid}" stroke-width="1" stroke-opacity="0.72" />`);
         yLabels.push(`
-          <text x="${paddingLeft - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7280">
+          <text x="${paddingLeft - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${CHART_THEME.label}">
             ${Math.round(value).toLocaleString('pt-BR')}
           </text>
         `);
@@ -959,7 +2148,7 @@
 
       const zeroY = getY(0);
       const xLabels = monthKeys.map((key, index) => `
-        <text x="${getX(index)}" y="${height - 14}" text-anchor="middle" font-size="11" fill="#6b7280">
+        <text x="${getX(index)}" y="${height - 14}" text-anchor="middle" font-size="11" fill="${CHART_THEME.label}">
           ${formatMonthLabel(key)}
         </text>
       `).join('');
@@ -972,18 +2161,18 @@
         return monthKeys.map((key, index) => {
           const x = getX(index);
           const y = getY(series.months[key] || 0);
-          return `<circle cx="${x}" cy="${y}" r="3.5" fill="${series.color}"></circle>`;
+          return `<circle cx="${x}" cy="${y}" r="3.5" fill="${series.color}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>`;
         }).join('');
       }).join('');
 
       return `
         <svg viewBox="0 0 ${width} ${height}" width="100%" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico de lucro ou prejuízo por imóvel">
-          <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>
+          <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="${CHART_THEME.background}"></rect>
           ${gridLines.join('')}
           ${yLabels.join('')}
-          <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="#9ca3af" stroke-width="1.2"></line>
-          <line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" stroke="#9ca3af" stroke-width="1.2"></line>
-          <line x1="${paddingLeft}" y1="${zeroY}" x2="${width - paddingRight}" y2="${zeroY}" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="4 4"></line>
+          <line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" stroke="${CHART_THEME.axis}" stroke-width="1.2"></line>
+          <line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" stroke="${CHART_THEME.axis}" stroke-width="1.2"></line>
+          <line x1="${paddingLeft}" y1="${zeroY}" x2="${width - paddingRight}" y2="${zeroY}" stroke="${CHART_THEME.axis}" stroke-width="1" stroke-dasharray="4 5" stroke-opacity="0.78"></line>
           ${paths}
           ${points}
           ${xLabels}
@@ -1120,6 +2309,8 @@
     }
 
     async function loadFinancialDashboard() {
+      if (!hasFullBillingAccess()) return;
+
       try {
         const response = await fetch(`${API_URL}/financial`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -1152,25 +2343,41 @@
 
       const name = document.getElementById('registerName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
+      const cpf = onlyDigits(document.getElementById('registerCpf').value);
       const password = document.getElementById('registerPassword').value.trim();
 
+      if (!name || !email || !cpf || !password) {
+        showMessage('authMessage', 'Preencha nome, e-mail, CPF e senha para criar a conta.', 'error');
+        return;
+      }
+
+      if (!isValidCpf(cpf)) {
+        showMessage('authMessage', 'CPF inválido. Confira os números e tente novamente.', 'error');
+        return;
+      }
+
       try {
+        setButtonLoading(registerBtn, true, 'Cadastrando...');
+
         const response = await fetch(`${API_URL}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({ name, email, cpf, password })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          showMessage('authMessage', data.error || data.message || 'Erro ao cadastrar usuário', 'error');
+          showMessage('authMessage', extractApiError(data, 'Não foi possível cadastrar este usuário.'), 'error');
           return;
         }
 
         showMessage('authMessage', 'Usuário cadastrado com sucesso. Agora faça login.', 'success');
+        document.getElementById('registerPassword').value = '';
       } catch (error) {
         showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+      } finally {
+        setButtonLoading(registerBtn, false);
       }
     }
 
@@ -1180,7 +2387,14 @@
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
 
+      if (!email || !password) {
+        showMessage('authMessage', 'Informe e-mail e senha para entrar.', 'error');
+        return;
+      }
+
       try {
+        setButtonLoading(loginBtn, true, 'Entrando...');
+
         const response = await fetch(`${API_URL}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1190,7 +2404,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          showMessage('authMessage', data.error || data.message || 'Erro no login', 'error');
+          showMessage('authMessage', extractApiError(data, 'Não foi possível entrar. Confira seus dados.'), 'error');
           return;
         }
 
@@ -1205,10 +2419,94 @@
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(loggedUser));
 
-        enterApp();
-        await loadProperties();
+        await enterApp();
+        if (hasFullBillingAccess()) {
+          await loadProperties();
+        }
       } catch (error) {
         showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+      } finally {
+        setButtonLoading(loginBtn, false);
+      }
+    }
+
+    async function requestPasswordReset() {
+      clearMessage('authMessage');
+
+      const email = document.getElementById('forgotPasswordEmail').value.trim();
+      if (!email) {
+        showMessage('authMessage', 'Informe o e-mail da conta para receber as instruções.', 'error');
+        return;
+      }
+
+      try {
+        setButtonLoading(forgotPasswordBtn, true, 'Enviando...');
+
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showMessage('authMessage', extractApiError(data, 'Não foi possível solicitar a recuperação.'), 'error');
+          return;
+        }
+
+        const devToken = data?.data?.reset_token;
+        if (devToken && document.getElementById('resetToken')) {
+          document.getElementById('resetToken').value = devToken;
+        }
+
+        showMessage('authMessage', data.message || 'Se o e-mail estiver cadastrado, enviaremos as instruções para redefinir sua senha.', 'success');
+      } catch (error) {
+        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+      } finally {
+        setButtonLoading(forgotPasswordBtn, false);
+      }
+    }
+
+    async function resetPassword() {
+      clearMessage('authMessage');
+
+      const tokenValue = document.getElementById('resetToken').value.trim();
+      const password = document.getElementById('resetPassword').value.trim();
+
+      if (!tokenValue || !password) {
+        showMessage('authMessage', 'Informe o token recebido e a nova senha.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('authMessage', 'A nova senha precisa ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
+      try {
+        setButtonLoading(resetPasswordBtn, true, 'Redefinindo...');
+
+        const response = await fetch(`${API_URL}/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenValue, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showMessage('authMessage', extractApiError(data, 'Não foi possível redefinir a senha.'), 'error');
+          return;
+        }
+
+        document.getElementById('resetPassword').value = '';
+        document.getElementById('loginPassword').value = '';
+        showMessage('authMessage', data.message || 'Senha redefinida com sucesso. Faça login com a nova senha.', 'success');
+      } catch (error) {
+        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+      } finally {
+        setButtonLoading(resetPasswordBtn, false);
       }
     }
 
@@ -1228,22 +2526,319 @@
       messageAutomations = [];
       messageLogs = [];
       editingMessageAutomationId = null;
+      billingOverview = null;
+      billingPayments = [];
+      billingAccessState = {
+        billingStatus: 'TRIAL',
+        accessStatus: 'FULL'
+      };
 
       authCard.classList.remove('hidden');
       app.classList.add('hidden');
       showSection('dashboard');
     }
 
-    function enterApp() {
+    async function enterApp() {
       authCard.classList.add('hidden');
       app.classList.remove('hidden');
       userInfo.textContent = loggedUser
         ? `Logado como ${loggedUser.name} (${loggedUser.email})`
         : 'Usuário logado';
-      showSection('dashboard');
+
+      try {
+        await loadBillingOverview();
+      } catch (error) {
+        billingAccessState = { billingStatus: 'BLOCKED', accessStatus: 'BLOCKED' };
+        applyBillingAccessControls();
+      }
+
+      showSection(preferredSectionForBillingAccess());
+
+      if (canAccessMyInfo()) {
+        loadMyInfo({ silent: true });
+      }
+    }
+
+    async function loadMyInfo(options = {}) {
+      try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          currentUserDetails = loggedUser || currentUserDetails;
+          renderMyInfo();
+          updateOnboardingIntegrationEmail();
+          if (!options.silent) {
+            const fallbackMessage = extractApiError(data, 'Erro ao carregar suas informações.');
+            showMessage('myInfoMessage', fallbackMessage.includes('/auth/me')
+              ? 'O backend precisa ser reiniciado para carregar todos os dados da conta. Enquanto isso, exibimos as informações já salvas no navegador.'
+              : fallbackMessage, 'error');
+          }
+          return null;
+        }
+
+        currentUserDetails = data?.data?.user || null;
+        if (currentUserDetails) {
+          loggedUser = { ...loggedUser, ...currentUserDetails };
+          localStorage.setItem('user', JSON.stringify(loggedUser));
+        }
+        renderMyInfo();
+        updateOnboardingIntegrationEmail();
+        return currentUserDetails;
+      } catch (error) {
+        if (!options.silent) showMessage('myInfoMessage', 'Erro ao conectar com o backend.', 'error');
+        return null;
+      }
+    }
+
+    function renderBillingAlert(overview = {}) {
+      const alert = document.getElementById('billingAlert');
+      const title = document.getElementById('billingAlertTitle');
+      const text = document.getElementById('billingAlertText');
+      if (!alert || !title || !text) return;
+
+      const status = String(getBillingStatusFromOverview(overview)).toUpperCase();
+      const accessStatus = String(getBillingAccessFromOverview(overview)).toUpperCase();
+      const daysRemaining = Number(overview.trial?.days_remaining ?? 0);
+
+      alert.className = 'billing-alert';
+
+      if (status === 'PAST_DUE') {
+        alert.classList.add('billing-alert-warning');
+        title.textContent = 'Pagamento em atraso';
+        text.textContent = 'Seu acesso pode ficar limitado até a regularização da cobrança.';
+        return;
+      }
+
+      if (['CANCELED', 'CANCELLED', 'BLOCKED', 'EXPIRED'].includes(status) || accessStatus === 'BLOCKED') {
+        alert.classList.add('billing-alert-danger');
+        title.textContent = 'Acesso bloqueado ou assinatura cancelada';
+        text.textContent = 'Ative uma assinatura para voltar a operar o StayFlow normalmente.';
+        return;
+      }
+
+      if (status === 'ACTIVE') {
+        alert.classList.add('billing-alert-success');
+        title.textContent = 'Assinatura ativa';
+        text.textContent = 'Sua conta está com acesso total e pronta para operar.';
+        return;
+      }
+
+      if (status === 'TRIAL' && daysRemaining <= 3) {
+        alert.classList.add('billing-alert-warning');
+        title.textContent = 'Trial acabando';
+        text.textContent = `Restam ${Math.max(daysRemaining, 0)} dia(s) de trial. Ative a assinatura para evitar bloqueio.`;
+        return;
+      }
+
+      alert.classList.add('billing-alert-info');
+      title.textContent = 'Trial ativo';
+      text.textContent = 'Você pode usar o StayFlow normalmente durante o período de teste.';
+    }
+
+    function renderBillingOverview() {
+      const overview = billingOverview || {};
+      billingAccessState = normalizeBillingAccessFromOverview(overview);
+      const billing = overview.billing || {};
+      const subscription = overview.subscription || {};
+      const trial = overview.trial || {};
+      const planStatus = getBillingStatusFromOverview(overview);
+      const accessStatus = getBillingAccessFromOverview(overview);
+      const currentAmount = billing.calculated_amount ?? billing.calculatedAmount ?? subscription.value ?? 0;
+      const nextDate = subscription.next_due_date || subscription.remote_next_due_date || billing.next_billing_date;
+      const nextAmount = subscription.value || currentAmount;
+
+      setText('billingPlanName', billing.plan_name || 'StayFlow Base');
+      setText('billingPlanStatus', billingStatusLabel(planStatus));
+      setText('billingTrialDays', trial.days_remaining == null ? '-' : String(trial.days_remaining));
+      setText('billingTrialEndsAt', formatBillingDate(trial.ends_at || billing.trial_ends_at));
+      setText('billingAccessStatus', billingStatusLabel(accessStatus));
+      setText('billingCurrentAmount', formatMoney(currentAmount));
+      setText('billingActiveProperties', billing.active_properties_count ?? 0);
+      setText('billingAdditionalProperties', billing.additional_properties_count ?? 0);
+      setText('billingNextDate', formatBillingDate(nextDate));
+      setText('billingNextAmount', formatMoney(nextAmount));
+
+      const badge = document.getElementById('billingStatusBadge');
+      if (badge) {
+        badge.textContent = billingStatusLabel(planStatus);
+        badge.className = `status-badge ${billingStatusClass(planStatus)}`;
+      }
+
+      renderBillingAlert(overview);
+      applyBillingAccessControls();
+    }
+
+    function renderBillingPayments() {
+      if (!billingPaymentsTableBody) return;
+
+      if (!billingPayments.length) {
+        billingPaymentsTableBody.innerHTML = '<tr><td colspan="5">Nenhum pagamento encontrado.</td></tr>';
+        return;
+      }
+
+      billingPaymentsTableBody.innerHTML = billingPayments.map(payment => {
+        const invoiceUrl = payment.invoice_url || payment.invoiceUrl || '';
+        const status = payment.status || 'PENDING';
+        const paidAt = payment.payment_date || payment.paymentDate || payment.confirmed_date || payment.confirmedDate;
+
+        return `
+          <tr>
+            <td><span class="status-badge ${billingStatusClass(status)}">${escapeHtml(billingStatusLabel(status))}</span></td>
+            <td>${escapeHtml(formatMoney(payment.value))}</td>
+            <td>${escapeHtml(formatBillingDate(payment.due_date || payment.dueDate))}</td>
+            <td>${escapeHtml(formatBillingDate(paidAt))}</td>
+            <td>${invoiceUrl ? `<a href="${escapeHtml(invoiceUrl)}" target="_blank" rel="noopener">Abrir fatura</a>` : '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadBillingOverview() {
+      const response = await fetch(`${API_URL}/billing/me`, {
+        headers: authHeaders()
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(extractApiError(data, 'Não foi possível carregar sua assinatura.'));
+      }
+
+      billingOverview = data.data || {};
+      renderBillingOverview();
+    }
+
+    async function loadBillingPayments() {
+      if (billingPaymentsTableBody) {
+        billingPaymentsTableBody.innerHTML = '<tr><td colspan="5">Carregando pagamentos...</td></tr>';
+      }
+
+      const response = await fetch(`${API_URL}/billing/payments`, {
+        headers: authHeaders()
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(extractApiError(data, 'Não foi possível carregar os pagamentos.'));
+      }
+
+      billingPayments = Array.isArray(data.data) ? data.data : [];
+      renderBillingPayments();
+    }
+
+    async function loadBillingDashboard(options = {}) {
+      if (!token) return;
+      clearMessage('billingMessage');
+
+      if (options.showLoading !== false) {
+        setText('billingPlanStatus', 'Carregando...');
+        if (billingPaymentsTableBody) {
+          billingPaymentsTableBody.innerHTML = '<tr><td colspan="5">Carregando pagamentos...</td></tr>';
+        }
+      }
+
+      try {
+        await Promise.all([
+          loadBillingOverview(),
+          loadBillingPayments()
+        ]);
+      } catch (error) {
+        showMessage('billingMessage', error.message || 'Erro ao conectar com o backend.', 'error');
+      }
+    }
+
+    async function runBillingAction(button, endpoint, options = {}) {
+      if (!token) return;
+      clearMessage('billingMessage');
+      setButtonLoading(button, true, options.loadingText || 'Processando...');
+
+      try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(options.body || {})
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showMessage('billingMessage', extractApiError(data, options.errorMessage || 'Não foi possível concluir a ação.'), 'error');
+          return;
+        }
+
+        showMessage('billingMessage', data.message || options.successMessage || 'Ação concluída com sucesso.', 'success');
+        await loadBillingDashboard({ showLoading: false });
+      } catch (error) {
+        showMessage('billingMessage', 'Erro ao conectar com o backend.', 'error');
+      } finally {
+        setButtonLoading(button, false);
+      }
+    }
+
+    function activateBilling() {
+      runBillingAction(activateBillingBtn, '/billing/activate-subscription', {
+        loadingText: 'Ativando...',
+        successMessage: 'Assinatura ativada com sucesso.',
+        errorMessage: 'Não foi possível ativar a assinatura.',
+        body: { billingType: billingTypeSelect?.value || 'PIX' }
+      });
+    }
+
+    function cancelBilling() {
+      if (!confirm('Tem certeza que deseja cancelar a assinatura? O acesso pode ser bloqueado conforme as regras de cobrança.')) return;
+
+      runBillingAction(cancelBillingBtn, '/billing/cancel-subscription', {
+        loadingText: 'Cancelando...',
+        successMessage: 'Assinatura cancelada com sucesso.',
+        errorMessage: 'Não foi possível cancelar a assinatura.'
+      });
+    }
+
+    function recalculateBilling() {
+      runBillingAction(recalculateBillingBtn, '/billing/recalculate', {
+        loadingText: 'Recalculando...',
+        successMessage: 'Plano recalculado com sucesso.',
+        errorMessage: 'Não foi possível recalcular o plano.'
+      });
+    }
+
+    function renderMyInfo() {
+      const user = currentUserDetails || loggedUser || {};
+      const onboardingState = getOnboardingState();
+      const activationStatus = getOnboardingActivationStatus();
+      const setupStatus = isOnboardingDone()
+        ? 'Onboarding concluído'
+        : onboardingState === 'skipped'
+          ? 'Onboarding pulado'
+          : activationStatus.hasProperty
+            ? 'Configuração em progresso'
+            : 'Configuração pendente';
+      const pairs = [
+        ['myInfoName', user.name || '-'],
+        ['myInfoEmail', user.email || '-'],
+        ['myInfoCpf', user.cpf || '-'],
+        ['myInfoSetupStatus', setupStatus],
+        ['myInfoIntegrationEmail', user.inbound_alias || 'E-mail ainda não disponível'],
+        ['myInfoOnboardingStatus', setupStatus]
+      ];
+
+      pairs.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      });
+
+      userInfo.textContent = user.email
+        ? `Logado como ${user.name || 'Usuário'} (${user.email})`
+        : userInfo.textContent;
     }
 
     async function loadProperties() {
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        return;
+      }
+
       clearMessage('propertyMessage');
       clearMessage('syncMessage');
 
@@ -1263,6 +2858,7 @@
         renderPropertyList();
         renderPropertySelects();
         renderMessagePropertyOptions();
+        maybeOpenOnboarding();
 
         if (properties.length > 0) {
           if (!selectedPropertyId) {
@@ -1292,6 +2888,7 @@
           renderPropertyProfitChart();
           renderPropertyRanking();
           messageAutomations = [];
+          messageAutomationLogs = [];
           messageLogs = [];
           messageLogSummary = { total: 0, pending: 0, needs_contact: 0, sent: 0, failed: 0 };
           renderMessageAutomationTable();
@@ -1320,6 +2917,7 @@ function renderPropertyList() {
 
   if (properties.length === 0) {
     propertyList.innerHTML = '<div class="small">Nenhum imóvel cadastrado.</div>';
+    renderActivationGuide();
     return;
   }
 
@@ -1365,6 +2963,8 @@ function renderPropertyList() {
 
     propertyList.appendChild(div);
   });
+
+  renderActivationGuide();
 }
 
     function renderPropertySelects() {
@@ -1461,6 +3061,187 @@ function renderPropertyList() {
   }
 }
 
+    async function createOnboardingProperty() {
+      const body = {
+        name: document.getElementById('onboardingPropertyName').value.trim(),
+        description: 'Criado pelo onboarding do StayFlow',
+        address: '',
+        city: document.getElementById('onboardingPropertyCity').value.trim(),
+        state: '',
+        country: 'Brasil',
+        listing_url: document.getElementById('onboardingListingUrl').value.trim(),
+        airbnb_ical_url: '',
+        booking_ical_url: ''
+      };
+
+      if (!body.name || !body.city || !body.listing_url) {
+        showMessage('onboardingMessage', 'Preencha nome, cidade e URL do anúncio para continuar.', 'error');
+        return false;
+      }
+
+      const response = await fetch(`${API_URL}/properties`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showMessage('onboardingMessage', extractApiError(data, 'Não foi possível cadastrar o imóvel.'), 'error');
+        return false;
+      }
+
+      const createdProperty = data.property || data.data?.property || null;
+      onboardingPropertyId = createdProperty?.id || null;
+      selectedPropertyId = onboardingPropertyId || selectedPropertyId;
+      updateOnboardingProgress({ property_created: true });
+      await loadProperties();
+      showMessage('onboardingMessage', 'Imóvel cadastrado. Agora conecte calendários e notificações.', 'success');
+      return true;
+    }
+
+    async function saveOnboardingCalendars() {
+      const propertyId = onboardingPropertyId || selectedPropertyId || properties[0]?.id;
+      const property = properties.find(item => Number(item.id) === Number(propertyId));
+      const airbnbIcal = document.getElementById('onboardingAirbnbIcal').value.trim();
+      const bookingIcal = document.getElementById('onboardingBookingIcal').value.trim();
+
+      if (!property) {
+        showMessage('onboardingMessage', 'Cadastre um imóvel antes de sincronizar calendários.', 'error');
+        return false;
+      }
+
+      if (!airbnbIcal && !bookingIcal) {
+        showMessage('onboardingMessage', 'Para concluir o onboarding, cole pelo menos um link iCal. Se preferir fazer isso depois, use "Pular por agora".', 'error');
+        return false;
+      }
+
+      const response = await fetch(`${API_URL}/properties/${property.id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: property.name,
+          description: property.description || '',
+          address: property.address || '',
+          city: property.city,
+          state: property.state || '',
+          country: property.country || 'Brasil',
+          listing_url: property.listing_url || property.property_listings?.[0]?.listing_url || '',
+          airbnb_ical_url: airbnbIcal || property.airbnb_ical_url || '',
+          booking_ical_url: bookingIcal || property.booking_ical_url || ''
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showMessage('onboardingMessage', extractApiError(data, 'Não foi possível salvar os calendários.'), 'error');
+        return false;
+      }
+
+      await loadProperties();
+      updateOnboardingProgress({ calendar_connected: true });
+      try {
+        await fetch(`${API_URL}/sync/${property.id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        document.getElementById('onboardingCalendarFeedback').textContent = 'Calendários salvos. A sincronização foi solicitada.';
+      } catch (error) {
+        document.getElementById('onboardingCalendarFeedback').textContent = 'Calendários salvos. Se precisar, sincronize depois pela área de Imóveis.';
+      }
+      return true;
+    }
+
+    async function createOnboardingAutomation() {
+      const shouldEnable = document.getElementById('onboardingEnableAutomation')?.checked;
+      const propertyId = onboardingPropertyId || selectedPropertyId || properties[0]?.id;
+
+      if (!shouldEnable || !propertyId) {
+        updateOnboardingProgress({ automation_step_completed: true });
+        return true;
+      }
+
+      const response = await fetch(`${API_URL}/message-automations`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          property_id: propertyId,
+          trigger_type: 'pre_check_in',
+          offset_days: 1,
+          send_time: '09:00',
+          template_text: 'Olá {nome_hospede}, seu check-in está chegando. Em breve enviaremos as informações do imóvel {nome_imovel} para deixar sua chegada tranquila.',
+          is_active: true
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        showMessage('onboardingMessage', extractApiError(data, 'Não foi possível criar a automação inicial. Você pode configurar depois.'), 'error');
+        updateOnboardingProgress({ automation_step_completed: true });
+        return true;
+      }
+
+      await loadMessageAutomations();
+      updateOnboardingProgress({ automation_step_completed: true });
+      return true;
+    }
+
+    async function advanceOnboarding() {
+      clearMessage('onboardingMessage');
+
+      if (onboardingStep === 1) {
+        onboardingStep = 2;
+        renderOnboardingStep();
+        return;
+      }
+
+      if (onboardingStep === 2) {
+        setButtonLoading(onboardingNextBtn, true, 'Cadastrando...');
+        const ok = await createOnboardingProperty();
+        setButtonLoading(onboardingNextBtn, false);
+        if (!ok) return;
+        onboardingStep = 3;
+        renderOnboardingStep();
+        return;
+      }
+
+      if (onboardingStep === 3) {
+        const progress = getOnboardingProgress();
+        if (!progress.email_copied || !progress.notifications_seen) {
+          showMessage('onboardingMessage', 'Copie o e-mail do StayFlow ou marque que entendeu onde cadastrá-lo antes de continuar.', 'error');
+          return;
+        }
+        setButtonLoading(onboardingNextBtn, true, 'Sincronizando...');
+        const ok = await saveOnboardingCalendars();
+        setButtonLoading(onboardingNextBtn, false);
+        if (!ok) return;
+        onboardingStep = 4;
+        renderOnboardingStep();
+        return;
+      }
+
+      if (onboardingStep === 4) {
+        setButtonLoading(onboardingNextBtn, true, 'Preparando...');
+        const ok = await createOnboardingAutomation();
+        setButtonLoading(onboardingNextBtn, false);
+        if (!ok) return;
+        onboardingStep = 5;
+        renderOnboardingStep();
+        return;
+      }
+
+      if (!canCompleteOnboarding()) {
+        showMessage('onboardingMessage', 'Ainda falta uma etapa de ativação. Conecte pelo menos um iCal e confirme o uso do e-mail do StayFlow, ou pule por agora.', 'error');
+        onboardingStep = 3;
+        renderOnboardingStep();
+        return;
+      }
+
+      markOnboardingDone();
+      closeOnboarding();
+      showSection('dashboard');
+    }
+
     async function createReservation() {
       clearMessage('reservationMessage');
 
@@ -1524,6 +3305,11 @@ function renderPropertyList() {
     }
 
     async function loadReservations() {
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        return;
+      }
+
       try {
         const response = await fetch(`${API_URL}/reservations`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -1589,9 +3375,12 @@ function renderPropertyList() {
           <td>${item.total_amount !== null && item.total_amount !== undefined ? formatMoney(item.total_amount) : '-'}</td>
           <td><span class="status-badge ${reservationStatusClass(item.status)}">${reservationStatusLabel(item.status)}</span></td>
           <td>
-            ${item.source !== 'blocked'
-              ? `<button type="button" data-action="view-reservation-finance" data-id="${item.id}">Ver lucro</button>`
-              : '-'}
+            <div class="row-actions">
+              <button type="button" data-action="view-reservation-details" data-id="${item.id}">Detalhes</button>
+              ${item.source !== 'blocked'
+                ? `<button type="button" class="btn-secondary" data-action="view-reservation-finance" data-id="${item.id}">Ver lucro</button>`
+                : ''}
+            </div>
           </td>
         </tr>
       `).join('');
@@ -1601,6 +3390,208 @@ function renderPropertyList() {
       document.querySelectorAll('#reservationsTableBody tr[data-id]').forEach(row => {
         row.classList.toggle('active-row', Number(row.dataset.id) === Number(selectedReservationId));
       });
+    }
+
+    function getReservationById(reservationId) {
+      return reservations.find(item => Number(item.id) === Number(reservationId)) || null;
+    }
+
+    function reservationSourceBadge(source) {
+      return '<span class="status-badge ' + sourceClass(source) + '">' + escapeHtml(sourceLabel(source)) + '</span>';
+    }
+
+    function reservationDetailMetric(label, value, className = '') {
+      return '<div class="summary-card">' +
+        '<div class="summary-label">' + escapeHtml(label) + '</div>' +
+        '<div class="summary-value ' + className + '">' + escapeHtml(value) + '</div>' +
+      '</div>';
+    }
+
+    function reservationDetailInfo(label, value) {
+      const displayValue = value === undefined || value === null || value === '' ? '-' : value;
+      return '<div class="operation-detail-field"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(displayValue) + '</strong></div>';
+    }
+
+    function renderRelatedList(items, emptyText, renderer) {
+      if (!items.length) return '<div class="operation-empty-row">' + escapeHtml(emptyText) + '</div>';
+      return '<div class="reservation-related-list">' + items.map(renderer).join('') + '</div>';
+    }
+
+    function timelineDateValue(value) {
+      if (!value) return 0;
+      const parsed = new Date(String(value).replace(' ', 'T')).getTime();
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function buildReservationTimeline(reservation, financeEntries = [], relatedLogs = [], relatedInbound = []) {
+      const items = [];
+
+      if (reservation.created_at) {
+        items.push({
+          date: reservation.created_at,
+          type: 'Reserva',
+          title: 'Reserva criada',
+          detail: sourceLabel(reservation.source) + ' · ' + reservationStatusLabel(reservation.status)
+        });
+      }
+
+      relatedInbound.forEach(item => {
+        items.push({
+          date: item.created_at,
+          type: 'Inbound',
+          title: item.subject || 'Email recebido',
+          detail: inboundStatusLabel(item.parsing_status) + ' · ' + (item.platform || item.provider || 'unknown')
+        });
+      });
+
+      financeEntries.forEach(entry => {
+        items.push({
+          date: entry.entry_date,
+          type: 'Financeiro',
+          title: (entry.type === 'income' ? 'Receita' : 'Despesa') + ' registrada',
+          detail: formatMoney(entry.amount) + ' · ' + (entry.category || '-') + ' · ' + financialStatusLabel(entry.status)
+        });
+      });
+
+      relatedLogs.forEach(log => {
+        items.push({
+          date: log.scheduled_for || log.sent_at || log.processed_at || log.created_at,
+          type: 'Mensagem',
+          title: log.subject || log.automation_name || 'Mensagem automatizada',
+          detail: messageLogStatusLabel(log.status) + ' · ' + (log.channel || 'email')
+        });
+      });
+
+      if (reservation.start_date) {
+        items.push({
+          date: reservation.start_date,
+          type: 'Estadia',
+          title: 'Check-in',
+          detail: reservation.guest_name || 'Hóspede'
+        });
+      }
+
+      if (reservation.end_date) {
+        items.push({
+          date: reservation.end_date,
+          type: 'Estadia',
+          title: 'Check-out',
+          detail: reservation.guest_name || 'Hóspede'
+        });
+      }
+
+      return items.sort((a, b) => timelineDateValue(a.date) - timelineDateValue(b.date));
+    }
+
+    function renderReservationTimeline(items) {
+      if (!items.length) return '<div class="operation-empty-row">Nenhum evento encontrado para montar a timeline.</div>';
+      return '<div class="reservation-timeline">' + items.map(item =>
+        '<div class="reservation-timeline-item">' +
+          '<div class="reservation-timeline-marker"></div>' +
+          '<div class="reservation-timeline-content">' +
+            '<div class="reservation-timeline-top"><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(item.type) + '</span></div>' +
+            '<div class="small">' + escapeHtml(formatDateTimeBR(item.date)) + '</div>' +
+            '<p>' + escapeHtml(item.detail || '-') + '</p>' +
+          '</div>' +
+        '</div>'
+      ).join('') + '</div>';
+    }
+
+    function renderReservationDetails(reservation, financeData = {}, relatedLogs = [], relatedInbound = []) {
+      const summary = financeData.summary || {};
+      const financeEntries = Array.isArray(financeData.entries) ? financeData.entries : [];
+      const contact = [reservation.guest_email, reservation.guest_phone].filter(Boolean).join(' / ') || '-';
+      const timelineItems = buildReservationTimeline(reservation, financeEntries, relatedLogs, relatedInbound);
+
+      return '<div class="reservation-detail-layout">' +
+        '<div class="operation-detail-summary">' +
+          '<div><div class="summary-label">Reserva #' + escapeHtml(reservation.id) + '</div><h3>' + escapeHtml(reservation.guest_name || 'Hóspede sem nome') + '</h3></div>' +
+          '<div class="row-actions">' +
+            reservationSourceBadge(reservation.source) +
+            '<span class="status-badge ' + reservationStatusClass(reservation.status) + '">' + reservationStatusLabel(reservation.status) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="operation-detail-grid">' +
+          reservationDetailInfo('Imóvel', reservation.property_name || properties.find(property => Number(property.id) === Number(reservation.property_id))?.name) +
+          reservationDetailInfo('Período', formatDateBR(reservation.start_date) + ' até ' + formatDateBR(reservation.end_date)) +
+          reservationDetailInfo('Contato', contact) +
+          reservationDetailInfo('Valor informado', reservation.total_amount !== null && reservation.total_amount !== undefined ? formatMoney(reservation.total_amount) : '-') +
+          reservationDetailInfo('Origem', sourceLabel(reservation.source)) +
+          reservationDetailInfo('Status', reservationStatusLabel(reservation.status)) +
+          reservationDetailInfo('Criada em', formatDateTimeBR(reservation.created_at)) +
+          reservationDetailInfo('Atualizada em', formatDateTimeBR(reservation.updated_at)) +
+        '</div>' +
+        (reservation.notes ? '<div class="operation-detail-block"><span>Observações</span><p>' + escapeHtml(reservation.notes) + '</p></div>' : '') +
+        '<div class="reservation-detail-metrics">' +
+          reservationDetailMetric('Receitas', formatMoney(summary.total_income || 0), 'income-value') +
+          reservationDetailMetric('Despesas', formatMoney(summary.total_expense || 0), 'expense-value') +
+          reservationDetailMetric('Pendentes', formatMoney(summary.total_pending || 0), 'pending-value') +
+          reservationDetailMetric('Lucro', formatMoney(summary.profit || 0), 'profit-value') +
+        '</div>' +
+        '<div class="operation-detail-block"><span>Timeline da reserva</span>' + renderReservationTimeline(timelineItems) + '</div>' +
+        '<div class="reservation-detail-sections">' +
+          '<div class="operation-detail-block"><span>Lançamentos financeiros</span>' +
+            renderRelatedList(financeEntries, 'Nenhum lançamento financeiro vinculado.', entry =>
+              '<div class="reservation-related-item"><strong>' + escapeHtml(entry.type === 'income' ? 'Receita' : 'Despesa') + ' · ' + escapeHtml(formatMoney(entry.amount)) + '</strong><small>' + escapeHtml(formatDateBR(entry.entry_date)) + ' · ' + escapeHtml(entry.category || '-') + ' · ' + escapeHtml(financialStatusLabel(entry.status)) + '</small></div>'
+            ) +
+          '</div>' +
+          '<div class="operation-detail-block"><span>Mensagens da reserva</span>' +
+            renderRelatedList(relatedLogs, 'Nenhuma mensagem encontrada para esta reserva.', log =>
+              '<div class="reservation-related-item"><strong>' + escapeHtml(log.subject || log.automation_name || 'Mensagem') + '</strong><small>' + escapeHtml(messageLogStatusLabel(log.status)) + ' · ' + escapeHtml(formatDateTimeBR(log.scheduled_for || log.created_at)) + '</small></div>'
+            ) +
+          '</div>' +
+          '<div class="operation-detail-block"><span>Inbound relacionado</span>' +
+            renderRelatedList(relatedInbound, 'Nenhum inbound relacionado encontrado.', item =>
+              '<div class="reservation-related-item"><strong>' + escapeHtml(item.subject || 'Inbound email') + '</strong><small>' + escapeHtml(inboundStatusLabel(item.parsing_status)) + ' · ' + escapeHtml(item.platform || item.provider || 'unknown') + ' · ' + escapeHtml(formatDateTimeBR(item.created_at)) + '</small></div>'
+            ) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    async function fetchReservationFinanceSafe(reservationId, reservation) {
+      if (!reservation || reservation.source === 'blocked') return { reservation, summary: {}, entries: [] };
+      try {
+        const response = await fetch(`${API_URL}/financial/by-reservation/${reservationId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) return { reservation, summary: {}, entries: [] };
+        return data;
+      } catch (error) {
+        return { reservation, summary: {}, entries: [] };
+      }
+    }
+
+    async function fetchRelatedReservationActivity(reservationId) {
+      const [logsResponse, inboundResponse] = await Promise.all([
+        fetch(`${API_URL}/message-logs`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/inbound-emails?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      const logsData = await logsResponse.json().catch(() => []);
+      const inboundData = await inboundResponse.json().catch(() => ({ emails: [] }));
+      const logs = Array.isArray(logsData) ? logsData.filter(log => Number(log.reservation_id) === Number(reservationId)) : [];
+      const inbound = Array.isArray(inboundData.emails) ? inboundData.emails.filter(item => Number(item.created_reservation_id) === Number(reservationId)) : [];
+      return { logs, inbound };
+    }
+
+    async function openReservationDetails(reservationId) {
+      const reservation = getReservationById(reservationId);
+      if (!reservation || !reservationDetailsCard || !reservationDetailsContent) return;
+
+      selectedReservationId = Number(reservationId);
+      highlightSelectedReservationRow();
+      reservationDetailsCard.classList.remove('hidden');
+      reservationDetailsContent.innerHTML = '<div class="operation-loading-row">Carregando detalhes da reserva...</div>';
+
+      const [financeData, activity] = await Promise.all([
+        fetchReservationFinanceSafe(reservationId, reservation),
+        fetchRelatedReservationActivity(reservationId).catch(() => ({ logs: [], inbound: [] }))
+      ]);
+
+      const resolvedReservation = financeData.reservation || reservation;
+      reservationDetailsContent.innerHTML = renderReservationDetails(resolvedReservation, financeData, activity.logs, activity.inbound);
+      reservationDetailsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     async function openReservationFinance(reservationId) {
@@ -1953,6 +3944,11 @@ function renderPropertyList() {
     }
 
     async function loadFinancialSummary() {
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        return;
+      }
+
       try {
         const params = new URLSearchParams();
 
@@ -1992,6 +3988,11 @@ function renderPropertyList() {
     }
 
     async function loadFinancialEntries() {
+      if (!hasFullBillingAccess()) {
+        clearSensitiveFrontendData();
+        return;
+      }
+
       try {
         const params = new URLSearchParams();
 
@@ -2103,6 +4104,11 @@ function renderPropertyList() {
         const action = button.dataset.action;
         const id = Number(button.dataset.id);
 
+        if (action === 'view-reservation-details' && id) {
+          await openReservationDetails(id);
+          return;
+        }
+
         if (action === 'view-reservation-finance' && id) {
           await openReservationFinance(id);
         }
@@ -2114,9 +4120,9 @@ function renderPropertyList() {
 
       const id = Number(row.dataset.id);
       const reservation = reservations.find(item => Number(item.id) === id);
-      if (!reservation || reservation.source === 'blocked') return;
+      if (!reservation) return;
 
-      await openReservationFinance(id);
+      await openReservationDetails(id);
     });
 
 
@@ -2181,6 +4187,121 @@ function renderPropertyList() {
     });
     refreshMessageLogsBtn.addEventListener('click', () => loadMessageLogs(currentMessageLogFilter));
 
+    operationRefreshBtn?.addEventListener('click', () => loadOperationalDashboard());
+    operationApplyFiltersBtn?.addEventListener('click', () => loadOperationalDashboard());
+    operationClearFiltersBtn?.addEventListener('click', () => {
+      if (operationStatusFilter) operationStatusFilter.value = '';
+      if (operationPropertyFilter) operationPropertyFilter.value = '';
+      if (operationFromFilter) operationFromFilter.value = '';
+      if (operationToFilter) operationToFilter.value = '';
+      loadOperationalDashboard();
+    });
+    operationCloseDetailsBtn?.addEventListener('click', () => {
+      operationDetailsCard?.classList.add('hidden');
+      if (operationDetailsContent) operationDetailsContent.innerHTML = '';
+    });
+    closeReservationDetailsBtn?.addEventListener('click', () => {
+      reservationDetailsCard?.classList.add('hidden');
+      if (reservationDetailsContent) reservationDetailsContent.innerHTML = '';
+    });
+    operationMessagesTableBody?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-operation-action]');
+      if (!button) return;
+      const action = button.dataset.operationAction;
+      const id = button.dataset.id;
+      try {
+        if (action === 'details-message') return showOperationDetails('message', id);
+        if (action === 'reprocess-message') {
+          if (!confirm('Deseja reprocessar esta mensagem? Um novo job será colocado na fila.')) return;
+          return runOperationAction(API_URL + '/message-logs/' + id + '/reprocess', 'Mensagem reenfileirada.', button);
+        }
+        if (action === 'force-message') {
+          if (!confirm('Deseja forçar o envio agora? Isso pode disparar email para o hóspede.')) return;
+          return runOperationAction(API_URL + '/message-logs/' + id + '/force-send', 'Envio forçado enfileirado.', button);
+        }
+      } catch (error) {
+        setOperationFeedback(error.message || 'Falha ao executar ação.', 'error');
+      }
+    });
+    operationInboundTableBody?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-operation-action]');
+      if (!button) return;
+      const action = button.dataset.operationAction;
+      const id = button.dataset.id;
+      try {
+        if (action === 'details-inbound') return showOperationDetails('inbound', id);
+        if (action === 'reprocess-inbound') {
+          if (!confirm('Deseja reprocessar este inbound? Ele pode atualizar/criar ações derivadas se o backend identificar mudanças.')) return;
+          return runOperationAction(API_URL + '/inbound-emails/' + id + '/reprocess', 'Inbound reenfileirado.', button);
+        }
+      } catch (error) {
+        setOperationFeedback(error.message || 'Falha ao executar ação.', 'error');
+      }
+    });
+    operationAttentionList?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-attention-type]');
+      if (!button) return;
+      const type = button.dataset.attentionType;
+      const id = button.dataset.id;
+      if (type === 'message') {
+        showOperationDetails('message', id);
+        return;
+      }
+      if (type === 'inbound') {
+        showOperationDetails('inbound', id);
+        return;
+      }
+      if (type === 'reservation') {
+        showSection('reservations');
+        await openReservationDetails(id);
+      }
+    });
+
+    onboardingNextBtn?.addEventListener('click', advanceOnboarding);
+    onboardingBackBtn?.addEventListener('click', () => {
+      if (onboardingStep > 1) {
+        onboardingStep -= 1;
+        clearMessage('onboardingMessage');
+        renderOnboardingStep();
+      }
+    });
+    onboardingSkipBtn?.addEventListener('click', () => {
+      markOnboardingSkipped();
+      closeOnboarding();
+      showSection('dashboard');
+    });
+    document.querySelectorAll('[data-copy-integration-email]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const success = await copyIntegrationEmail('onboardingMessage');
+        if (success) showMessage('onboardingMessage', 'E-mail copiado. Agora cadastre esse e-mail nas notificações das plataformas.', 'success');
+      });
+    });
+    document.getElementById('onboardingEmailUnderstoodBtn')?.addEventListener('click', () => {
+      updateOnboardingProgress({ email_copied: true, notifications_seen: true });
+      showMessage('onboardingMessage', 'Perfeito. O e-mail do StayFlow foi marcado como entendido para esta configuração.', 'success');
+    });
+    refreshMyInfoBtn?.addEventListener('click', () => loadMyInfo());
+    copyMyIntegrationEmailBtn?.addEventListener('click', () => copyIntegrationEmail('myInfoMessage'));
+    openOnboardingBtn?.addEventListener('click', () => openOnboarding(getSuggestedOnboardingStep()));
+    refreshBillingBtn?.addEventListener('click', () => loadBillingDashboard());
+    activateBillingBtn?.addEventListener('click', activateBilling);
+    cancelBillingBtn?.addEventListener('click', cancelBilling);
+    recalculateBillingBtn?.addEventListener('click', recalculateBilling);
+    accessRestrictionCta?.addEventListener('click', () => showSection('billing'));
+    activationAssistantToggle?.addEventListener('click', () => {
+      activationAssistant?.classList.toggle('is-minimized');
+      const minimized = activationAssistant?.classList.contains('is-minimized');
+      if (activationAssistantToggle) activationAssistantToggle.textContent = minimized ? '+' : '-';
+    });
+    [activationNextCta, assistantPrimaryCta].forEach(button => {
+      button?.addEventListener('click', () => goToActivationSection(button.dataset.activationSection));
+    });
+    document.addEventListener('click', (event) => {
+      const activationButton = event.target.closest('[data-activation-section]');
+      if (!activationButton) return;
+      goToActivationSection(activationButton.dataset.activationSection);
+    });
+
     if (messageLogFilters) {
       messageLogFilters.addEventListener('click', (event) => {
         const button = event.target.closest('[data-log-filter]');
@@ -2191,6 +4312,13 @@ function renderPropertyList() {
 
     loginBtn.addEventListener('click', login);
     registerBtn.addEventListener('click', registerUser);
+    showForgotPasswordBtn?.addEventListener('click', () => toggleForgotPasswordPanel(true));
+    hideForgotPasswordBtn?.addEventListener('click', () => toggleForgotPasswordPanel(false));
+    forgotPasswordBtn?.addEventListener('click', requestPasswordReset);
+    resetPasswordBtn?.addEventListener('click', resetPassword);
+    registerCpfInput?.addEventListener('input', (event) => {
+      event.target.value = formatCpf(event.target.value);
+    });
     logoutBtn.addEventListener('click', logout);
     createPropertyBtn.addEventListener('click', createProperty);
     createReservationBtn.addEventListener('click', createReservation);
@@ -2241,11 +4369,22 @@ function renderPropertyList() {
     });
 
     document.getElementById('financialFilterMonth').value = new Date().toISOString().slice(0, 7);
+
+    const resetTokenFromUrl = new URLSearchParams(window.location.search).get('resetToken');
+    if (resetTokenFromUrl && document.getElementById('resetToken')) {
+      document.getElementById('resetToken').value = resetTokenFromUrl;
+      toggleForgotPasswordPanel(true);
+      showMessage('authMessage', 'Token carregado. Informe sua nova senha para concluir a redefinição.', 'success');
+    }
+
     resetFinancialForm();
     resetMessageAutomationForm();
     resetReservationFinanceCard();
 
     if (token && loggedUser) {
-      enterApp();
-      loadProperties();
+      enterApp().then(() => {
+        if (hasFullBillingAccess()) {
+          loadProperties();
+        }
+      });
     }

@@ -4,9 +4,11 @@ const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
+const { requireFullBilling } = require('../middlewares/billingAccessMiddleware');
 
 router.use(authMiddleware);
 router.use(adminMiddleware);
+router.use(requireFullBilling);
 
 // LISTAR LOGS DO SISTEMA
 router.get('/', async (req, res) => {

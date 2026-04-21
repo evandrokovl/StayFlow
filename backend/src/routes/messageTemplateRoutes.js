@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 
 router.use(authMiddleware);
 
 // LISTAR templates do usuário
-router.get('/', async (req, res) => {
+router.get('/', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
 });
 
 // BUSCAR template por id
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -55,7 +56,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // CRIAR template
-router.post('/', async (req, res) => {
+router.post('/', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, channel, subject, body } = req.body;
@@ -99,7 +100,7 @@ router.post('/', async (req, res) => {
 });
 
 // ATUALIZAR template
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -163,7 +164,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // EXCLUIR template
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireWritableBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;

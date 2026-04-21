@@ -63,6 +63,10 @@ const env = {
     ? requireEnv('WEBHOOK_SECRET')
     : (process.env.WEBHOOK_SECRET ? String(process.env.WEBHOOK_SECRET).trim() : ''),
 
+  ASAAS_BASE_URL: requireEnv('ASAAS_BASE_URL', { defaultValue: 'https://api-sandbox.asaas.com/v3' }),
+  ASAAS_API_KEY: process.env.ASAAS_API_KEY ? String(process.env.ASAAS_API_KEY).trim() : '',
+  ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN ? String(process.env.ASAAS_WEBHOOK_TOKEN).trim() : '',
+
   CORS_ORIGINS: (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((item) => item.trim())

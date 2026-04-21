@@ -17,6 +17,8 @@ const messageTemplateRoutes = require('./routes/messageTemplateRoutes');
 const messageAutomationRoutes = require('./routes/messageAutomationRoutes');
 const messageLogRoutes = require('./routes/messageLogRoutes');
 const financialRoutes = require('./routes/financialRoutes');
+const billingRoutes = require('./routes/billingRoutes');
+const asaasWebhookRoutes = require('./routes/asaasWebhookRoutes');
 
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -63,6 +65,8 @@ app.use('/message-templates', messageTemplateRoutes);
 app.use('/message-automations', messageAutomationRoutes);
 app.use('/message-logs', messageLogRoutes);
 app.use('/financial', financialRoutes);
+app.use('/billing', billingRoutes);
+app.use('/webhooks', asaasWebhookRoutes);
 
 app.get('/', (req, res) => {
   res.send('API funcionando 🚀');

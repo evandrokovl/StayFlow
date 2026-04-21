@@ -44,7 +44,14 @@ test('ical gera calendario ICS para token valido', async () => {
     },
     {
       mocks: {
-        [srcPath('config', 'database.js')]: pool
+        [srcPath('config', 'database.js')]: pool,
+        [srcPath('middlewares', 'authMiddleware.js')]: (req, res, next) => next(),
+        [srcPath('services', 'billingService.js')]: {
+          refreshUserAccessStatus: async () => ({
+            billingStatus: 'ACTIVE',
+            accessStatus: 'FULL'
+          })
+        }
       }
     }
   );
@@ -66,7 +73,9 @@ test('ical property retorna token do imovel existente', async () => {
     srcPath('routes', 'icalRoutes.js'),
     '/ical',
     async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/ical/property/10`);
+      const response = await fetch(`${baseUrl}/ical/property/10`, {
+        headers: { Authorization: 'Bearer token-teste' }
+      });
       const body = await response.json();
 
       assert.equal(response.status, 200);
@@ -75,7 +84,17 @@ test('ical property retorna token do imovel existente', async () => {
     },
     {
       mocks: {
-        [srcPath('config', 'database.js')]: pool
+        [srcPath('config', 'database.js')]: pool,
+        [srcPath('middlewares', 'authMiddleware.js')]: (req, res, next) => {
+          req.user = { id: 7, email: 'pessoa@email.com' };
+          next();
+        },
+        [srcPath('services', 'billingService.js')]: {
+          refreshUserAccessStatus: async () => ({
+            billingStatus: 'ACTIVE',
+            accessStatus: 'FULL'
+          })
+        }
       }
     }
   );

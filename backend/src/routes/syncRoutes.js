@@ -5,6 +5,7 @@ const pool = require('../config/database');
 const { syncAllProperties, syncOneProperty } = require('../services/syncService');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
+const { requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const { createRateLimiter } = require('../middlewares/rateLimit');
 
 const syncRateLimit = createRateLimiter({
@@ -17,7 +18,20 @@ const syncRateLimit = createRateLimiter({
 router.use(authMiddleware);
 router.use(syncRateLimit);
 
-router.post('/all', adminMiddleware, async (req, res, next) => {
+function runMiddleware(middleware, req, res) {
+  return new Promise((resolve, reject) => {
+    middleware(req, res, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
+router.post('/all', adminMiddleware, requireWritableBilling, async (req, res, next) => {
   try {
     await syncAllProperties();
 
@@ -57,6 +71,8 @@ router.post('/:propertyId', async (req, res, next) => {
       err.statusCode = 403;
       throw err;
     }
+
+    await runMiddleware(requireWritableBilling, req, res);
 
     const result = await syncOneProperty(propertyId);
 

@@ -19,11 +19,15 @@
 
       <div class="nav-menu">
         <button type="button" class="nav-btn active" data-section-btn="dashboard">Dashboard</button>
-        <button type="button" class="nav-btn" data-section-btn="properties">Imóveis</button>
-        <button type="button" class="nav-btn" data-section-btn="reservations">Reservas</button>
-        <button type="button" class="nav-btn" data-section-btn="calendar">Calendário</button>
         <button type="button" class="nav-btn" data-section-btn="messages">Automação de mensagens</button>
+        <button type="button" class="nav-btn" data-section-btn="calendar">Calendário</button>
         <button type="button" class="nav-btn" data-section-btn="financial">Financeiro</button>
+        <button type="button" class="nav-btn" data-section-btn="properties">Imóveis</button>
+        <button type="button" class="nav-btn" data-section-btn="my-info">Minhas informações</button>
+        <button type="button" class="nav-btn" data-section-btn="operations">Operação</button>
+        <button type="button" class="nav-btn" data-section-btn="reservations">Reservas</button>
+        <button type="button" class="nav-btn" data-section-btn="message-status">Status das mensagens</button>
+        <button type="button" class="nav-btn" data-section-btn="billing">Assinatura e Cobrança</button>
       </div>
     </aside>
 
@@ -35,24 +39,78 @@
             <div class="brand-kicker">Sistema de gestão de imóveis por temporada</div>
           </div>
 
-          <div class="grid grid-2">
-            <div>
-              <h2>Entrar</h2>
+          <div class="grid grid-2 auth-grid">
+            <div class="auth-panel">
+              <div class="auth-panel-heading">
+                <h2>Entrar</h2>
+                <div class="small">Acesse sua operação com segurança.</div>
+              </div>
               <div class="grid">
-                <input type="email" id="loginEmail" placeholder="E-mail" />
-                <input type="password" id="loginPassword" placeholder="Senha" />
+                <label class="form-field">
+                  <span>E-mail</span>
+                  <input type="email" id="loginEmail" placeholder="voce@email.com" autocomplete="email" />
+                </label>
+                <label class="form-field">
+                  <span>Senha</span>
+                  <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" />
+                </label>
                 <button id="loginBtn" type="button">Entrar</button>
+                <button class="auth-link-button" id="showForgotPasswordBtn" type="button">Esqueci minha senha</button>
               </div>
             </div>
 
-            <div>
-              <h2>Cadastrar usuário</h2>
+            <div class="auth-panel">
+              <div class="auth-panel-heading">
+                <h2>Cadastrar usuário</h2>
+                <div class="small">CPF obrigatório para proteger a conta e evitar duplicidade.</div>
+              </div>
               <div class="grid">
-                <input type="text" id="registerName" placeholder="Nome" />
-                <input type="email" id="registerEmail" placeholder="E-mail" />
-                <input type="password" id="registerPassword" placeholder="Senha" />
+                <label class="form-field">
+                  <span>Nome</span>
+                  <input type="text" id="registerName" placeholder="Nome completo" autocomplete="name" />
+                </label>
+                <label class="form-field">
+                  <span>E-mail</span>
+                  <input type="email" id="registerEmail" placeholder="voce@email.com" autocomplete="email" />
+                </label>
+                <label class="form-field">
+                  <span>CPF</span>
+                  <input type="text" id="registerCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" />
+                </label>
+                <label class="form-field">
+                  <span>Senha</span>
+                  <input type="password" id="registerPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
+                </label>
                 <button class="btn-secondary" id="registerBtn" type="button">Cadastrar</button>
               </div>
+            </div>
+          </div>
+
+          <div class="auth-reset-panel hidden" id="forgotPasswordPanel">
+            <div class="auth-panel-heading">
+              <h2>Recuperar senha</h2>
+              <div class="small">Informe o e-mail da conta. Se ele existir, enviaremos um link seguro para redefinição.</div>
+            </div>
+            <div class="grid grid-2 auth-reset-grid">
+              <label class="form-field">
+                <span>E-mail da conta</span>
+                <input type="email" id="forgotPasswordEmail" placeholder="voce@email.com" autocomplete="email" />
+              </label>
+              <div class="auth-reset-actions">
+                <button class="btn-secondary" id="forgotPasswordBtn" type="button">Enviar instruções</button>
+                <button class="auth-link-button" id="hideForgotPasswordBtn" type="button">Voltar ao login</button>
+              </div>
+            </div>
+            <div class="grid grid-2 auth-reset-grid reset-password-box">
+              <label class="form-field">
+                <span>Token de redefinição</span>
+                <input type="text" id="resetToken" placeholder="Cole o token recebido por e-mail" autocomplete="off" />
+              </label>
+              <label class="form-field">
+                <span>Nova senha</span>
+                <input type="password" id="resetPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
+              </label>
+              <button class="btn-success" id="resetPasswordBtn" type="button">Redefinir senha</button>
             </div>
           </div>
 
@@ -75,6 +133,204 @@
             </div>
           </div>
 
+          <div class="access-restriction-banner hidden" id="accessRestrictionBanner">
+            <div>
+              <strong id="accessRestrictionTitle">Acesso limitado</strong>
+              <span id="accessRestrictionText">Regularize sua assinatura para voltar a usar todos os recursos.</span>
+            </div>
+            <button type="button" id="accessRestrictionCta">Ver cobrança</button>
+          </div>
+
+          <aside class="activation-assistant" id="activationAssistant">
+            <div class="activation-assistant-head">
+              <div>
+                <span class="assistant-kicker">PrÃ³ximo passo</span>
+                <strong id="assistantNextTitle">Ative o StayFlow</strong>
+              </div>
+              <button type="button" class="assistant-toggle" id="activationAssistantToggle" aria-label="Minimizar guia">-</button>
+            </div>
+            <div class="activation-assistant-body" id="activationAssistantBody">
+              <div class="activation-mini-progress">
+                <div><span id="assistantProgressText">0 de 4 concluÃ­dos</span><strong id="assistantProgressPercent">0%</strong></div>
+                <div class="activation-track"><span id="assistantProgressBar"></span></div>
+              </div>
+              <p id="assistantNextDescription">Siga o guia para deixar calendÃ¡rio, e-mail e mensagens funcionando.</p>
+              <div class="activation-mini-steps" id="assistantStepList"></div>
+              <button type="button" id="assistantPrimaryCta">Continuar configuraÃ§Ã£o</button>
+            </div>
+          </aside>
+
+          <div class="onboarding-shell hidden" id="onboardingShell">
+            <div class="onboarding-card">
+              <div class="onboarding-top">
+                <div>
+                  <div class="brand-kicker">Configuração guiada</div>
+                  <h2 id="onboardingTitle">Bem-vindo ao StayFlow</h2>
+                  <div class="small" id="onboardingSubtitle">Em poucos minutos você deixa sua operação pronta para acompanhar reservas, calendários e mensagens.</div>
+                </div>
+                <button type="button" class="auth-link-button" id="onboardingSkipBtn">Pular por agora</button>
+              </div>
+
+              <div class="onboarding-progress">
+                <div class="onboarding-progress-meta">
+                  <span id="onboardingStepText">Etapa 1 de 5</span>
+                  <span id="onboardingProgressPercent">20%</span>
+                </div>
+                <div class="onboarding-progress-track">
+                  <div id="onboardingProgressBar"></div>
+                </div>
+              </div>
+
+              <div class="onboarding-body">
+                <div class="onboarding-step" data-onboarding-step="1">
+                  <div class="onboarding-hero">
+                    <div>
+                      <h3>Vamos chegar ao primeiro valor rápido.</h3>
+                      <p>O StayFlow funciona melhor quando já conhece seu primeiro imóvel, seus calendários e o e-mail de notificações das plataformas.</p>
+                    </div>
+                    <div class="onboarding-benefits">
+                      <div><strong>1</strong><span>Centralize reservas</span></div>
+                      <div><strong>2</strong><span>Evite conflitos de calendário</span></div>
+                      <div><strong>3</strong><span>Prepare automações</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="onboarding-step hidden" data-onboarding-step="2">
+                  <div class="grid grid-2">
+                    <div>
+                      <h3>Cadastre seu primeiro imóvel</h3>
+                      <p class="small">Use o link do anúncio para ajudar o StayFlow a identificar reservas recebidas por e-mail.</p>
+                    </div>
+                    <div class="onboarding-form">
+                      <label class="form-field"><span>Nome do imóvel</span><input type="text" id="onboardingPropertyName" placeholder="Ex: Studio Vista Mar" /></label>
+                      <label class="form-field"><span>Cidade</span><input type="text" id="onboardingPropertyCity" placeholder="Ex: Rio de Janeiro" /></label>
+                      <label class="form-field"><span>URL do anúncio</span><input type="text" id="onboardingListingUrl" placeholder="Link do Airbnb, Booking ou outra plataforma" /></label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="onboarding-step hidden" data-onboarding-step="3">
+                  <div class="onboarding-section-heading">
+                    <h3>Conecte calendário e e-mail do StayFlow</h3>
+                    <p class="small">Configure os dois canais essenciais: o iCal mantém sua agenda sincronizada e o e-mail do StayFlow ajuda a identificar reservas, alterações e cancelamentos automaticamente.</p>
+                  </div>
+
+                  <div class="integration-concept-grid">
+                    <div class="concept-card">
+                      <span>Calendário iCal</span>
+                      <strong>Sincroniza disponibilidade</strong>
+                      <p>Use os links iCal do Airbnb e Booking para manter datas bloqueadas e reduzir conflitos de calendário.</p>
+                    </div>
+                    <div class="concept-card">
+                      <span>E-mail do StayFlow</span>
+                      <strong>Recebe eventos das plataformas</strong>
+                      <p>Cadastre este e-mail nas notificações para o StayFlow reconhecer novas reservas, mudanças e cancelamentos.</p>
+                    </div>
+                  </div>
+
+                  <div class="integration-email-callout">
+                    <div>
+                      <span class="small">E-mail do StayFlow para notificações</span>
+                      <strong id="onboardingIntegrationEmailText">Carregando e-mail...</strong>
+                      <p>Cadastre este e-mail nas notificações do Airbnb e Booking para o StayFlow identificar reservas, alterações e cancelamentos automaticamente.</p>
+                    </div>
+                    <div class="integration-email-actions">
+                      <button type="button" class="btn-secondary" data-copy-integration-email>Copiar e-mail</button>
+                      <button type="button" class="auth-link-button" id="onboardingEmailUnderstoodBtn">Já entendi</button>
+                    </div>
+                  </div>
+
+                  <div class="integration-guide-label">1. Pegue o link iCal de calendário</div>
+                  <div class="ical-guide-grid">
+                    <div class="ical-guide-card">
+                      <div class="guide-card-title"><span>Airbnb</span><small>Link iCal</small></div>
+                      <div class="visual-steps">
+                        <div><strong>1</strong><span>Entre no anúncio que será conectado ao StayFlow.</span></div>
+                        <div><strong>2</strong><span>Abra a área de calendário ou disponibilidade.</span></div>
+                        <div><strong>3</strong><span>Localize a opção de exportar ou compartilhar calendário.</span></div>
+                        <div><strong>4</strong><span>Copie o link iCal gerado pelo Airbnb.</span></div>
+                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
+                      </div>
+                      <label class="form-field"><span>iCal Airbnb</span><input type="text" id="onboardingAirbnbIcal" placeholder="https://www.airbnb.com/calendar/ical/..." /></label>
+                    </div>
+                    <div class="ical-guide-card">
+                      <div class="guide-card-title"><span>Booking</span><small>Link iCal</small></div>
+                      <div class="visual-steps">
+                        <div><strong>1</strong><span>Entre na extranet ou painel do Booking.</span></div>
+                        <div><strong>2</strong><span>Abra a área de calendário ou sincronização.</span></div>
+                        <div><strong>3</strong><span>Localize o link iCal do imóvel.</span></div>
+                        <div><strong>4</strong><span>Copie o link indicado pela plataforma.</span></div>
+                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
+                      </div>
+                      <label class="form-field"><span>iCal Booking</span><input type="text" id="onboardingBookingIcal" placeholder="https://admin.booking.com/hotel/..." /></label>
+                    </div>
+                  </div>
+
+                  <div class="integration-guide-label">2. Cadastre o e-mail do StayFlow nas notificações</div>
+                  <div class="ical-guide-grid notification-guide-grid">
+                    <div class="ical-guide-card">
+                      <div class="guide-card-title"><span>Airbnb</span><small>E-mail</small></div>
+                      <div class="visual-steps">
+                        <div><strong>1</strong><span>Abra as configurações da conta ou do anúncio.</span></div>
+                        <div><strong>2</strong><span>Procure notificações, contatos ou mensagens por e-mail.</span></div>
+                        <div><strong>3</strong><span>Adicione o e-mail do StayFlow como destinatário quando disponível.</span></div>
+                        <div><strong>4</strong><span>Salve para que eventos cheguem automaticamente ao StayFlow.</span></div>
+                      </div>
+                    </div>
+                    <div class="ical-guide-card">
+                      <div class="guide-card-title"><span>Booking</span><small>E-mail</small></div>
+                      <div class="visual-steps">
+                        <div><strong>1</strong><span>Acesse a extranet do Booking.</span></div>
+                        <div><strong>2</strong><span>Procure conta, contatos ou notificações por e-mail.</span></div>
+                        <div><strong>3</strong><span>Inclua o e-mail do StayFlow como contato de notificações.</span></div>
+                        <div><strong>4</strong><span>Mantenha esse e-mail ativo para receber reservas e alterações.</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="onboardingCalendarFeedback" class="small"></div>
+                </div>
+
+                <div class="onboarding-step hidden" data-onboarding-step="4">
+                  <div class="grid grid-2">
+                    <div>
+                      <h3>Ative sua primeira automação</h3>
+                      <p class="small">Comece com uma mensagem simples de pré-check-in. Você pode editar tudo depois na aba Automação de mensagens.</p>
+                      <label class="automation-toggle-card">
+                        <input type="checkbox" id="onboardingEnableAutomation" checked />
+                        <span><strong>Ativar automação inicial</strong><small>Preparar mensagem de pré-check-in para hóspedes futuros.</small></span>
+                      </label>
+                    </div>
+                    <div class="message-preview-card">
+                      <span class="small">Preview</span>
+                      <p>Olá {nome_hospede}, seu check-in está chegando. Em breve enviaremos as informações do imóvel {nome_imovel} para deixar sua chegada tranquila.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="onboarding-step hidden" data-onboarding-step="5">
+                  <div class="onboarding-complete">
+                    <div class="complete-mark">✓</div>
+                    <h3>Sua conta está pronta para operar</h3>
+                    <p>Você já conectou o caminho essencial: imóvel, calendário, e-mail do StayFlow e automação inicial. Agora o painel passa a ser sua central de operação.</p>
+                    <div class="onboarding-benefits">
+                      <div><strong>✓</strong><span>Imóvel inicial criado</span></div>
+                      <div><strong>✓</strong><span>Calendário e e-mail entendidos</span></div>
+                      <div><strong>✓</strong><span>Painel liberado</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="onboardingMessage"></div>
+
+              <div class="onboarding-actions">
+                <button type="button" class="btn-secondary hidden" id="onboardingBackBtn">Voltar</button>
+                <button type="button" id="onboardingNextBtn">Começar configuração</button>
+              </div>
+            </div>
+          </div>
+
           <section id="section-dashboard" class="section">
             <div class="section-heading">
               <div>
@@ -86,6 +342,30 @@
                 <button type="button" class="btn-success" data-section-jump="reservations">Nova reserva</button>
                 <button type="button" data-section-jump="financial">Novo lançamento</button>
               </div>
+            </div>
+
+            <div class="activation-panel" id="activationPanel">
+              <div class="activation-panel-hero">
+                <div>
+                  <div class="brand-kicker">AtivaÃ§Ã£o guiada</div>
+                  <h2>Automatize em 4 passos</h2>
+                  <p>Configure o caminho principal para o StayFlow identificar reservas, sincronizar calendÃ¡rios e enviar mensagens sem trabalho manual.</p>
+                </div>
+                <div class="activation-score">
+                  <span id="activationProgressPercent">0%</span>
+                  <small id="activationProgressText">0 de 4 concluÃ­dos</small>
+                </div>
+              </div>
+              <div class="activation-track"><span id="activationProgressBar"></span></div>
+              <div class="activation-next-card">
+                <div>
+                  <span>PrÃ³xima aÃ§Ã£o recomendada</span>
+                  <strong id="activationNextTitle">Criar o primeiro imÃ³vel</strong>
+                  <small id="activationNextDescription">Cadastre o imÃ³vel principal para liberar calendÃ¡rio, reservas e automaÃ§Ãµes.</small>
+                </div>
+                <button type="button" id="activationNextCta">ComeÃ§ar agora</button>
+              </div>
+              <div class="activation-steps-grid" id="activationStepsGrid"></div>
             </div>
 
             <div class="grid grid-4">
@@ -187,6 +467,124 @@
                   <div id="selectedPropertyInfo" class="small">Selecione um imóvel</div>
                   <div class="link-box" id="icalLinkBox">Link do iCal aparecerá aqui</div>
                   <div id="syncMessage"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="section-operations" class="section hidden">
+            <div class="section-heading">
+              <div>
+                <h2>Operação</h2>
+                <div class="small">Controle de mensagens, inbound emails e ações que precisam de atenção.</div>
+              </div>
+              <div class="actions-inline">
+                <button type="button" class="btn-secondary" id="operationRefreshBtn">Atualizar operação</button>
+              </div>
+            </div>
+            <div id="operationFeedback"></div>
+            <div class="operation-summary-grid">
+              <div class="operation-card"><div class="summary-label">Enviadas hoje</div><div class="summary-value" id="operationSentToday">0</div><div class="small">Mensagens com envio registrado no dia.</div></div>
+              <div class="operation-card"><div class="summary-label">Pendentes</div><div class="summary-value pending-value" id="operationPendingCount">0</div><div class="small">Aguardando processamento ou envio.</div></div>
+              <div class="operation-card"><div class="summary-label">Com erro</div><div class="summary-value expense-value" id="operationFailedCount">0</div><div class="small">Precisam de correção ou reprocessamento.</div></div>
+              <div class="operation-card"><div class="summary-label">Precisam de contato</div><div class="summary-value" id="operationNeedsContactCount">0</div><div class="small">Reservas sem email/telefone útil.</div></div>
+            </div>
+            <div class="card operation-attention-card">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h3>Atenção necessária</h3>
+                  <div class="small">Itens que podem impedir automação correta ou exigir revisão manual.</div>
+                </div>
+              </div>
+              <div id="operationAttentionList" class="operation-attention-list">
+                <div class="operation-empty-row">Carregue a operação para ver prioridades.</div>
+              </div>
+            </div>
+            <div class="card operation-filters-card">
+              <div class="section-heading compact-heading"><div><h3>Filtros</h3><div class="small">Use para reduzir ruído e atuar por prioridade.</div></div></div>
+              <div class="operation-filters-grid">
+                <label><span>Status</span><select id="operationStatusFilter"><option value="">Todos</option><option value="pending">Pendentes</option><option value="queued">Na fila</option><option value="sent">Enviadas / processados</option><option value="failed">Com erro</option><option value="needs_contact">Precisam de contato</option><option value="ignored">Ignorados</option></select></label>
+                <label><span>Imóvel</span><select id="operationPropertyFilter"><option value="">Todos os imóveis</option></select></label>
+                <label><span>De</span><input type="date" id="operationFromFilter" /></label>
+                <label><span>Até</span><input type="date" id="operationToFilter" /></label>
+                <div class="operation-filter-actions"><button type="button" id="operationApplyFiltersBtn">Aplicar</button><button type="button" class="btn-secondary" id="operationClearFiltersBtn">Limpar</button></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="section-heading"><div><h3>Tabela de mensagens</h3><div class="small">Reprocesse falhas, force envios e veja o contexto de cada automação.</div></div></div>
+              <div class="table-wrap operation-table-wrap"><table class="operation-table"><thead><tr><th>Status</th><th>Hóspede</th><th>Imóvel</th><th>Data agendada</th><th>Canal</th><th>Ação</th></tr></thead><tbody id="operationMessagesTableBody"><tr><td colspan="6">Nenhuma mensagem carregada.</td></tr></tbody></table></div>
+            </div>
+            <div class="card">
+              <div class="section-heading"><div><h3>Inbound emails</h3><div class="small">Audite parser, score, plataforma e reconciliação de reservas.</div></div></div>
+              <div class="table-wrap operation-table-wrap"><table class="operation-table"><thead><tr><th>Status</th><th>Plataforma</th><th>Ação</th><th>Confiança</th><th>Imóvel identificado</th><th>Ação</th></tr></thead><tbody id="operationInboundTableBody"><tr><td colspan="6">Nenhum inbound carregado.</td></tr></tbody></table></div>
+            </div>
+            <div class="card operation-details-card hidden" id="operationDetailsCard">
+              <div class="section-heading"><div><h3>Detalhes</h3><div class="small">Contexto operacional do item selecionado, com resumo e inspeção técnica.</div></div><button type="button" class="btn-secondary" id="operationCloseDetailsBtn">Fechar</button></div>
+              <div id="operationDetailsContent" class="operation-details-content"></div>
+            </div>
+          </section>
+
+          <section id="section-my-info" class="section hidden">
+            <div class="section-heading">
+              <div>
+                <h2>Minhas informações</h2>
+                <div class="small">Dados da conta e e-mail de notificações para configurar Airbnb, Booking e outras plataformas.</div>
+              </div>
+              <button type="button" class="btn-secondary" id="refreshMyInfoBtn">Atualizar</button>
+            </div>
+
+            <div class="my-info-grid">
+              <div class="card">
+                <h3>Dados pessoais</h3>
+                <div class="info-list">
+                  <div class="info-row"><span>Nome</span><strong id="myInfoName">-</strong></div>
+                  <div class="info-row"><span>E-mail</span><strong id="myInfoEmail">-</strong></div>
+                  <div class="info-row"><span>CPF</span><strong id="myInfoCpf">-</strong></div>
+                  <div class="info-row"><span>Configuração</span><strong id="myInfoSetupStatus">Pendente</strong></div>
+                </div>
+              </div>
+
+              <div class="card integration-email-reference-card">
+                <div class="section-heading">
+                  <div>
+                    <h3>E-mail do StayFlow</h3>
+                    <div class="small">Cadastre este e-mail nas notificações das plataformas para o StayFlow receber eventos automaticamente.</div>
+                  </div>
+                </div>
+                <div class="integration-email-display" id="myInfoIntegrationEmail">Carregando...</div>
+                <div class="activation-strip">
+                  <span id="myInfoOnboardingStatus">Onboarding pendente</span>
+                  <small>Use este e-mail em Airbnb, Booking e outras plataformas para centralizar notificações.</small>
+                </div>
+                <div class="actions-inline">
+                  <button type="button" class="btn-secondary" id="copyMyIntegrationEmailBtn">Copiar e-mail</button>
+                  <button type="button" id="openOnboardingBtn">Continuar onboarding</button>
+                </div>
+                <div id="myInfoMessage"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Como usar este e-mail</h3>
+              <p class="small">Ele deve ser cadastrado nas notificações das plataformas. Assim, o StayFlow recebe eventos importantes sem depender de trabalho manual.</p>
+              <div class="ical-guide-grid">
+                <div class="ical-guide-card">
+                  <div class="guide-card-title"><span>Airbnb</span><small>E-mail</small></div>
+                  <div class="visual-steps">
+                    <div><strong>1</strong><span>Abra o anúncio ou configurações da conta.</span></div>
+                    <div><strong>2</strong><span>Procure notificações, contatos ou mensagens.</span></div>
+                    <div><strong>3</strong><span>Adicione o e-mail do StayFlow quando disponível.</span></div>
+                    <div><strong>4</strong><span>Salve e mantenha esse e-mail como contato de eventos.</span></div>
+                  </div>
+                </div>
+                <div class="ical-guide-card">
+                  <div class="guide-card-title"><span>Booking</span><small>E-mail</small></div>
+                  <div class="visual-steps">
+                    <div><strong>1</strong><span>Acesse a extranet do Booking.</span></div>
+                    <div><strong>2</strong><span>Procure conta, contatos ou notificações.</span></div>
+                    <div><strong>3</strong><span>Use o e-mail do StayFlow para receber reservas e alterações.</span></div>
+                    <div><strong>4</strong><span>Confirme a alteração e acompanhe os eventos no painel.</span></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -309,6 +707,17 @@
                 </table>
               </div>
             </div>
+
+            <div class="card reservation-details-card hidden" id="reservationDetailsCard">
+              <div class="section-heading">
+                <div>
+                  <h3>Detalhes da reserva</h3>
+                  <div class="small">Visão operacional com hóspede, imóvel, financeiro, mensagens e inbound relacionado.</div>
+                </div>
+                <button type="button" class="btn-secondary" id="closeReservationDetailsBtn">Fechar</button>
+              </div>
+              <div id="reservationDetailsContent" class="reservation-details-content"></div>
+            </div>
           </section>
 
           <section id="section-calendar" class="section hidden">
@@ -411,6 +820,59 @@
 
               <div class="stack">
                 <div class="card">
+                  <h3>Resumo da automação</h3>
+                  <div class="info-list">
+                    <div class="info-row"><span>Total de automações</span><strong id="messageAutomationCount">0</strong></div>
+                    <div class="info-row"><span>Ativas</span><strong id="messageAutomationActiveCount">0</strong></div>
+                    <div class="info-row"><span>Inativas</span><strong id="messageAutomationInactiveCount">0</strong></div>
+                    <div class="info-row"><span>Logs gerados</span><strong id="messageAutomationGeneratedCount">0</strong></div>
+                    <div class="info-row"><span>Falhas recentes</span><strong id="messageAutomationFailureCount">0</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="table-title-row">
+                <div>
+                  <h3>Automações cadastradas</h3>
+                  <div class="small">Edite, ative ou exclua cada regra de mensagem.</div>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Imóvel</th>
+                      <th>Disparo</th>
+                      <th>Dias</th>
+                      <th>Horário</th>
+                      <th>Status</th>
+                      <th>Operação</th>
+                      <th>Mensagem</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="messageAutomationTableBody">
+                    <tr>
+                      <td colspan="8">Nenhuma automação cadastrada</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="section-message-status" class="section hidden">
+            <div class="section-heading">
+              <div>
+                <h2>Status das mensagens</h2>
+                <div class="small">Acompanhe envios, pendências, erros e contatos ausentes em um único lugar.</div>
+              </div>
+            </div>
+
+                <div class="card">
                   <div class="section-heading">
                     <div>
                       <h3>Operação das mensagens</h3>
@@ -438,6 +900,10 @@
                       <div class="summary-label">Falhas</div>
                       <div class="summary-value" id="messageLogFailedCount">0</div>
                     </div>
+                    <div class="summary-card">
+                      <div class="summary-label">Enviadas</div>
+                      <div class="summary-value" id="messageLogSentCount">0</div>
+                    </div>
                   </div>
 
                   <div class="section-heading" style="margin-top:16px;">
@@ -459,48 +925,6 @@
                     <div class="small">Nenhum log carregado.</div>
                   </div>
                 </div>
-
-                <div class="card">
-                  <h3>Resumo da automação</h3>
-                  <div class="info-list">
-                    <div class="info-row"><span>Total de automações</span><strong id="messageAutomationCount">0</strong></div>
-                    <div class="info-row"><span>Ativas</span><strong id="messageAutomationActiveCount">0</strong></div>
-                    <div class="info-row"><span>Inativas</span><strong id="messageAutomationInactiveCount">0</strong></div>
-                    <div class="info-row"><span>Enviadas</span><strong id="messageLogSentCount">0</strong></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="table-title-row">
-                <div>
-                  <h3>Automações cadastradas</h3>
-                  <div class="small">Edite, ative ou exclua cada regra de mensagem.</div>
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Imóvel</th>
-                      <th>Disparo</th>
-                      <th>Dias</th>
-                      <th>Horário</th>
-                      <th>Status</th>
-                      <th>Mensagem</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="messageAutomationTableBody">
-                    <tr>
-                      <td colspan="7">Nenhuma automação cadastrada</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </section>
 
           <section id="section-financial" class="section hidden">
@@ -673,6 +1097,150 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="section-billing" class="section hidden">
+            <div class="section-heading">
+              <div>
+                <h2>Assinatura e Cobrança</h2>
+                <div class="small">Acompanhe trial, plano, acesso e histórico de cobranças do StayFlow.</div>
+              </div>
+              <div class="actions-inline">
+                <button type="button" class="btn-secondary" id="refreshBillingBtn">Atualizar</button>
+              </div>
+            </div>
+
+            <div id="billingMessage"></div>
+
+            <div class="billing-alert hidden" id="billingAlert">
+              <strong id="billingAlertTitle">Status da assinatura</strong>
+              <span id="billingAlertText">Carregando informações...</span>
+            </div>
+
+            <div class="billing-layout">
+              <div class="card billing-hero-card">
+                <div class="billing-card-top">
+                  <div>
+                    <div class="brand-kicker">Plano atual</div>
+                    <h3 id="billingPlanName">StayFlow Base</h3>
+                  </div>
+                  <span class="status-badge" id="billingStatusBadge">Carregando</span>
+                </div>
+
+                <div class="billing-status-grid">
+                  <div class="billing-metric">
+                    <span>Status do plano</span>
+                    <strong id="billingPlanStatus">-</strong>
+                  </div>
+                  <div class="billing-metric">
+                    <span>Dias restantes do trial</span>
+                    <strong id="billingTrialDays">-</strong>
+                  </div>
+                  <div class="billing-metric">
+                    <span>Fim do trial</span>
+                    <strong id="billingTrialEndsAt">-</strong>
+                  </div>
+                  <div class="billing-metric">
+                    <span>Acesso atual</span>
+                    <strong id="billingAccessStatus">-</strong>
+                  </div>
+                </div>
+
+                <div class="billing-actions">
+                  <button type="button" id="activateBillingBtn">Ativar assinatura</button>
+                  <button type="button" class="btn-secondary" id="recalculateBillingBtn">Recalcular plano</button>
+                  <button type="button" class="btn-danger" id="cancelBillingBtn">Cancelar assinatura</button>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="table-title-row">
+                  <div>
+                    <h3>Informações do plano</h3>
+                    <div class="small">O valor acompanha automaticamente a quantidade de imóveis ativos.</div>
+                  </div>
+                </div>
+
+                <div class="billing-price-box">
+                  <span>Valor atual</span>
+                  <strong id="billingCurrentAmount">R$ 0,00</strong>
+                  <small>R$ 49,90 inclui 1 imóvel. Cada imóvel adicional soma R$ 29,90.</small>
+                </div>
+
+                <div class="info-list">
+                  <div class="info-row"><span>Imóveis ativos</span><strong id="billingActiveProperties">0</strong></div>
+                  <div class="info-row"><span>Imóveis adicionais</span><strong id="billingAdditionalProperties">0</strong></div>
+                  <div class="info-row"><span>Plano base</span><strong>R$ 49,90</strong></div>
+                  <div class="info-row"><span>Adicional por imóvel</span><strong>R$ 29,90</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-2">
+              <div class="card">
+                <div class="table-title-row">
+                  <div>
+                    <h3>Próxima cobrança</h3>
+                    <div class="small">Dados da assinatura recorrente cadastrada na Asaas.</div>
+                  </div>
+                </div>
+                <div class="billing-next-charge">
+                  <div>
+                    <span>Data</span>
+                    <strong id="billingNextDate">-</strong>
+                  </div>
+                  <div>
+                    <span>Valor</span>
+                    <strong id="billingNextAmount">R$ 0,00</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="table-title-row">
+                  <div>
+                    <h3>Forma de pagamento</h3>
+                    <div class="small">A ativação usa PIX por padrão. Você pode expandir depois para boleto e cartão.</div>
+                  </div>
+                </div>
+                <label class="form-field">
+                  <span>Tipo de cobrança</span>
+                  <select id="billingTypeSelect">
+                    <option value="PIX">PIX</option>
+                    <option value="BOLETO">Boleto</option>
+                    <option value="CREDIT_CARD">Cartão de crédito</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="table-title-row">
+                <div>
+                  <h3>Pagamentos</h3>
+                  <div class="small">Histórico de cobranças, vencimentos e links de fatura.</div>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Valor</th>
+                      <th>Vencimento</th>
+                      <th>Pagamento</th>
+                      <th>Fatura</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billingPaymentsTableBody">
+                    <tr>
+                      <td colspan="5">Nenhum pagamento carregado.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </section>

@@ -7,7 +7,7 @@ const resend = new Resend(env.RESEND_API_KEY);
 async function sendEmail({ to, subject, html }) {
   try {
     const response = await resend.emails.send({
-      from: 'StayFlow <noreply@stayflowapp.online>',
+      from: env.EMAIL_FROM || 'StayFlow <noreply@stayflowapp.online>',
       to,
       subject,
       html

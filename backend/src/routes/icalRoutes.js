@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const authMiddleware = require('../middlewares/authMiddleware');
+const { requireFullBilling } = require('../middlewares/billingAccessMiddleware');
 
 function formatDateICS(date) {
   const d = new Date(date);
@@ -101,7 +103,7 @@ router.get('/:token.ics', async (req, res) => {
   }
 });
 
-router.get('/property/:id', async (req, res) => {
+router.get('/property/:id', authMiddleware, requireFullBilling, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -109,8 +111,9 @@ router.get('/property/:id', async (req, res) => {
       `SELECT id, name, internal_ical_token
        FROM properties
        WHERE id = ?
+         AND (user_id = ? OR ? = 'admin')
        LIMIT 1`,
-      [id]
+      [id, req.user.id, req.user.role || 'user']
     );
 
     if (properties.length === 0) {
