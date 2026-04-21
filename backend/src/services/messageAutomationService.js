@@ -131,6 +131,17 @@ async function logAlreadyExists(automationId, reservationId, scheduledFor) {
   return rows.length > 0;
 }
 
+function isDuplicateMessageLogError(error) {
+  return (
+    error &&
+    (
+      error.code === 'ER_DUP_ENTRY' ||
+      error.errno === 1062 ||
+      error.sqlState === '23000'
+    )
+  );
+}
+
 // =========================
 // CALCULAR DATA
 // =========================
@@ -202,6 +213,7 @@ async function processMessageAutomations(userId = null) {
   let createdLogs = 0;
   let processedAutomations = 0;
   let needsContactLogs = 0;
+  let duplicateLogsSkipped = 0;
 
   for (const automation of automations) {
     if (!automation.is_active) continue;
@@ -287,38 +299,55 @@ async function processMessageAutomations(userId = null) {
       const status = guestContact ? 'pending' : 'needs_contact';
       const errorMessage = guestContact ? null : buildMissingContactMessage(automation.channel);
 
-      await pool.query(
-        `
-        INSERT INTO message_logs (
-          automation_id,
-          reservation_id,
-          property_id,
-          channel,
-          guest_name,
-          guest_contact,
-          subject,
-          body_rendered,
-          scheduled_for,
-          processed_at,
-          status,
-          error_message
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          automation.id,
-          reservation.id,
-          reservation.property_id,
-          automation.channel || 'email',
-          reservation.guest_name || null,
-          guestContact,
-          subjectRendered || null,
-          bodyRendered,
-          scheduledFor,
-          null,
-          status,
-          errorMessage
-        ]
-      );
+      try {
+        await pool.query(
+          `
+          INSERT INTO message_logs (
+            automation_id,
+            reservation_id,
+            property_id,
+            channel,
+            guest_name,
+            guest_contact,
+            subject,
+            body_rendered,
+            scheduled_for,
+            processed_at,
+            status,
+            error_message
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            automation.id,
+            reservation.id,
+            reservation.property_id,
+            automation.channel || 'email',
+            reservation.guest_name || null,
+            guestContact,
+            subjectRendered || null,
+            bodyRendered,
+            scheduledFor,
+            null,
+            status,
+            errorMessage
+          ]
+        );
+      } catch (error) {
+        if (isDuplicateMessageLogError(error)) {
+          duplicateLogsSkipped++;
+
+          logger.info('Log de automação duplicado ignorado', {
+            service: 'message-automation',
+            automationId: automation.id,
+            reservationId: reservation.id,
+            scheduledFor
+          });
+
+          continue;
+        }
+
+        throw error;
+      }
 
       createdLogs++;
 
@@ -340,7 +369,8 @@ async function processMessageAutomations(userId = null) {
   return {
     processedAutomations,
     createdLogs,
-    needsContactLogs
+    needsContactLogs,
+    duplicateLogsSkipped
   };
 }
 

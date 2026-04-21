@@ -1,6 +1,10 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
+const { buildInboundFingerprint, findExistingInboundEmail, isDuplicateInboundError } = require('./inbound/idempotency');
+const { parseInboundReservation } = require('./inbound/reservationParser');
+const { findBestPropertyMatch } = require('./inbound/propertyMatcher');
+const { findBestReservationMatch } = require('./inbound/reservationReconciler');
 
 function normalizeEmail(value) {
   if (!value) return null;
@@ -1432,6 +1436,8 @@ async function processInboundResendWebhook(event) {
     headers,
     rawFetched
   } = emailData;
+  const inboundFingerprint = buildInboundFingerprint(emailData);
+  const inboundEmailExternalId = emailId || makeFallbackInboundEmailId(emailData);
 
   const extractedUserId = extractAliasUserId(toEmail);
   const user = await findUserByAliasOrId(toEmail, extractedUserId);
@@ -1451,21 +1457,48 @@ async function processInboundResendWebhook(event) {
 
   const rawFullText = `${subject || ''}\n${bodyText || ''}\n${bodyHtml || ''}`;
   const fullText = cleanEmailText(rawFullText);
-
-  const source = detectSource(subject, fromEmail, fullText);
-  const reservationAction = classifyReservationAction(subject, fromEmail, fullText);
-  const matchedListing = await findPropertyByListingData(user.id, source, fullText);
-  const parseResult = parseReservationData({
+  const parseResult = parseInboundReservation({
     subject,
-    fullText,
-    source,
-    reservationAction
+    bodyText,
+    bodyHtml,
+    fromEmail
   });
+  const source = parseResult.source === 'unknown' ? 'manual' : parseResult.source;
+  const reservationAction = parseResult.workflowAction || 'unknown';
+  const propertyMatch = await findBestPropertyMatch(pool, user.id, parseResult, logger);
+  const matchedListing = propertyMatch.matched;
 
   connection = await pool.getConnection();
   await connection.beginTransaction();
 
   try {
+    const existingInbound = await findExistingInboundEmail(connection, {
+      provider: 'resend',
+      emailId: inboundEmailExternalId,
+      fingerprint: inboundFingerprint
+    });
+
+    if (existingInbound) {
+      await connection.commit();
+
+      logger.info('Inbound duplicado ignorado por idempotência', {
+        service: 'inbound',
+        inboundEmailId: existingInbound.id,
+        emailId: inboundEmailExternalId,
+        fingerprint: inboundFingerprint
+      });
+
+      return {
+        success: true,
+        ignored: true,
+        duplicate: true,
+        inbound_email_id: existingInbound.id,
+        reservation_id: existingInbound.created_reservation_id || null,
+        property_id: existingInbound.property_id || null,
+        message: 'Inbound duplicado ignorado por idempotência'
+      };
+    }
+
     const parsingNotesBase = [];
 
     if (matchedListing) {
@@ -1482,8 +1515,15 @@ async function processInboundResendWebhook(event) {
       parsingNotesBase.push('Inbound recebido com sucesso');
     }
 
-    parsingNotesBase.push(`Ação detectada: ${reservationAction}`);
+    parsingNotesBase.push(`Plataforma detectada: ${parseResult.platform}`);
+    parsingNotesBase.push(`Ação detectada: ${parseResult.action}`);
+    parsingNotesBase.push(`Ação do workflow: ${reservationAction}`);
     parsingNotesBase.push(`Confianca do parse: ${parseResult.confidence}`);
+    parsingNotesBase.push(`Fingerprint: ${inboundFingerprint}`);
+
+    if (propertyMatch.decision) {
+      parsingNotesBase.push(`Decisão do imóvel: ${propertyMatch.decision.status}:${propertyMatch.decision.reason}`);
+    }
 
     if (parseResult.missingFields.length) {
       parsingNotesBase.push(`Campos ausentes: ${parseResult.missingFields.join(', ')}`);
@@ -1499,59 +1539,102 @@ async function processInboundResendWebhook(event) {
       parsingNotesBase.push(`Fallback para webhook: ${fetchErrorMessage}`);
     }
 
-    const [inboundInsert] = await connection.query(
-      `
-      INSERT INTO inbound_emails (
-        user_id,
-        property_id,
-        provider,
-        event_type,
-        email_id,
-        to_email,
-        from_email,
-        subject,
-        body_text,
-        body_html,
-        attachments_json,
-        headers_json,
-        raw_payload,
-        parsing_status,
-        parsing_notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        user.id,
-        matchedListing ? matchedListing.property_id : null,
-        'resend',
-        eventType,
-        emailId || makeFallbackInboundEmailId(emailData),
-        toEmail,
-        fromEmail,
-        subject,
-        bodyText || null,
-        bodyHtml || null,
-        JSON.stringify(Array.isArray(attachments) ? attachments : []),
-        headers ? JSON.stringify(headers) : null,
-        JSON.stringify({
-          webhook_event: event,
-          resend_email: rawFetched || null,
-          resend_fetch_failed: fetchErrorMessage || null,
-          detected_source: source,
-          detected_action: reservationAction,
-          parse_result: parseResult,
-          property_match: matchedListing
-            ? {
-                property_id: matchedListing.property_id,
-                property_name: matchedListing.property_name,
-                score: matchedListing.match_score || null,
-                reasons: matchedListing.match_reasons || []
-              }
-            : null
-        }),
-        'pending',
-        parsingNotesBase.join(' | ')
-      ]
-    );
+    let inboundInsert;
+
+    try {
+      [inboundInsert] = await connection.query(
+        `
+        INSERT INTO inbound_emails (
+          user_id,
+          property_id,
+          provider,
+          event_type,
+          email_id,
+          fingerprint,
+          to_email,
+          from_email,
+          subject,
+          body_text,
+          body_html,
+          attachments_json,
+          headers_json,
+          raw_payload,
+          parsing_status,
+          parsing_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          user.id,
+          matchedListing ? matchedListing.property_id : null,
+          'resend',
+          eventType,
+          inboundEmailExternalId,
+          inboundFingerprint,
+          toEmail,
+          fromEmail,
+          subject,
+          bodyText || null,
+          bodyHtml || null,
+          JSON.stringify(Array.isArray(attachments) ? attachments : []),
+          headers ? JSON.stringify(headers) : null,
+          JSON.stringify({
+            webhook_event: event,
+            resend_email: rawFetched || null,
+            resend_fetch_failed: fetchErrorMessage || null,
+            detected_source: source,
+            detected_platform: parseResult.platform,
+            detected_action: parseResult.action,
+            workflow_action: reservationAction,
+            fingerprint: inboundFingerprint,
+            parse_result: {
+              ...parseResult,
+              normalized: undefined
+            },
+            property_match: matchedListing
+              ? {
+                  property_id: matchedListing.property_id,
+                  property_name: matchedListing.property_name,
+                  score: matchedListing.match_score || null,
+                  reasons: matchedListing.match_reasons || []
+                }
+              : null,
+            property_match_decision: propertyMatch.decision || null,
+            property_match_candidates: propertyMatch.candidates
+              ? propertyMatch.candidates.slice(0, 5).map((candidate) => ({
+                  property_id: candidate.listing.property_id,
+                  property_name: candidate.listing.property_name,
+                  score: candidate.score,
+                  reasons: candidate.reasons
+                }))
+              : []
+          }),
+          'pending',
+          parsingNotesBase.join(' | ')
+        ]
+      );
+    } catch (error) {
+      if (!isDuplicateInboundError(error)) {
+        throw error;
+      }
+
+      const duplicatedInbound = await findExistingInboundEmail(connection, {
+        provider: 'resend',
+        emailId: inboundEmailExternalId,
+        fingerprint: inboundFingerprint
+      });
+
+      await connection.commit();
+
+      return {
+        success: true,
+        ignored: true,
+        duplicate: true,
+        inbound_email_id: duplicatedInbound?.id || null,
+        reservation_id: duplicatedInbound?.created_reservation_id || null,
+        property_id: duplicatedInbound?.property_id || null,
+        message: 'Inbound duplicado ignorado por idempotência'
+      };
+    }
 
     const inboundEmailId = inboundInsert.insertId;
 
@@ -1629,13 +1712,14 @@ async function processInboundResendWebhook(event) {
     }
 
     if (reservationAction === 'updated' || reservationAction === 'cancelled') {
-      const existingReservation = await findExistingReservationForAction(connection, propertyId, {
+      const reservationMatch = await findBestReservationMatch(connection, propertyId, {
         guestName,
         guestEmail,
         startDate,
         endDate,
         totalAmount
-      });
+      }, logger);
+      const existingReservation = reservationMatch.matched;
 
       if (!existingReservation) {
         const diagnostic = buildParseDiagnostic(parseResult, ['no_matching_reservation']);
@@ -1654,7 +1738,7 @@ async function processInboundResendWebhook(event) {
           `,
           [
             propertyId,
-            ` | Nenhuma reserva compatível foi encontrada para aplicar ação automática${diagnostic}`,
+            ` | Nenhuma reserva compatível foi encontrada para aplicar ação automática | Decisão da reconciliação: ${reservationMatch.decision.status}:${reservationMatch.decision.reason}${diagnostic}`,
             inboundEmailId
           ]
         );
@@ -1841,7 +1925,7 @@ async function processInboundResendWebhook(event) {
       };
     }
 
-    const externalId = emailId || `inbound_${inboundEmailId}`;
+    const externalId = inboundEmailExternalId || `inbound_${inboundEmailId}`;
 
     const [existingReservations] = await connection.query(
       `
