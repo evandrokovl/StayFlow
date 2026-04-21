@@ -40,7 +40,7 @@ CREATE TABLE `properties` (
   UNIQUE KEY `internal_ical_token` (`internal_ical_token`),
   KEY `idx_properties_user` (`user_id`),
   CONSTRAINT `properties_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -49,7 +49,7 @@ CREATE TABLE `properties` (
 
 LOCK TABLES `properties` WRITE;
 /*!40000 ALTER TABLE `properties` DISABLE KEYS */;
-INSERT INTO `properties` VALUES (1,2,'Loft Centro Floripa','Loft moderno e bem localizado no centro de Florianópolis','Rua Bocaiúva, 1200','Florianópolis','SC','Brasil','https://www.airbnb.com/calendar/ical/exemplo-loft-centro.ics','https://admin.booking.com/hotel/hoteladmin/ical.html?t=exemplo-loft-centro','token_loft_centro_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(2,2,'Casa Praia Campeche','Casa ampla próxima à praia, ideal para famílias','Rua da Praia, 85','Florianópolis','SC','Brasil','https://www.airbnb.com/calendar/ical/exemplo-campeche.ics',NULL,'token_casa_campeche_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(3,2,'Studio Trindade','Studio compacto para estadias curtas e executivas','Rua Lauro Linhares, 540','Florianópolis','SC','Brasil',NULL,'https://admin.booking.com/hotel/hoteladmin/ical.html?t=exemplo-studio-trindade','token_studio_trindade_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(4,2,'Loft Teste Airbnb','Imóvel para teste do inbound','Rua Exemplo, 100','Florianópolis','SC','Brasil',NULL,NULL,'efba1a5b593e6cfab7358b1b7a74f9810811764d49be4929','2026-04-14 18:48:59','2026-04-14 18:48:59');
+INSERT INTO `properties` VALUES (1,2,'Loft Centro Floripa','Loft moderno e bem localizado no centro de Florianópolis','Rua Bocaiúva, 1200','Florianópolis','SC','Brasil','https://www.airbnb.com/calendar/ical/exemplo-loft-centro.ics','https://admin.booking.com/hotel/hoteladmin/ical.html?t=exemplo-loft-centro','token_loft_centro_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(2,2,'Casa Praia Campeche','Casa ampla próxima à praia, ideal para famílias','Rua da Praia, 85','Florianópolis','SC','Brasil','https://www.airbnb.com/calendar/ical/exemplo-campeche.ics',NULL,'token_casa_campeche_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(3,2,'Studio Trindade','Studio compacto para estadias curtas e executivas','Rua Lauro Linhares, 540','Florianópolis','SC','Brasil',NULL,'https://admin.booking.com/hotel/hoteladmin/ical.html?t=exemplo-studio-trindade','token_studio_trindade_2','2026-04-07 00:04:05','2026-04-07 00:04:05'),(4,2,'Loft Teste Airbnb','Imóvel para teste do inbound','Rua Exemplo, 100','Florianópolis','SC','Brasil',NULL,NULL,'efba1a5b593e6cfab7358b1b7a74f9810811764d49be4929','2026-04-14 18:48:59','2026-04-14 18:48:59'),(14,2,'teste','Criado pelo onboarding do StayFlow',NULL,'floripa',NULL,'Brasil',NULL,NULL,'d6d640d7e946b61e5d82cc7c13454e34b6458fd1d7680c8c','2026-04-21 14:15:50','2026-04-21 14:15:50'),(15,2,'teste','Criado pelo onboarding do StayFlow',NULL,'floripa',NULL,'Brasil','https://calendar.google.com/calendar/ical/en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics','https://www.officeholidays.com/ics/ics_country_code.php?iso=US','a6da10d1bd9874968711b5999cd0b71208282fbd9ea96760','2026-04-21 17:43:36','2026-04-21 17:43:39');
 /*!40000 ALTER TABLE `properties` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -62,4 +62,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-20 20:30:39
+-- Dump completed on 2026-04-21 15:57:24

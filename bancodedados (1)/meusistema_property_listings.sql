@@ -36,7 +36,7 @@ CREATE TABLE `property_listings` (
   KEY `idx_property_listings_platform` (`platform`),
   KEY `idx_property_listings_listing_code` (`listing_code`),
   CONSTRAINT `fk_property_listings_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,7 +45,7 @@ CREATE TABLE `property_listings` (
 
 LOCK TABLES `property_listings` WRITE;
 /*!40000 ALTER TABLE `property_listings` DISABLE KEYS */;
-INSERT INTO `property_listings` VALUES (1,4,'airbnb','https://www.airbnb.com/rooms/123456789','123456789',1,'2026-04-14 18:48:59','2026-04-14 18:48:59');
+INSERT INTO `property_listings` VALUES (1,4,'airbnb','https://www.airbnb.com/rooms/123456789','123456789',1,'2026-04-14 18:48:59','2026-04-14 18:48:59'),(4,14,'airbnb','https://www.airbnb.com/calendar/ical/123456789012345678.ics?s=abcdef1234567890',NULL,1,'2026-04-21 14:15:50','2026-04-21 14:15:50'),(5,15,'other','https://www.officeholidays.com/ics/ics_country_code.php?iso=US',NULL,1,'2026-04-21 17:43:36','2026-04-21 17:43:36');
 /*!40000 ALTER TABLE `property_listings` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -58,4 +58,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-20 20:30:40
+-- Dump completed on 2026-04-21 15:57:24
