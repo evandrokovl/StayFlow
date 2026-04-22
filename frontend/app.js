@@ -1,4 +1,14 @@
-    const API_URL = 'http://localhost:3000';
+    const API_URL = (() => {
+      const configuredUrl = window.STAYFLOW_API_URL;
+      if (configuredUrl) return configuredUrl.replace(/\/$/, '');
+
+      const isLocalHost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+      const isLocalFile = window.location.protocol === 'file:';
+
+      if (isLocalFile || isLocalHost) return 'http://localhost:3000';
+
+      return window.location.origin;
+    })();
 
     function getStoredUser() {
       const rawUser = localStorage.getItem('user');
@@ -158,7 +168,13 @@
 
     function setActiveNav(section) {
       navButtons.forEach(button => {
-        button.classList.toggle('active', button.dataset.sectionBtn === section);
+        const isActive = button.dataset.sectionBtn === section;
+        button.classList.toggle('active', isActive);
+        if (isActive) {
+          button.setAttribute('aria-current', 'page');
+        } else {
+          button.removeAttribute('aria-current');
+        }
       });
     }
 
@@ -503,6 +519,13 @@
         section: 'operations',
         cta: 'Ver opera\u00e7\u00e3o'
       };
+      const contextNotes = {
+        property: 'Primeiro crie o im\u00f3vel principal. Ele vira o contexto para reservas, calend\u00e1rio, financeiro e automa\u00e7\u00f5es.',
+        ical: 'Agora conecte pelo menos um iCal. Isso ajuda a centralizar disponibilidade e reduzir conflito de datas.',
+        email: 'Cadastre o e-mail do StayFlow nas plataformas para identificar reservas, altera\u00e7\u00f5es e cancelamentos automaticamente.',
+        automation: 'Com im\u00f3vel, calend\u00e1rio e e-mail configurados, ative uma automa\u00e7\u00e3o inicial para reduzir trabalho manual.',
+        done: 'Configura\u00e7\u00e3o principal conclu\u00edda. A partir daqui, acompanhe opera\u00e7\u00e3o, reservas e mensagens pelo painel.'
+      };
 
       const setText = (id, value) => {
         const el = document.getElementById(id);
@@ -517,7 +540,13 @@
       setText('activationProgressText', `${completed} de ${steps.length} conclu\u00eddos`);
       setText('activationNextTitle', nextStep.title);
       setText('activationNextDescription', nextStep.description);
+      setText('activationContextNote', contextNotes[nextStep.key] || contextNotes.done);
       setWidth('activationProgressBar', percent);
+
+      const dashboardSecondaryContent = document.getElementById('dashboardSecondaryContent');
+      if (dashboardSecondaryContent) {
+        dashboardSecondaryContent.classList.toggle('dashboard-secondary-muted', completed < steps.length);
+      }
 
       if (activationNextCta) {
         activationNextCta.textContent = nextStep.cta || 'Continuar';
@@ -588,6 +617,58 @@
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       };
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+      const {
+        auth = true,
+        errorMessage = 'Não foi possível concluir a solicitação.',
+        headers: customHeaders = {},
+        body,
+        ...fetchOptions
+      } = options;
+
+      const url = /^https?:\/\//i.test(endpoint)
+        ? endpoint
+        : `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+      const headers = { ...customHeaders };
+      let requestBody = body;
+
+      if (auth && token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      if (requestBody !== undefined && !(requestBody instanceof FormData) && typeof requestBody !== 'string') {
+        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+        requestBody = JSON.stringify(requestBody);
+      }
+
+      const response = await fetch(url, {
+        ...fetchOptions,
+        headers,
+        body: requestBody
+      });
+
+      const raw = await response.text();
+      let data = {};
+
+      if (raw) {
+        try {
+          data = JSON.parse(raw);
+        } catch (error) {
+          data = raw;
+        }
+      }
+
+      if (!response.ok) {
+        const error = new Error(extractApiError(data, errorMessage));
+        error.response = response;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
     }
 
     function sourceClass(source) {
@@ -1920,9 +2001,9 @@
     };
 
     function buildLineChartSvg(monthKeys, monthsMap) {
-      const width = 760;
-      const height = 280;
-      const paddingTop = 20;
+      const width = 680;
+      const height = 240;
+      const paddingTop = 18;
       const paddingRight = 24;
       const paddingBottom = 42;
       const paddingLeft = 52;
@@ -1997,7 +2078,7 @@
       }).join('');
 
       return `
-        <svg viewBox="0 0 ${width} ${height}" width="100%" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico financeiro em linhas">
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico financeiro em linhas">
           <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="${CHART_THEME.background}"></rect>
           ${gridLines.join('')}
           ${yLabels.join('')}
@@ -2337,23 +2418,17 @@
       try {
         setButtonLoading(registerBtn, true, 'Cadastrando...');
 
-        const response = await fetch(`${API_URL}/auth/register`, {
+        const data = await apiFetch('/auth/register', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, cpf, password })
+          auth: false,
+          body: { name, email, cpf, password },
+          errorMessage: 'Não foi possível cadastrar este usuário.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('authMessage', extractApiError(data, 'Não foi possível cadastrar este usuário.'), 'error');
-          return;
-        }
 
         showMessage('authMessage', 'Usuário cadastrado com sucesso. Agora faça login.', 'success');
         document.getElementById('registerPassword').value = '';
       } catch (error) {
-        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+        showMessage('authMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
         setButtonLoading(registerBtn, false);
       }
@@ -2373,18 +2448,12 @@
       try {
         setButtonLoading(loginBtn, true, 'Entrando...');
 
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const data = await apiFetch('/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          auth: false,
+          body: { email, password },
+          errorMessage: 'Não foi possível entrar. Confira seus dados.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('authMessage', extractApiError(data, 'Não foi possível entrar. Confira seus dados.'), 'error');
-          return;
-        }
 
         token = data?.data?.token || data.token || '';
         loggedUser = data?.data?.user || data.user || null;
@@ -2402,7 +2471,7 @@
           await loadProperties();
         }
       } catch (error) {
-        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+        showMessage('authMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
         setButtonLoading(loginBtn, false);
       }
@@ -2420,18 +2489,12 @@
       try {
         setButtonLoading(forgotPasswordBtn, true, 'Enviando...');
 
-        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        const data = await apiFetch('/auth/forgot-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          auth: false,
+          body: { email },
+          errorMessage: 'Não foi possível solicitar a recuperação.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('authMessage', extractApiError(data, 'Não foi possível solicitar a recuperação.'), 'error');
-          return;
-        }
 
         const devToken = data?.data?.reset_token;
         if (devToken && document.getElementById('resetToken')) {
@@ -2440,7 +2503,7 @@
 
         showMessage('authMessage', data.message || 'Se o e-mail estiver cadastrado, enviaremos as instruções para redefinir sua senha.', 'success');
       } catch (error) {
-        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+        showMessage('authMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
         setButtonLoading(forgotPasswordBtn, false);
       }
@@ -2465,24 +2528,18 @@
       try {
         setButtonLoading(resetPasswordBtn, true, 'Redefinindo...');
 
-        const response = await fetch(`${API_URL}/auth/reset-password`, {
+        const data = await apiFetch('/auth/reset-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: tokenValue, password })
+          auth: false,
+          body: { token: tokenValue, password },
+          errorMessage: 'Não foi possível redefinir a senha.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('authMessage', extractApiError(data, 'Não foi possível redefinir a senha.'), 'error');
-          return;
-        }
 
         document.getElementById('resetPassword').value = '';
         document.getElementById('loginPassword').value = '';
         showMessage('authMessage', data.message || 'Senha redefinida com sucesso. Faça login com a nova senha.', 'success');
       } catch (error) {
-        showMessage('authMessage', 'Erro ao conectar com o backend.', 'error');
+        showMessage('authMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
         setButtonLoading(resetPasswordBtn, false);
       }
@@ -2539,23 +2596,9 @@
 
     async function loadMyInfo(options = {}) {
       try {
-        const response = await fetch(`${API_URL}/auth/me`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const data = await apiFetch('/auth/me', {
+          errorMessage: 'Erro ao carregar suas informações.'
         });
-        const data = await response.json();
-
-        if (!response.ok) {
-          currentUserDetails = loggedUser || currentUserDetails;
-          renderMyInfo();
-          updateOnboardingIntegrationEmail();
-          if (!options.silent) {
-            const fallbackMessage = extractApiError(data, 'Erro ao carregar suas informações.');
-            showMessage('myInfoMessage', fallbackMessage.includes('/auth/me')
-              ? 'O backend precisa ser reiniciado para carregar todos os dados da conta. Enquanto isso, exibimos as informações já salvas no navegador.'
-              : fallbackMessage, 'error');
-          }
-          return null;
-        }
 
         currentUserDetails = data?.data?.user || null;
         if (currentUserDetails) {
@@ -2566,7 +2609,14 @@
         updateOnboardingIntegrationEmail();
         return currentUserDetails;
       } catch (error) {
-        if (!options.silent) showMessage('myInfoMessage', 'Erro ao conectar com o backend.', 'error');
+        currentUserDetails = loggedUser || currentUserDetails;
+        renderMyInfo();
+        updateOnboardingIntegrationEmail();
+        if (!options.silent) {
+          showMessage('myInfoMessage', error.message.includes('/auth/me')
+            ? 'O backend precisa ser reiniciado para carregar todos os dados da conta. Enquanto isso, exibimos as informações já salvas no navegador.'
+            : (error.message || 'Erro ao conectar com o backend.'), 'error');
+        }
         return null;
       }
     }
@@ -2675,14 +2725,9 @@
     }
 
     async function loadBillingOverview() {
-      const response = await fetch(`${API_URL}/billing/me`, {
-        headers: authHeaders()
+      const data = await apiFetch('/billing/me', {
+        errorMessage: 'Não foi possível carregar sua assinatura.'
       });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(extractApiError(data, 'Não foi possível carregar sua assinatura.'));
-      }
 
       billingOverview = data.data || {};
       renderBillingOverview();
@@ -2693,14 +2738,9 @@
         billingPaymentsTableBody.innerHTML = '<tr><td colspan="5">Carregando pagamentos...</td></tr>';
       }
 
-      const response = await fetch(`${API_URL}/billing/payments`, {
-        headers: authHeaders()
+      const data = await apiFetch('/billing/payments', {
+        errorMessage: 'Não foi possível carregar os pagamentos.'
       });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(extractApiError(data, 'Não foi possível carregar os pagamentos.'));
-      }
 
       billingPayments = Array.isArray(data.data) ? data.data : [];
       renderBillingPayments();
@@ -2733,22 +2773,16 @@
       setButtonLoading(button, true, options.loadingText || 'Processando...');
 
       try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
+        const data = await apiFetch(endpoint, {
           method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify(options.body || {})
+          body: options.body || {},
+          errorMessage: options.errorMessage || 'Não foi possível concluir a ação.'
         });
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          showMessage('billingMessage', extractApiError(data, options.errorMessage || 'Não foi possível concluir a ação.'), 'error');
-          return;
-        }
 
         showMessage('billingMessage', data.message || options.successMessage || 'Ação concluída com sucesso.', 'success');
         await loadBillingDashboard({ showLoading: false });
       } catch (error) {
-        showMessage('billingMessage', 'Erro ao conectar com o backend.', 'error');
+        showMessage('billingMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
         setButtonLoading(button, false);
       }
@@ -2854,10 +2888,10 @@
           await loadMessageLogs();
         } else {
           selectedPropertyId = null;
-          selectedPropertyInfo.innerHTML = 'Nenhum imóvel cadastrado.';
-          icalLinkBox.innerHTML = 'Link do iCal aparecerá aqui';
-          reservationsTableBody.innerHTML = '<tr><td colspan="8">Nenhuma reserva carregada</td></tr>';
-          financialTableBody.innerHTML = '<tr><td colspan="10">Nenhum lançamento financeiro</td></tr>';
+          selectedPropertyInfo.innerHTML = 'Cadastre seu primeiro imóvel para começar a centralizar reservas, calendário e automações.';
+          icalLinkBox.innerHTML = 'Depois de cadastrar um imóvel, cole aqui os links iCal do Airbnb ou Booking.';
+          reservationsTableBody.innerHTML = '<tr><td colspan="8">Cadastre um imóvel e conecte o iCal para começar a centralizar reservas.</td></tr>';
+          financialTableBody.innerHTML = '<tr><td colspan="10">Os lançamentos aparecem depois que você cadastrar imóvel e reservas.</td></tr>';
           calendarGrid.innerHTML = '';
           updateSummaryCards({ total_income: 0, total_expense: 0, total_pending: 0, profit: 0 });
           updateSummaryMirrors({ total_income: 0, total_expense: 0, total_pending: 0, profit: 0 });
@@ -2894,7 +2928,7 @@ function renderPropertyList() {
   propertyList.innerHTML = '';
 
   if (properties.length === 0) {
-    propertyList.innerHTML = '<div class="small">Nenhum imóvel cadastrado.</div>';
+    propertyList.innerHTML = '<div class="empty-state"><strong>Cadastre seu primeiro imóvel para começar</strong><br><span>Esse é o primeiro passo para conectar iCal, receber reservas e ativar automações.</span></div>';
     renderActivationGuide();
     return;
   }
@@ -3315,9 +3349,9 @@ function renderPropertyList() {
       const property = properties.find(p => Number(p.id) === Number(selectedPropertyId));
 
       if (!property) {
-        selectedPropertyInfo.innerHTML = 'Nenhum imóvel selecionado.';
+        selectedPropertyInfo.innerHTML = 'Selecione ou cadastre um imóvel para ver reservas, calendário e links iCal.';
         if (selectedPropertyBadge) selectedPropertyBadge.textContent = 'Nenhum imóvel selecionado';
-        icalLinkBox.innerHTML = 'Link do iCal aparecerá aqui';
+        icalLinkBox.innerHTML = 'Conecte o iCal para começar a sincronizar calendário.';
         return;
       }
 
@@ -3339,7 +3373,7 @@ function renderPropertyList() {
 
     function renderReservationsTable() {
       if (!reservations.length) {
-        reservationsTableBody.innerHTML = '<tr><td colspan="8">Nenhuma reserva para este imóvel</td></tr>';
+        reservationsTableBody.innerHTML = '<tr><td colspan="8">Nenhuma reserva ainda. Conecte o iCal ou cadastre uma reserva manual para começar.</td></tr>';
         return;
       }
 
