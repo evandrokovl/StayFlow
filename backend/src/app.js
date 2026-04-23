@@ -81,7 +81,7 @@ app.use('/billing', billingRoutes);
 app.use('/webhooks', asaasWebhookRoutes);
 
 app.get('/', (req, res) => {
-  res.send('API funcionando 🚀');
+  res.send('API funcionando');
 });
 
 app.get('/health', async (req, res) => {
@@ -91,7 +91,10 @@ app.get('/health', async (req, res) => {
     return res.status(200).json({
       success: true,
       status: 'ok',
-      service: 'api'
+      service: 'api',
+      dependencies: {
+        database: 'ok'
+      }
     });
   } catch (error) {
     logger.error('Health check falhou', {
@@ -104,7 +107,8 @@ app.get('/health', async (req, res) => {
       success: false,
       status: 'degraded',
       service: 'api',
-      message: 'Servico temporariamente indisponivel'
+      message: 'Serviço temporariamente indisponível',
+      ...(env.IS_PRODUCTION ? {} : { reason: 'database_unavailable' })
     });
   }
 });

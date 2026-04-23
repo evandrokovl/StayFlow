@@ -2,6 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { srcPath, withRoute } = require('./helpers');
 
+const loggerMock = {
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {}
+};
+
 test('ical gera calendario ICS para token valido', async () => {
   const pool = {
     async query(sql, params) {
@@ -45,6 +52,7 @@ test('ical gera calendario ICS para token valido', async () => {
     {
       mocks: {
         [srcPath('config', 'database.js')]: pool,
+        [srcPath('utils', 'logger.js')]: loggerMock,
         [srcPath('middlewares', 'authMiddleware.js')]: (req, res, next) => next(),
         [srcPath('services', 'billingService.js')]: {
           refreshUserAccessStatus: async () => ({
@@ -85,6 +93,7 @@ test('ical property retorna token do imovel existente', async () => {
     {
       mocks: {
         [srcPath('config', 'database.js')]: pool,
+        [srcPath('utils', 'logger.js')]: loggerMock,
         [srcPath('middlewares', 'authMiddleware.js')]: (req, res, next) => {
           req.user = { id: 7, email: 'pessoa@email.com' };
           next();

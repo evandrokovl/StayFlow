@@ -342,6 +342,7 @@
       localStorage.setItem(onboardingStorageKey('onboardingProgress'), JSON.stringify(progress));
       renderMyInfo();
       renderActivationGuide();
+      applyBillingAccessControls();
       return progress;
     }
 
@@ -358,11 +359,13 @@
       setOnboardingState('completed');
       localStorage.setItem(onboardingStorageKey('onboardingDone'), '1');
       localStorage.removeItem(onboardingStorageKey('onboardingSkipped'));
+      applyBillingAccessControls();
     }
 
     function markOnboardingSkipped() {
       setOnboardingState('skipped');
       localStorage.setItem(onboardingStorageKey('onboardingSkipped'), '1');
+      applyBillingAccessControls();
     }
 
     function hasConnectedIcal() {
@@ -841,6 +844,20 @@
       return true;
     }
 
+    function isInitialTrialExperience() {
+      if (!hasFullBillingAccess()) return false;
+
+      const billingStatus = String(billingAccessState.billingStatus || 'TRIAL').toUpperCase();
+      const isTrialLike = !billingStatus || billingStatus === 'TRIAL';
+
+      return isTrialLike && !isOnboardingDone() && !isOnboardingSkipped();
+    }
+
+    function shouldHideSectionForInitialExperience(section) {
+      const advancedSections = ['financial', 'operations', 'message-status'];
+      return isInitialTrialExperience() && advancedSections.includes(section);
+    }
+
     function preferredSectionForBillingAccess() {
       if (billingAccessState.accessStatus === 'FULL') return 'dashboard';
       return 'billing';
@@ -951,11 +968,14 @@
     function applyBillingAccessControls() {
       navButtons.forEach(button => {
         const section = button.dataset.sectionBtn;
-        button.classList.toggle('hidden', !canAccessSection(section));
+        const hidden = !canAccessSection(section) || shouldHideSectionForInitialExperience(section);
+        button.classList.toggle('hidden', hidden);
       });
 
       document.querySelectorAll('[data-section-jump]').forEach(button => {
-        button.classList.toggle('hidden', !canAccessSection(button.dataset.sectionJump));
+        const section = button.dataset.sectionJump;
+        const hidden = !canAccessSection(section) || shouldHideSectionForInitialExperience(section);
+        button.classList.toggle('hidden', hidden);
       });
 
       clearSensitiveFrontendData();
@@ -964,6 +984,11 @@
       const activeSection = document.querySelector('.section:not(.hidden)')?.id?.replace('section-', '');
       if (activeSection && !canAccessSection(activeSection)) {
         showSection('billing');
+        return;
+      }
+
+      if (activeSection && shouldHideSectionForInitialExperience(activeSection)) {
+        showSection('dashboard');
       }
     }
 

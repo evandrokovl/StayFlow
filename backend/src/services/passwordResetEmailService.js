@@ -2,8 +2,8 @@ const { env } = require('../config/env');
 const { sendEmail } = require('./emailService');
 
 function buildPasswordResetUrl(token) {
-  const baseUrl = String(env.APP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
-  return `${baseUrl}/?resetToken=${encodeURIComponent(token)}`;
+  const baseUrl = String(env.FRONTEND_BASE_URL || env.APP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return `${baseUrl}/app.html?resetToken=${encodeURIComponent(token)}`;
 }
 
 async function sendPasswordResetEmail({ to, token, expiresAt }) {

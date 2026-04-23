@@ -4,6 +4,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { srcPath, withRoute, requestJson } = require('./helpers');
 
+const rateLimitMock = {
+  createRateLimiter: () => (req, res, next) => next()
+};
+
 test('auth registra usuario com senha criptografada e alias inbound', async () => {
   const calls = [];
   const pool = {
@@ -52,6 +56,7 @@ test('auth registra usuario com senha criptografada e alias inbound', async () =
         [srcPath('services', 'billingService.js')]: {
           ensureTrialForUser: async () => ({})
         },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
         [srcPath('config', 'env.js')]: {
           env: {
             JWT_SECRET: 'test-secret',
@@ -120,6 +125,81 @@ test('auth login retorna token JWT valido', async () => {
         [srcPath('services', 'billingService.js')]: {
           ensureTrialForUser: async () => ({})
         },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
+        [srcPath('config', 'env.js')]: {
+          env: {
+            JWT_SECRET: 'test-secret',
+            INBOUND_DOMAIN: 'inbound.test',
+            LOG_LEVEL: 'error'
+          }
+        }
+      }
+    }
+  );
+});
+
+test('auth login nao enumera usuario entre email inexistente e senha incorreta', async () => {
+  const passwordHash = await bcrypt.hash('senha123', 10);
+  const pool = {
+    async execute(sql, params) {
+      if (sql.includes('information_schema.COLUMNS')) {
+        return [[{ total: 1 }]];
+      }
+
+      if (sql.includes('SELECT id, name, email, cpf, inbound_alias, password FROM users')) {
+        if (params[0] === 'pessoa@email.com') {
+          return [[{
+            id: 7,
+            name: 'Pessoa Teste',
+            email: 'pessoa@email.com',
+            cpf: '52998224725',
+            inbound_alias: 'u7@inbound.test',
+            password: passwordHash
+          }]];
+        }
+
+        return [[]];
+      }
+
+      throw new Error(`Query nao mockada: ${sql}`);
+    }
+  };
+
+  await withRoute(
+    srcPath('routes', 'authRoutes.js'),
+    '/auth',
+    async (baseUrl) => {
+      const wrongPassword = await requestJson(`${baseUrl}/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'pessoa@email.com',
+          password: 'errada123'
+        })
+      });
+
+      const missingUser = await requestJson(`${baseUrl}/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'naoexiste@email.com',
+          password: 'errada123'
+        })
+      });
+
+      assert.equal(wrongPassword.status, 401);
+      assert.equal(missingUser.status, 401);
+      assert.deepEqual(wrongPassword.body, missingUser.body);
+      assert.equal(wrongPassword.body.message, 'E-mail ou senha inválidos');
+    },
+    {
+      mocks: {
+        [srcPath('config', 'database.js')]: pool,
+        [srcPath('services', 'passwordResetEmailService.js')]: {
+          sendPasswordResetEmail: async () => ({ success: true })
+        },
+        [srcPath('services', 'billingService.js')]: {
+          ensureTrialForUser: async () => ({})
+        },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
         [srcPath('config', 'env.js')]: {
           env: {
             JWT_SECRET: 'test-secret',
@@ -178,6 +258,7 @@ test('auth me retorna dados pessoais e alias inbound', async () => {
         [srcPath('services', 'billingService.js')]: {
           ensureTrialForUser: async () => ({})
         },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
         [srcPath('config', 'env.js')]: {
           env: {
             JWT_SECRET: 'test-secret',
@@ -240,6 +321,7 @@ test('auth solicita recuperacao de senha com token seguro sem enumerar email', a
         [srcPath('services', 'billingService.js')]: {
           ensureTrialForUser: async () => ({})
         },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
         [srcPath('config', 'env.js')]: {
           env: {
             JWT_SECRET: 'test-secret',
@@ -302,6 +384,7 @@ test('auth redefine senha e invalida token usado', async () => {
         [srcPath('services', 'billingService.js')]: {
           ensureTrialForUser: async () => ({})
         },
+        [srcPath('middlewares', 'rateLimit.js')]: rateLimitMock,
         [srcPath('config', 'env.js')]: {
           env: {
             JWT_SECRET: 'test-secret',

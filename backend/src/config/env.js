@@ -30,6 +30,7 @@ function getNumberEnv(name, defaultValue) {
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
+const appBaseUrl = requireEnv('APP_BASE_URL', { defaultValue: 'http://localhost:3000' });
 
 const env = {
   NODE_ENV: nodeEnv,
@@ -44,7 +45,8 @@ const env = {
   DB_PASSWORD: requireEnv('DB_PASSWORD'),
   DB_NAME: requireEnv('DB_NAME'),
 
-  APP_BASE_URL: requireEnv('APP_BASE_URL', { defaultValue: 'http://localhost:3000' }),
+  APP_BASE_URL: appBaseUrl,
+  FRONTEND_BASE_URL: requireEnv('FRONTEND_BASE_URL', { defaultValue: appBaseUrl }),
   INBOUND_DOMAIN: requireEnv('INBOUND_DOMAIN', { defaultValue: 'inbound.seudominio.com' }),
 
   RESEND_API_KEY: process.env.RESEND_API_KEY || '',

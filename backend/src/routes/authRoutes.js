@@ -64,8 +64,8 @@ function publicForgotPasswordMessage() {
 }
 
 function invalidLoginError() {
-  const err = new Error('E-mail ou senha invalidos');
-  err.statusCode = 400;
+  const err = new Error('E-mail ou senha inválidos');
+  err.statusCode = 401;
   return err;
 }
 
@@ -346,11 +346,16 @@ router.post('/forgot-password', passwordResetRateLimit, validate(forgotPasswordS
       expiresAt
     });
 
-    res.json({
+    const responsePayload = {
       success: true,
-      message: publicForgotPasswordMessage(),
-      data: env.IS_PRODUCTION ? undefined : { reset_token: rawToken }
-    });
+      message: publicForgotPasswordMessage()
+    };
+
+    if (!env.IS_PRODUCTION) {
+      responsePayload.data = { reset_token: rawToken };
+    }
+
+    res.json(responsePayload);
   } catch (error) {
     next(error);
   }
