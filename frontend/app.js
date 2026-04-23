@@ -7,7 +7,7 @@
 
       if (isLocalFile || isLocalHost) return 'http://localhost:3000';
 
-      return window.location.origin;
+      return 'https://api.stayflowapp.online';
     })();
 
     function getStoredUser() {
@@ -863,6 +863,13 @@
         'summaryExpense',
         'summaryProfit',
         'summaryPending',
+        'summaryOccupancy',
+        'dashboardUpcomingReservations',
+        'dashboardUpcomingCheckins',
+        'dashboardUpcomingCheckouts',
+        'dashboardNoContact',
+        'dashboardAutomationIssues',
+        'dashboardRecentErrors',
         'operationSentToday',
         'operationPendingCount',
         'operationFailedCount',
@@ -890,6 +897,10 @@
       sensitiveCounters.forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
+        if (id === 'summaryOccupancy') {
+          el.textContent = '0%';
+          return;
+        }
         const isMoney = /(income|expense|profit|summary|reservation)/i.test(id);
         el.textContent = isMoney ? 'R$ 0,00' : '0';
       });
@@ -1249,11 +1260,13 @@
       });
     }
 
+    /* MESSAGES */
     function renderMessageLogs() {
       if (!messageLogsList) return;
 
       if (!messageLogs.length) {
         messageLogsList.innerHTML = '<div class="small">Nenhum log de mensagem encontrado para esse filtro.</div>';
+        renderDashboardAlerts();
         return;
       }
 
@@ -1273,6 +1286,7 @@
           <div class="template-preview">${log.body_rendered || log.message_text || log.content || 'Sem conteúdo registrado.'}</div>
         </div>
       `).join('');
+      renderDashboardAlerts();
     }
 
     async function loadMessageLogSummary() {
@@ -2066,13 +2080,9 @@
 
       const pointCircles = monthKeys.map((key, index) => {
         const x = getX(index);
-        const incomeY = getY(monthsMap[key].income);
-        const expenseY = getY(monthsMap[key].expense);
         const profitY = getY(monthsMap[key].profit);
 
         return `
-          <circle cx="${x}" cy="${incomeY}" r="4" fill="${CHART_THEME.income}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
-          <circle cx="${x}" cy="${expenseY}" r="4" fill="${CHART_THEME.expense}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
           <circle cx="${x}" cy="${profitY}" r="4" fill="${CHART_THEME.profit}" stroke="${CHART_THEME.background}" stroke-width="2"></circle>
         `;
       }).join('');
@@ -2086,8 +2096,6 @@
           <line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" stroke="${CHART_THEME.axis}" stroke-width="1.2"></line>
           <line x1="${paddingLeft}" y1="${zeroY}" x2="${width - paddingRight}" y2="${zeroY}" stroke="${CHART_THEME.axis}" stroke-width="1" stroke-dasharray="4 5" stroke-opacity="0.78"></line>
 
-          <path d="${incomePath}" fill="none" stroke="${CHART_THEME.income}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-          <path d="${expensePath}" fill="none" stroke="${CHART_THEME.expense}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
           <path d="${profitPath}" fill="none" stroke="${CHART_THEME.profit}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
 
           ${pointCircles}
@@ -2312,6 +2320,7 @@
 
       if (!allFinancialEntries.length || !properties.length) {
         container.innerHTML = '<div class="small">Sem dados suficientes para montar o ranking.</div>';
+        updateDashboardPerformanceHighlights([]);
         return;
       }
 
@@ -2350,8 +2359,11 @@
 
       if (!ranking.length) {
         container.innerHTML = '<div class="small">Sem dados suficientes para montar o ranking.</div>';
+        updateDashboardPerformanceHighlights([]);
         return;
       }
+
+      updateDashboardPerformanceHighlights(ranking);
 
       container.innerHTML = ranking.map((item, index) => `
         <div class="ranking-item">
@@ -2365,6 +2377,99 @@
           </div>
         </div>
       `).join('');
+    }
+
+    function updateDashboardPerformanceHighlights(ranking = []) {
+      const best = ranking[0];
+      const worst = ranking.length > 1 ? ranking[ranking.length - 1] : null;
+
+      setText('dashboardBestProperty', best ? best.property_name : '-');
+      setText('dashboardBestPropertyValue', best ? formatMoney(best.profit) + ' de lucro' : 'Sem dados suficientes.');
+      setText('dashboardWorstProperty', worst ? worst.property_name : '-');
+      setText('dashboardWorstPropertyValue', worst ? formatMoney(worst.profit) + ' de resultado' : 'Sem dados suficientes.');
+    }
+
+    function getDateOnly(value) {
+      if (!value) return null;
+      const date = new Date(`${String(value).slice(0, 10)}T12:00:00`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function daysBetween(start, end) {
+      return Math.max(0, Math.ceil((end - start) / 86400000));
+    }
+
+    function calculateCurrentMonthOccupancy() {
+      if (!selectedPropertyId || !reservations.length) return 0;
+
+      const today = new Date();
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1, 12);
+      const daysInMonth = daysBetween(monthStart, monthEnd);
+      let occupiedDays = 0;
+
+      reservations.forEach(reservation => {
+        if (reservation.status === 'cancelled' || reservation.status === 'canceled') return;
+        const start = getDateOnly(reservation.start_date);
+        const end = getDateOnly(reservation.end_date);
+        if (!start || !end) return;
+
+        const overlapStart = start > monthStart ? start : monthStart;
+        const overlapEnd = end < monthEnd ? end : monthEnd;
+        occupiedDays += daysBetween(overlapStart, overlapEnd);
+      });
+
+      return daysInMonth ? Math.min(100, Math.round((occupiedDays / daysInMonth) * 100)) : 0;
+    }
+
+    function renderDashboardOperations() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const nextSevenDays = new Date(today);
+      nextSevenDays.setDate(nextSevenDays.getDate() + 7);
+
+      const activeReservations = reservations.filter(reservation => !['cancelled', 'canceled'].includes(String(reservation.status || '').toLowerCase()));
+      const futureReservations = activeReservations.filter(reservation => {
+        const start = getDateOnly(reservation.start_date);
+        return start && start >= today;
+      }).sort((a, b) => getDateOnly(a.start_date) - getDateOnly(b.start_date));
+
+      const checkins = futureReservations.filter(reservation => {
+        const start = getDateOnly(reservation.start_date);
+        return start && start >= today && start <= nextSevenDays;
+      });
+
+      const checkouts = activeReservations.filter(reservation => {
+        const end = getDateOnly(reservation.end_date);
+        return end && end >= today && end <= nextSevenDays;
+      });
+
+      setText('dashboardUpcomingReservations', String(futureReservations.length));
+      setText('dashboardUpcomingCheckins', String(checkins.length));
+      setText('dashboardUpcomingCheckouts', String(checkouts.length));
+      setText('dashboardUpcomingReservationsText', futureReservations[0]
+        ? `Próxima: ${futureReservations[0].guest_name || 'Hóspede'} em ${formatDateBR(futureReservations[0].start_date)}.`
+        : 'Nenhuma reserva futura.');
+      setText('summaryOccupancy', `${calculateCurrentMonthOccupancy()}%`);
+    }
+
+    function renderDashboardAlerts() {
+      const noContactReservations = reservations.filter(reservation => {
+        if (['cancelled', 'canceled'].includes(String(reservation.status || '').toLowerCase())) return false;
+        return !reservation.guest_email && !reservation.guest_phone && !reservation.phone;
+      });
+      const automationIssues = messageLogs.filter(log => ['pending', 'failed', 'needs_contact'].includes(String(log.status || '').toLowerCase()));
+      const recentErrors = messageLogs.filter(log => String(log.status || '').toLowerCase() === 'failed');
+
+      setText('dashboardNoContact', String(noContactReservations.length));
+      setText('dashboardAutomationIssues', String(automationIssues.length));
+      setText('dashboardRecentErrors', String(recentErrors.length));
+    }
+
+    /* DASHBOARD */
+    function renderDashboardValueBlocks() {
+      renderDashboardOperations();
+      renderDashboardAlerts();
     }
 
     async function loadFinancialDashboard() {
@@ -2397,6 +2502,7 @@
       }
     }
 
+    /* AUTH */
     async function registerUser() {
       clearMessage('authMessage');
 
@@ -2666,6 +2772,7 @@
       text.textContent = 'Você pode usar o StayFlow normalmente durante o período de teste.';
     }
 
+    /* BILLING */
     function renderBillingOverview() {
       const overview = billingOverview || {};
       billingAccessState = normalizeBillingAccessFromOverview(overview);
@@ -2845,6 +2952,7 @@
         : userInfo.textContent;
     }
 
+    /* PROPERTIES */
     async function loadProperties() {
       if (!hasFullBillingAccess()) {
         clearSensitiveFrontendData();
@@ -3340,6 +3448,7 @@ function renderPropertyList() {
         renderReservationsTable();
         renderCalendar();
         renderFinancialReservationOptions(financialReservation.value);
+        renderDashboardValueBlocks();
       } catch (error) {
         alert('Erro ao carregar reservas');
       }
@@ -3762,6 +3871,7 @@ function renderPropertyList() {
       openReservationFinance(eventItem.id);
     }
 
+    /* CALENDAR */
     function renderCalendar() {
       calendarGrid.innerHTML = '';
 
@@ -3996,7 +4106,9 @@ function renderPropertyList() {
       document.getElementById('summaryExpense').textContent = formatMoney(data.total_expense || 0);
       document.getElementById('summaryProfit').textContent = formatMoney(data.profit || 0);
       document.getElementById('summaryPending').textContent = formatMoney(data.total_pending || 0);
+      setText('summaryOccupancy', `${calculateCurrentMonthOccupancy()}%`);
       updateSummaryMirrors(data);
+      renderDashboardValueBlocks();
     }
 
     async function loadFinancialEntries() {

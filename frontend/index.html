@@ -319,10 +319,11 @@
           </div>
 
           <section id="section-dashboard" class="section">
-            <div class="section-heading">
+            <div class="section-heading dashboard-hero-heading">
               <div>
-                <h3>Visão geral</h3>
-                <div class="small">Indicadores, próximos passos e contexto para operar com mais clareza.</div>
+                <div class="brand-kicker">Painel executivo</div>
+                <h2>Como está sua operação agora?</h2>
+                <div class="small">Resultado financeiro, ocupação, próximas estadias e alertas para decidir rápido.</div>
               </div>
               <div class="quick-actions">
                 <button type="button" class="btn-secondary" data-section-jump="properties">Cadastrar imóvel</button>
@@ -358,108 +359,145 @@
               <div class="activation-steps-grid" id="activationStepsGrid"></div>
             </div>
 
-            <div class="grid grid-4">
+            <div class="dashboard-kpi-grid">
+              <div class="summary-card dashboard-primary-kpi">
+                <div class="summary-label">Lucro do mês</div>
+                <div class="summary-value profit-value" id="summaryProfit">R$ 0,00</div>
+                <div class="small">Resultado depois das despesas registradas.</div>
+              </div>
               <div class="summary-card">
-                <div class="summary-label">Receitas</div>
+                <div class="summary-label">Receita total</div>
                 <div class="summary-value income-value" id="summaryIncome">R$ 0,00</div>
+                <div class="small">Entradas do período selecionado.</div>
               </div>
               <div class="summary-card">
                 <div class="summary-label">Despesas</div>
                 <div class="summary-value expense-value" id="summaryExpense">R$ 0,00</div>
+                <div class="small">Custos e saídas operacionais.</div>
               </div>
               <div class="summary-card">
-                <div class="summary-label">Lucro</div>
-                <div class="summary-value profit-value" id="summaryProfit">R$ 0,00</div>
+                <div class="summary-label">Ocupação</div>
+                <div class="summary-value" id="summaryOccupancy">0%</div>
+                <div class="small">Estimativa do mês para o imóvel atual.</div>
               </div>
-              <div class="summary-card">
-                <div class="summary-label">Pendentes</div>
-                <div class="summary-value pending-value" id="summaryPending">R$ 0,00</div>
+            </div>
+
+            <div class="dashboard-operations-grid">
+              <div class="card dashboard-panel">
+                <div class="section-heading">
+                  <div>
+                    <h3>Operação</h3>
+                    <div class="small">O que está chegando nos próximos dias.</div>
+                  </div>
+                  <button class="btn-secondary" id="syncPropertyBtn" type="button">Sincronizar imóvel</button>
+                </div>
+                <div class="dashboard-mini-grid">
+                  <div class="dashboard-mini-card">
+                    <span>Próximas reservas</span>
+                    <strong id="dashboardUpcomingReservations">0</strong>
+                    <small id="dashboardUpcomingReservationsText">Nenhuma reserva futura.</small>
+                  </div>
+                  <div class="dashboard-mini-card">
+                    <span>Check-ins próximos</span>
+                    <strong id="dashboardUpcomingCheckins">0</strong>
+                    <small>Entradas nos próximos 7 dias.</small>
+                  </div>
+                  <div class="dashboard-mini-card">
+                    <span>Check-outs próximos</span>
+                    <strong id="dashboardUpcomingCheckouts">0</strong>
+                    <small>Saídas nos próximos 7 dias.</small>
+                  </div>
+                </div>
+                <div class="dashboard-selected-property">
+                  <div id="selectedPropertyInfo" class="small">Selecione um imóvel</div>
+                  <div class="link-box" id="icalLinkBox">Link do iCal aparecerá aqui</div>
+                </div>
+              </div>
+
+              <div class="card dashboard-panel dashboard-alert-panel">
+                <div class="section-heading">
+                  <div>
+                    <h3>Alertas</h3>
+                    <div class="small">Prioridades que podem travar automação ou atendimento.</div>
+                  </div>
+                </div>
+                <div class="dashboard-alert-list">
+                  <div class="dashboard-alert-item">
+                    <span>Reservas sem contato</span>
+                    <strong id="dashboardNoContact">0</strong>
+                    <small>Precisam de e-mail ou telefone útil.</small>
+                  </div>
+                  <div class="dashboard-alert-item">
+                    <span>Problemas de automação</span>
+                    <strong id="dashboardAutomationIssues">0</strong>
+                    <small>Mensagens pendentes, em erro ou sem contato.</small>
+                  </div>
+                  <div class="dashboard-alert-item">
+                    <span>Erros recentes</span>
+                    <strong id="dashboardRecentErrors">0</strong>
+                    <small>Falhas que merecem revisão.</small>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="dashboard-grid" id="dashboardSecondaryContent">
-              <div class="stack">
-                <div class="card">
-                  <div class="section-heading">
-                    <div>
-                      <h3>Desempenho financeiro</h3>
-                      <div class="small">Últimos 6 meses</div>
-                    </div>
-                    <div style="min-width: 260px;">
-                      <select id="dashboardChartProperty">
-                        <option value="">Todos os imóveis</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="chart-card">
-                    <div class="chart-legend">
-                      <div class="chart-legend-item">
-                        <span class="chart-legend-line line-income"></span>
-                        <span>Receitas</span>
-                      </div>
-                      <div class="chart-legend-item">
-                        <span class="chart-legend-line line-expense"></span>
-                        <span>Despesas</span>
-                      </div>
-                      <div class="chart-legend-item">
-                        <span class="chart-legend-line line-profit"></span>
-                        <span>Lucro</span>
-                      </div>
-                    </div>
-                    <div class="chart-wrap" id="lineChartContainer">
-                      <div class="chart-empty">Cadastre seu primeiro imóvel e conecte o iCal para começar a formar histórico de operação.</div>
-                    </div>
+              <div class="card dashboard-panel">
+                <div class="section-heading">
+                  <div>
+                    <h3>Performance dos imóveis</h3>
+                    <div class="small">Ranking, melhor imóvel e pior desempenho pelo resultado financeiro.</div>
                   </div>
                 </div>
-
-                <div class="card">
-                  <div class="section-heading">
-                    <div>
-                      <h3>Ranking de imóveis</h3>
-                      <div class="small">Veja rapidamente quais imóveis estão performando melhor.</div>
-                    </div>
+                <div class="dashboard-performance-grid">
+                  <div class="dashboard-mini-card dashboard-best-card">
+                    <span>Melhor imóvel</span>
+                    <strong id="dashboardBestProperty">-</strong>
+                    <small id="dashboardBestPropertyValue">Sem dados suficientes.</small>
                   </div>
-
-                  <div id="propertyRankingContent" class="ranking-list">
-                    <div class="small">O ranking aparece depois que você tiver imóveis e reservas suficientes para comparar desempenho.</div>
+                  <div class="dashboard-mini-card dashboard-worst-card">
+                    <span>Pior desempenho</span>
+                    <strong id="dashboardWorstProperty">-</strong>
+                    <small id="dashboardWorstPropertyValue">Sem dados suficientes.</small>
                   </div>
+                </div>
+                <div id="propertyRankingContent" class="ranking-list">
+                  <div class="small">O ranking aparece depois que você tiver imóveis e reservas suficientes para comparar desempenho.</div>
                 </div>
               </div>
 
-              <div class="stack">
-                <div class="card">
-                  <div class="section-heading">
-                    <div>
-                      <h3>Lucro / prejuízo por imóvel</h3>
-                      <div class="small">Uma linha por imóvel nos últimos 6 meses</div>
-                    </div>
+              <div class="card dashboard-panel">
+                <div class="section-heading">
+                  <div>
+                    <h3>Linha de lucro</h3>
+                    <div class="small">Evolução do lucro ao longo dos últimos meses.</div>
                   </div>
-
-                  <div class="chart-wrap" id="propertyProfitChartContainer">
-                    <div class="chart-empty">Depois dos primeiros lançamentos, este gráfico mostra quais imóveis geram mais resultado.</div>
-                  </div>
-
-                  <div id="propertyProfitLegend" class="property-lines-legend">
-                    <div class="small">Cadastre imóveis e lançamentos para visualizar este gráfico.</div>
+                  <div class="dashboard-chart-select">
+                    <select id="dashboardChartProperty">
+                      <option value="">Todos os imóveis</option>
+                    </select>
                   </div>
                 </div>
-
-                <div class="card">
-                  <div class="section-heading">
-                    <div>
-                      <h3>Imóvel selecionado</h3>
-                      <div class="small">Contexto rápido para orientar suas ações</div>
+                <div class="chart-card">
+                  <div class="chart-legend">
+                    <div class="chart-legend-item">
+                      <span class="chart-legend-line line-profit"></span>
+                      <span>Lucro</span>
                     </div>
-                    <button class="btn-secondary" id="syncPropertyBtn" type="button">Sincronizar imóvel</button>
                   </div>
-
-                  <div id="selectedPropertyInfo" class="small">Selecione um imóvel</div>
-                  <div class="link-box" id="icalLinkBox">Link do iCal aparecerá aqui</div>
-                  <div id="syncMessage"></div>
+                  <div class="chart-wrap" id="lineChartContainer">
+                    <div class="chart-empty">Cadastre seu primeiro imóvel e conecte o iCal para começar a formar histórico de operação.</div>
+                  </div>
+                </div>
+                <div class="hidden">
+                  <div class="chart-wrap" id="propertyProfitChartContainer"></div>
+                  <div id="propertyProfitLegend" class="property-lines-legend"></div>
                 </div>
               </div>
             </div>
+
+            <div class="hidden" id="summaryPending">R$ 0,00</div>
+            <div id="syncMessage"></div>
           </section>
 
           <section id="section-operations" class="section hidden">
