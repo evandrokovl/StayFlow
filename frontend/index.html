@@ -3,1280 +3,1321 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StayFlow</title>
+  <title>StayFlow — Centralize reservas, calendário e mensagens para aluguel por temporada</title>
+  <meta name="description" content="StayFlow é um SaaS para anfitriões e gestores centralizarem reservas, calendário, mensagens, financeiro e cobrança em um painel profissional." />
+  <meta property="og:title" content="StayFlow — Gestão de aluguel por temporada em um painel" />
+  <meta property="og:description" content="Centralize reservas, calendário, mensagens e cobrança. Comece com teste grátis de 15 dias." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="StayFlow" />
   <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --bg: #08101d;
+      --bg-2: #0e1728;
+      --card: rgba(16, 24, 40, 0.74);
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #e6edf8;
+      --muted: #94a3b8;
+      --blue: #2563eb;
+      --cyan: #38bdf8;
+      --purple: #8b5cf6;
+      --green: #22c55e;
+      --red: #f43f5e;
+      --yellow: #f59e0b;
+      --shadow: 0 28px 70px rgba(2, 8, 23, .42);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --container: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, .14), transparent 28%),
+        radial-gradient(circle at 90% 5%, rgba(139, 92, 246, .14), transparent 25%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(var(--container), calc(100% - 32px)); margin: 0 auto; }
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(16px);
+      background: rgba(8, 16, 29, .68);
+      border-bottom: 1px solid rgba(148, 163, 184, .08);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: .2px;
+    }
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple));
+      box-shadow: 0 18px 34px rgba(37, 99, 235, .34);
+      font-size: 1.15rem;
+      font-weight: 900;
+    }
+    .brand small {
+      display: block;
+      font-size: .76rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .1px;
+    }
+    .nav-actions .btn,
+    .nav-actions .btn-ghost {
+      min-height: 46px;
+      padding: 12px 18px;
+      white-space: nowrap;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .btn, .btn-secondary, .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-weight: 700;
+      transition: .22s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+      min-height: 50px;
+      white-space: nowrap;
+    }
+    .btn {
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple));
+      box-shadow: 0 18px 34px rgba(37, 99, 235, .28);
+      color: white;
+    }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.03); }
+    .btn-secondary {
+      background: rgba(148, 163, 184, .08);
+      border-color: rgba(148, 163, 184, .16);
+      color: var(--text);
+    }
+    .btn-secondary:hover, .btn-ghost:hover {
+      background: rgba(148, 163, 184, .12);
+    }
+    .btn-ghost {
+      border-color: rgba(148, 163, 184, .14);
+      background: transparent;
+      color: #dbe7fb;
+    }
+
+    .hero {
+      padding: 72px 0 54px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.02fr .98fr;
+      gap: 36px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .92rem;
+      color: #d7e7ff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .08);
+      border: 1px solid rgba(56, 189, 248, .16);
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: clamp(2.8rem, 5vw, 4.7rem);
+      line-height: .98;
+      margin: 0 0 18px;
+      max-width: 12ch;
+      letter-spacing: -1.8px;
+    }
+    .lead {
+      color: #bfd0e6;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      max-width: 62ch;
+      margin: 0 0 28px;
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .proof {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .proof-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .44);
+      color: #d7e7ff;
+      font-size: .92rem;
+    }
+    .urgency-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(245, 158, 11, .08);
+      border: 1px solid rgba(245, 158, 11, .2);
+      color: #fde9b3;
+      font-size: .93rem;
+      max-width: 540px;
+    }
+
+    .hero-card {
+      position: relative;
+      padding: 20px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg, rgba(15, 23, 42, .92), rgba(15, 23, 42, .72));
+      border: 1px solid rgba(148, 163, 184, .1);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, .12), transparent 24%),
+                  radial-gradient(circle at bottom right, rgba(139, 92, 246, .1), transparent 22%);
+      pointer-events: none;
+    }
+    .window-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(226, 232, 240, .28);
+    }
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .hero-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hero-logo .mini-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple));
+      font-weight: 900;
+      box-shadow: 0 14px 28px rgba(37, 99, 235, .25);
+    }
+    .hero-logo b { display: block; font-size: 1rem; }
+    .hero-logo span { color: var(--muted); font-size: .88rem; }
+    .status-pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .1);
+      color: #b9f7cd;
+      border: 1px solid rgba(34, 197, 94, .18);
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .dashboard-preview {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .panel {
+      background: rgba(8, 15, 29, .64);
+      border: 1px solid rgba(148, 163, 184, .1);
+      border-radius: 20px;
+      padding: 18px;
+      min-height: 112px;
+    }
+    .panel.wide { grid-column: span 2; }
+    .panel-title {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 10px;
+    }
+    .panel-value {
+      font-size: 1.95rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.8px;
+    }
+    .panel-foot {
+      margin-top: 10px;
+      color: #a8bed9;
+      font-size: .9rem;
+    }
+    .mini-bars {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .mini-bar {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, .1);
+      overflow: hidden;
+      position: relative;
+    }
+    .mini-bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
+    }
+    .calendar-mini {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .day {
+      height: 62px;
+      border-radius: 16px;
+      background: rgba(148, 163, 184, .05);
+      border: 1px solid rgba(148, 163, 184, .08);
+      padding: 10px;
+      font-size: .86rem;
+      color: #dbe7fb;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .tag {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      display: block;
+    }
+    .airbnb { background: linear-gradient(90deg, #38bdf8, #2563eb); }
+    .booking { background: linear-gradient(90deg, #8b5cf6, #2563eb); }
+    .direct { background: linear-gradient(90deg, #22c55e, #14b8a6); }
+
+    .section {
+      padding: 88px 0;
+    }
+    .section-head {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 42px;
+    }
+    .section-head h2 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -1.2px;
+    }
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 1.04rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .stat {
+      padding: 24px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, .58);
+      border: 1px solid var(--line);
+      text-align: center;
+      box-shadow: 0 14px 40px rgba(2, 8, 23, .18);
+    }
+    .stat b {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .stat span { color: var(--muted); font-size: .94rem; }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 30px;
+    }
+    .comparison-card {
+      padding: 28px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .6);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, .18);
+    }
+    .comparison-card.bad {
+      border-color: rgba(244, 63, 94, .18);
+      background: linear-gradient(180deg, rgba(36, 10, 20, .62), rgba(15, 23, 42, .52));
+    }
+    .comparison-card.good {
+      border-color: rgba(34, 197, 94, .18);
+      background: linear-gradient(180deg, rgba(8, 36, 22, .52), rgba(15, 23, 42, .52));
+    }
+    .comparison-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.35rem;
+    }
+    .comparison-list {
+      display: grid;
+      gap: 12px;
+      color: #dfe9fa;
+    }
+    .comparison-list div {
+      display: flex;
+      gap: 12px;
+      line-height: 1.65;
+      color: #dce7f9;
+    }
+    .comparison-list span {
+      width: 24px;
+      flex: 0 0 24px;
+      font-weight: 800;
+    }
+    .comparison-card.bad span { color: #fda4af; }
+    .comparison-card.good span { color: #86efac; }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .feature {
+      padding: 28px;
+      border-radius: 24px;
+      background: rgba(15, 23, 42, .62);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, .18);
+    }
+    .feature-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(37,99,235,.14), rgba(139,92,246,.18));
+      border: 1px solid rgba(148, 163, 184, .1);
+      font-size: 1.35rem;
+      margin-bottom: 18px;
+    }
+    .feature h3 {
+      margin: 0 0 10px;
+      font-size: 1.24rem;
+    }
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .screens-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .screen {
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .68);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, .18);
+      overflow: hidden;
+    }
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, .08);
+      background: rgba(8, 15, 29, .38);
+    }
+    .screen-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+    .screen-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .1);
+      border: 1px solid rgba(56, 189, 248, .16);
+      color: #d8f6ff;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+    .screen-body { padding: 18px; }
+    .screen-dashboard {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 16px;
+    }
+    .side-menu {
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(8, 15, 29, .46);
+      border: 1px solid rgba(148, 163, 184, .08);
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .side-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      color: #cfe1fa;
+      border: 1px solid transparent;
+      background: rgba(148, 163, 184, .04);
+    }
+    .side-item.active {
+      background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(37,99,235,.18), rgba(139,92,246,.16));
+      border-color: rgba(56, 189, 248, .18);
+      color: white;
+    }
+    .dash-main {
+      display: grid;
+      gap: 14px;
+    }
+    .dash-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .metric {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(8, 15, 29, .48);
+      border: 1px solid rgba(148, 163, 184, .08);
+    }
+    .metric small { color: var(--muted); display: block; margin-bottom: 8px; }
+    .metric b { font-size: 1.4rem; letter-spacing: -.5px; }
+    .chart-card, .table-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(8, 15, 29, .48);
+      border: 1px solid rgba(148, 163, 184, .08);
+    }
+    .chart {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      align-items: end;
+      gap: 10px;
+      height: 180px;
+      margin-top: 16px;
+    }
+    .chart div {
+      border-radius: 12px 12px 6px 6px;
+      background: linear-gradient(180deg, var(--cyan), var(--blue), var(--purple));
+      opacity: .95;
+    }
+    .table {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1.2fr .9fr .8fr .9fr;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(148, 163, 184, .04);
+      color: #dbe7fb;
+      font-size: .93rem;
+    }
+    .row.head {
+      background: transparent;
+      color: var(--muted);
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .status-ok { background: rgba(34,197,94,.12); color: #c9f8d8; border: 1px solid rgba(34,197,94,.16); }
+    .status-warn { background: rgba(245,158,11,.12); color: #fde7b0; border: 1px solid rgba(245,158,11,.16); }
+
+    .screen-stack {
+      display: grid;
+      gap: 18px;
+    }
+    .mini-screen {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .68);
+      overflow: hidden;
+    }
+    .mini-content { padding: 16px; }
+    .message-list, .billing-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .message-item, .billing-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(148, 163, 184, .05);
+      border: 1px solid rgba(148, 163, 184, .08);
+      color: #dde8fb;
+      font-size: .92rem;
+    }
+    .billing-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-top: 26px;
+    }
+    .card {
+      border-radius: 24px;
+      padding: 30px;
+      background: rgba(15, 23, 42, .6);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(2,8,23,.18);
+    }
+    .card h3 {
+      margin: 0 0 14px;
+      font-size: 1.5rem;
+      letter-spacing: -.4px;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .steps {
+      display: grid;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(8, 15, 29, .42);
+      border: 1px solid rgba(148, 163, 184, .08);
+    }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple));
+      box-shadow: 0 12px 22px rgba(37, 99, 235, .22);
+    }
+    .step b { display: block; margin-bottom: 6px; }
+    .step span { color: var(--muted); line-height: 1.65; font-size: .95rem; }
+
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+    .price-card {
+      padding: 30px;
+      border-radius: 24px;
+      background: rgba(15, 23, 42, .62);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, .18);
+      position: relative;
+    }
+    .price-card.featured {
+      transform: translateY(-6px);
+      border-color: rgba(56, 189, 248, .28);
+      box-shadow: 0 24px 50px rgba(37, 99, 235, .22);
+    }
+    .pill {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .1);
+      border: 1px solid rgba(56, 189, 248, .18);
+      color: #d9f4ff;
+      font-size: .82rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+    .price-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.5rem;
+    }
+    .price-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.75;
+      min-height: 84px;
+    }
+    .price {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .price small {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .price-note {
+      color: #c5d7ee;
+      font-size: .92rem;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .check-list {
+      display: grid;
+      gap: 12px;
+      color: #dce8fa;
+      margin-bottom: 22px;
+    }
+    .check-list div::before {
+      content: "✓";
+      color: #86efac;
+      font-weight: 800;
+      margin-right: 10px;
+    }
+
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-top: 26px;
+    }
+    .faq-item h4 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+    .faq-item p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .cta-box {
+      padding: 42px;
+      border-radius: 30px;
+      text-align: center;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.14), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(139,92,246,.14), transparent 25%),
+        rgba(15, 23, 42, .7);
+      border: 1px solid rgba(148, 163, 184, .12);
+      box-shadow: var(--shadow);
+    }
+    .cta-box h2 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -1.2px;
+    }
+    .cta-box p {
+      max-width: 760px;
+      margin: 0 auto 24px;
+      color: #c0d0e8;
+      line-height: 1.8;
+      font-size: 1.02rem;
+    }
+
+    footer {
+      padding: 30px 0 48px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .95rem;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard { grid-template-columns: 1fr; }
+      h1 { max-width: 12ch; }
+      .price-card.featured { transform: none; }
+      .dash-row { grid-template-columns: 1fr; }
+      .row, .row.head { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 820px) {
+      .hero { padding-top: 48px; }
+      .nav-inner {
+        align-items: flex-start;
+      }
+      .dashboard-preview { grid-template-columns: 1fr; }
+      .panel.wide { grid-column: auto; }
+      .calendar-mini { grid-template-columns: repeat(4, 1fr); }
+      .section { padding: 72px 0; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .container { width: min(var(--container), calc(100% - 20px)); }
+      .cta-row, .nav-actions { flex-direction: column; }
+      .nav-inner { gap: 14px; }
+      .nav-actions { width: 100%; }
+      .btn, .btn-secondary, .btn-ghost { width: 100%; }
+      .calendar-mini { grid-template-columns: repeat(3, 1fr); }
+      .proof-item { width: 100%; justify-content: center; }
+      .cta-box { padding: 28px 20px; }
+      .stats { grid-template-columns: 1fr; }
+      .screen-header, .billing-top, .hero-top { flex-direction: column; align-items: flex-start; }
+      .row, .row.head { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="Menu principal">
-      <div class="sidebar-brand">
-      <img class="sidebar-logo" src="assets/stayflow-logo.png" alt="StayFlow" />
-      <div class="brand-kicker">Channel manager com foco em operação e resultado</div>
-      <div class="sidebar-title">StayFlow</div>
-      <div class="sidebar-subtitle">Gestão de imóveis por temporada</div>
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="#topo" class="brand">
+        <div class="brand-mark">S</div>
+        <div>
+          StayFlow
+          <small>Seu fluxo de reservas, automatizado</small>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#beneficios">Benefícios</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#telas">Telas do sistema</a>
+        <a href="#planos">Planos</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn-ghost" href="/app.html">Acessar minha conta</a>
+        <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+      </div>
     </div>
+  </header>
 
-      <div class="nav-menu" role="navigation" aria-label="Seções do StayFlow">
-        <button type="button" class="nav-btn active" data-section-btn="dashboard" aria-current="page">Dashboard</button>
-        <button type="button" class="nav-btn" data-section-btn="messages">Automação de mensagens</button>
-        <button type="button" class="nav-btn" data-section-btn="calendar">Calendário</button>
-        <button type="button" class="nav-btn" data-section-btn="financial">Financeiro</button>
-        <button type="button" class="nav-btn" data-section-btn="properties">Imóveis</button>
-        <button type="button" class="nav-btn" data-section-btn="my-info">Minhas informações</button>
-        <button type="button" class="nav-btn" data-section-btn="operations">Operação</button>
-        <button type="button" class="nav-btn" data-section-btn="reservations">Reservas</button>
-        <button type="button" class="nav-btn" data-section-btn="message-status">Status das mensagens</button>
-        <button type="button" class="nav-btn" data-section-btn="billing">Assinatura e Cobrança</button>
-      </div>
-      <div class="sidebar-value-card">
-        <span>Setup recomendado</span>
-        <strong>Automatize em 4 passos</strong>
-        <small>Imóvel, iCal, e-mail do StayFlow e automação.</small>
-      </div>
-    </aside>
+  <main id="topo">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">Operação profissional para aluguel por temporada</div>
+          <h1>Centralize reservas, calendário e mensagens para operar com menos falhas.</h1>
+          <p class="lead">
+            O <strong>StayFlow</strong> reúne operação, agenda, mensagens, financeiro e cobrança em uma visão clara
+            para anfitriões e gestores que querem ganhar tempo, reduzir retrabalho e tomar decisões com mais controle.
+          </p>
 
-    <main class="content" id="mainContent" tabindex="-1">
-      <div class="auth-wrap">
-        <div class="card" id="authCard">
-          <div class="auth-brand">
-            <img src="assets/stayflow-logo.png" alt="StayFlow" />
-            <div class="brand-kicker">Sistema de gestão de imóveis por temporada</div>
+          <div class="proof">
+            <div class="proof-item">Sem depender de planilha</div>
+            <div class="proof-item">Menos conflito de agenda</div>
+            <div class="proof-item">Visão centralizada da operação</div>
           </div>
 
-          <div class="grid grid-2 auth-grid">
-            <div class="auth-panel">
-              <div class="auth-panel-heading">
-                <h2>Entrar</h2>
-                <div class="small">Acesse sua operação com segurança.</div>
-              </div>
-              <div class="grid">
-                <label class="form-field">
-                  <span>E-mail</span>
-                  <input type="email" id="loginEmail" placeholder="voce@email.com" autocomplete="email" />
-                </label>
-                <label class="form-field">
-                  <span>Senha</span>
-                  <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" />
-                </label>
-                <button id="loginBtn" type="button">Entrar</button>
-                <button class="auth-link-button" id="showForgotPasswordBtn" type="button">Esqueci minha senha</button>
+          <div class="cta-row">
+            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+            <a class="btn-ghost" href="#como-funciona">Ver como funciona</a>
+          </div>
+
+          <div class="urgency-box">
+            Teste por 15 dias e veja se o fluxo encaixa na sua operação antes de pagar.
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="window-bar">
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+            <span class="window-dot"></span>
+          </div>
+
+          <div class="hero-top">
+            <div class="hero-logo">
+              <div class="mini-mark">S</div>
+              <div>
+                <b>StayFlow</b>
+                <span>Painel operacional em tempo real</span>
               </div>
             </div>
+            <div class="status-pill">● Operação saudável</div>
+          </div>
 
-            <div class="auth-panel">
-              <div class="auth-panel-heading">
-                <h2>Cadastrar usuário</h2>
-                <div class="small">CPF obrigatório para proteger a conta e evitar duplicidade.</div>
+          <div class="dashboard-preview">
+            <div class="panel">
+              <div class="panel-title">Receita prevista do mês</div>
+              <div class="panel-value">R$ 18.420</div>
+              <div class="panel-foot">+12,4% em relação ao mês anterior</div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">Ocupação média</div>
+              <div class="panel-value">84%</div>
+              <div class="panel-foot">5 imóveis com alta demanda</div>
+            </div>
+
+            <div class="panel wide">
+              <div class="panel-title">Origem das reservas</div>
+              <div class="mini-bars">
+                <div class="mini-bar"><span style="width:72%"></span></div>
+                <div class="mini-bar"><span style="width:58%"></span></div>
+                <div class="mini-bar"><span style="width:34%"></span></div>
               </div>
-              <div class="grid">
-                <label class="form-field">
-                  <span>Nome</span>
-                  <input type="text" id="registerName" placeholder="Nome completo" autocomplete="name" />
-                </label>
-                <label class="form-field">
-                  <span>E-mail</span>
-                  <input type="email" id="registerEmail" placeholder="voce@email.com" autocomplete="email" />
-                </label>
-                <label class="form-field">
-                  <span>CPF</span>
-                  <input type="text" id="registerCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" />
-                </label>
-                <label class="form-field">
-                  <span>Senha</span>
-                  <input type="password" id="registerPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
-                </label>
-                <button class="btn-secondary" id="registerBtn" type="button">Cadastrar</button>
+              <div class="panel-foot">Airbnb, Booking e reservas diretas em uma só visão</div>
+            </div>
+
+            <div class="panel wide">
+              <div class="panel-title">Calendário unificado</div>
+              <div class="calendar-mini">
+                <div class="day">12 <span class="tag airbnb"></span></div>
+                <div class="day">13 <span class="tag airbnb"></span></div>
+                <div class="day">14 <span class="tag booking"></span></div>
+                <div class="day">15 <span class="tag booking"></span></div>
+                <div class="day">16 <span class="tag direct"></span></div>
+                <div class="day">17</div>
+                <div class="day">18</div>
               </div>
             </div>
           </div>
-
-          <div class="auth-reset-panel hidden" id="forgotPasswordPanel">
-            <div class="auth-panel-heading">
-              <h2>Recuperar senha</h2>
-              <div class="small">Informe o e-mail da conta. Se ele existir, enviaremos um link seguro para redefinição.</div>
-            </div>
-            <div class="grid grid-2 auth-reset-grid">
-              <label class="form-field">
-                <span>E-mail da conta</span>
-                <input type="email" id="forgotPasswordEmail" placeholder="voce@email.com" autocomplete="email" />
-              </label>
-              <div class="auth-reset-actions">
-                <button class="btn-secondary" id="forgotPasswordBtn" type="button">Enviar instruções</button>
-                <button class="auth-link-button" id="hideForgotPasswordBtn" type="button">Voltar ao login</button>
-              </div>
-            </div>
-            <div class="grid grid-2 auth-reset-grid reset-password-box">
-              <label class="form-field">
-                <span>Token de redefinição</span>
-                <input type="text" id="resetToken" placeholder="Cole o token recebido por e-mail" autocomplete="off" />
-              </label>
-              <label class="form-field">
-                <span>Nova senha</span>
-                <input type="password" id="resetPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
-              </label>
-              <button class="btn-success" id="resetPasswordBtn" type="button">Redefinir senha</button>
-            </div>
-          </div>
-
-          <div id="authMessage"></div>
         </div>
       </div>
+    </section>
 
-      <div id="app" class="hidden">
-        <div class="app-main">
+    <section class="section" id="beneficios">
+      <div class="container">
+        <div class="section-head">
+          <h2>Feito para transformar rotina operacional em controle visível</h2>
+          <p>
+            O StayFlow organiza o que costuma ficar espalhado entre plataformas, mensagens e planilhas.
+            Assim você enxerga reservas, calendário, automações e resultado no mesmo fluxo.
+          </p>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b>1 painel</b><span>para reservas, calendário, mensagens e cobrança</span></div>
+          <div class="stat"><b>Mais clareza</b><span>sobre lucro, ocupação e próximos eventos</span></div>
+          <div class="stat"><b>Menos retrabalho</b><span>na conferência entre Airbnb, Booking e reservas diretas</span></div>
+          <div class="stat"><b>Mais controle</b><span>para crescer sem perder a operação de vista</span></div>
+        </div>
+
+        <div class="comparison">
+          <div class="comparison-card bad">
+            <h3>Antes do StayFlow</h3>
+            <div class="comparison-list">
+              <div><span>✕</span><div>Planilhas, abas e conferência manual todos os dias.</div></div>
+              <div><span>✕</span><div>Risco constante de conflito entre Airbnb, Booking e reservas diretas.</div></div>
+              <div><span>✕</span><div>Visão financeira e operacional espalhada em vários lugares.</div></div>
+            </div>
+          </div>
+          <div class="comparison-card good">
+            <h3>Depois do StayFlow</h3>
+            <div class="comparison-list">
+              <div><span>✓</span><div>Um único painel para enxergar reservas, bloqueios e ocupação.</div></div>
+              <div><span>✓</span><div>Mais controle da agenda e menos chance de overbooking.</div></div>
+              <div><span>✓</span><div>Base profissional para crescer com mais organização.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">↻</div>
+            <h3>SyncFlow™</h3>
+            <p>Conecte calendários iCal do Airbnb e Booking para reduzir conflito de datas e manter a agenda sempre atualizada.</p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">◷</div>
+            <h3>FlowCalendar™</h3>
+            <p>Visualize check-ins, check-outs, bloqueios e reservas diretas em uma agenda clara, bonita e realmente profissional.</p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <h3>Painel operacional</h3>
+            <p>Acompanhe receita prevista, ocupação e pontos de atenção sem abrir várias plataformas ao mesmo tempo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="telas">
+      <div class="container">
+        <div class="section-head">
+          <h2>O painel mostra o que realmente precisa de atenção</h2>
+          <p>
+            Em vez de abrir várias abas para entender o dia, você acompanha resultado, estadias, alertas,
+            mensagens e cobrança dentro de uma experiência única.
+          </p>
+        </div>
+
+        <div class="screens-grid">
+          <div class="screen">
+            <div class="screen-header">
+                <div class="screen-title">Dashboard de resultado</div>
+                <div class="screen-chip">Lucro, ocupação e alertas</div>
+            </div>
+            <div class="screen-body">
+              <div class="screen-dashboard">
+                <div class="side-menu">
+                  <div class="side-item active">Dashboard</div>
+                  <div class="side-item">Imóveis</div>
+                  <div class="side-item">Reservas</div>
+                  <div class="side-item">Calendário</div>
+                  <div class="side-item">Financeiro</div>
+                  <div class="side-item">Automações</div>
+                  <div class="side-item">Cobrança</div>
+                </div>
+                <div class="dash-main">
+                  <div class="dash-row">
+                    <div class="metric"><small>Lucro do mês</small><b>R$ 8.740</b></div>
+                    <div class="metric"><small>Check-ins próximos</small><b>12</b></div>
+                    <div class="metric"><small>Ocupação</small><b>84%</b></div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="panel-title">Linha de lucro e performance dos imóveis</div>
+                    <div class="chart">
+                      <div style="height:48%"></div>
+                      <div style="height:72%"></div>
+                      <div style="height:58%"></div>
+                      <div style="height:85%"></div>
+                      <div style="height:65%"></div>
+                      <div style="height:76%"></div>
+                      <div style="height:61%"></div>
+                      <div style="height:89%"></div>
+                    </div>
+                  </div>
+
+                  <div class="table-card">
+                    <div class="panel-title">Próximas reservas e pontos de atenção</div>
+                    <div class="table">
+                      <div class="row head"><div>Hóspede</div><div>Canal</div><div>Status</div><div>Período</div></div>
+                      <div class="row"><div>Marina Costa</div><div>Airbnb</div><div><span class="status status-ok">Confirmada</span></div><div>14–18 Abr</div></div>
+                      <div class="row"><div>João Nunes</div><div>Booking</div><div><span class="status status-warn">Check-in hoje</span></div><div>21–24 Abr</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="screen-stack">
+            <div class="mini-screen">
+              <div class="screen-header">
+                <div class="screen-title">Automações de mensagens</div>
+                <div class="screen-chip">Menos trabalho manual</div>
+              </div>
+              <div class="mini-content">
+                <div class="message-list">
+                  <div class="message-item">
+                    <strong>Check-in amanhã</strong>
+                    <span>Template automático para enviar instruções ao hóspede.</span>
+                    <span class="status status-ok">Ativa</span>
+                  </div>
+                  <div class="message-item">
+                    <strong>Lembrete de checkout</strong>
+                    <span>Gatilho configurado para o último dia da reserva.</span>
+                    <span class="status status-ok">Ativa</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-screen">
+              <div class="screen-header">
+                <div class="screen-title">Assinatura e cobrança</div>
+                <div class="screen-chip">Plano simples e transparente</div>
+              </div>
+              <div class="mini-content">
+                <div class="billing-list">
+                  <div class="billing-item">
+                    <div class="billing-top">
+                      <strong>Plano Pro</strong>
+                      <span class="status status-ok">Ativo</span>
+                    </div>
+                    <span>Próxima cobrança em 07/05</span>
+                  </div>
+                  <div class="billing-item">
+                    <div class="billing-top">
+                      <strong>Fatura #1048</strong>
+                      <span class="status status-ok">Pago</span>
+                    </div>
+                    <span>R$ 79,00 • link da fatura disponível</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-screen">
+              <div class="screen-header">
+                <div class="screen-title">Calendário unificado</div>
+                <div class="screen-chip">Airbnb + Booking + direto</div>
+              </div>
+              <div class="mini-content">
+                <div class="calendar-mini">
+                  <div class="day">18 <span class="tag airbnb"></span></div>
+                  <div class="day">19 <span class="tag booking"></span></div>
+                  <div class="day">20</div>
+                  <div class="day">21 <span class="tag direct"></span></div>
+                  <div class="day">22 <span class="tag direct"></span></div>
+                  <div class="day">23</div>
+                  <div class="day">24 <span class="tag airbnb"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="como-funciona">
+      <div class="container">
+        <div class="section-head">
+          <h2>Configure o fluxo principal em poucos minutos</h2>
+          <p>
+            A configuração é simples: você conecta as fontes da operação e passa a acompanhar tudo com mais clareza.
+          </p>
+        </div>
+
+        <div class="split">
           <div class="card">
-            <div class="topbar">
-              <div>
-                <h2 class="page-header-title" id="pageTitle">Dashboard</h2>
-                <div class="small" id="userInfo">Usuário logado</div>
+            <h3>Do cadastro ao controle em 4 passos</h3>
+            <p>
+              Sem setup técnico pesado: o StayFlow guia o básico para sua operação começar a gerar valor.
+            </p>
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div><b>Cadastre o imóvel</b><span>Crie o contexto da operação e organize cada unidade em um painel único.</span></div>
               </div>
-              <div class="topbar-actions">
-                <div class="selected-property-chip" id="selectedPropertyBadge">Nenhum imóvel selecionado</div>
-                <button class="btn-danger" id="logoutBtn" type="button" aria-label="Sair da conta">Sair</button>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div><b>Conecte o iCal</b><span>Sincronize disponibilidade de Airbnb e Booking para reduzir conflito de agenda.</span></div>
               </div>
-            </div>
-          </div>
-
-          <div class="access-restriction-banner hidden" id="accessRestrictionBanner">
-            <div>
-              <strong id="accessRestrictionTitle">Acesso limitado</strong>
-              <span id="accessRestrictionText">Regularize sua assinatura para voltar a usar todos os recursos.</span>
-            </div>
-            <button type="button" id="accessRestrictionCta">Ver cobrança</button>
-          </div>
-
-          <div class="onboarding-shell hidden" id="onboardingShell">
-            <div class="onboarding-card">
-              <div class="onboarding-top">
-                <div>
-                  <div class="brand-kicker">Configuração guiada</div>
-                  <h2 id="onboardingTitle">Bem-vindo ao StayFlow</h2>
-                  <div class="small" id="onboardingSubtitle">Em poucos minutos você deixa sua operação pronta para acompanhar reservas, calendários e mensagens.</div>
-                </div>
-                <button type="button" class="auth-link-button" id="onboardingSkipBtn">Pular por agora</button>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div><b>Receba eventos</b><span>Use o e-mail do StayFlow para centralizar reservas, alterações e cancelamentos.</span></div>
               </div>
-
-              <div class="onboarding-progress">
-                <div class="onboarding-progress-meta">
-                  <span id="onboardingStepText">Etapa 1 de 5</span>
-                  <span id="onboardingProgressPercent">20%</span>
-                </div>
-                <div class="onboarding-progress-track">
-                  <div id="onboardingProgressBar"></div>
-                </div>
-              </div>
-
-              <div class="onboarding-body">
-                <div class="onboarding-step" data-onboarding-step="1">
-                  <div class="onboarding-hero">
-                    <div>
-                      <h3>Vamos chegar ao primeiro valor rápido.</h3>
-                      <p>O StayFlow funciona melhor quando já conhece seu primeiro imóvel, seus calendários e o e-mail de notificações das plataformas.</p>
-                    </div>
-                    <div class="onboarding-benefits">
-                      <div><strong>1</strong><span>Centralize reservas</span></div>
-                      <div><strong>2</strong><span>Evite conflitos de calendário</span></div>
-                      <div><strong>3</strong><span>Prepare automações</span></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="2">
-                  <div class="grid grid-2">
-                    <div>
-                      <h3>Cadastre seu primeiro imóvel</h3>
-                      <p class="small">Use o link do anúncio para ajudar o StayFlow a identificar reservas recebidas por e-mail.</p>
-                    </div>
-                    <div class="onboarding-form">
-                      <label class="form-field"><span>Nome do imóvel</span><input type="text" id="onboardingPropertyName" placeholder="Ex: Studio Vista Mar" /></label>
-                      <label class="form-field"><span>Cidade</span><input type="text" id="onboardingPropertyCity" placeholder="Ex: Rio de Janeiro" /></label>
-                      <label class="form-field"><span>URL do anúncio</span><input type="text" id="onboardingListingUrl" placeholder="Link do Airbnb, Booking ou outra plataforma" /></label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="3">
-                  <div class="onboarding-section-heading">
-                    <h3>Conecte calendário e e-mail do StayFlow</h3>
-                    <p class="small">Configure os dois canais essenciais: o iCal mantém sua agenda sincronizada e o e-mail do StayFlow ajuda a identificar reservas, alterações e cancelamentos automaticamente.</p>
-                  </div>
-
-                  <div class="integration-concept-grid">
-                    <div class="concept-card">
-                      <span>Calendário iCal</span>
-                      <strong>Sincroniza disponibilidade</strong>
-                      <p>Use os links iCal do Airbnb e Booking para manter datas bloqueadas e reduzir conflitos de calendário.</p>
-                    </div>
-                    <div class="concept-card">
-                      <span>E-mail do StayFlow</span>
-                      <strong>Recebe eventos das plataformas</strong>
-                      <p>Cadastre este e-mail nas notificações para o StayFlow reconhecer novas reservas, mudanças e cancelamentos.</p>
-                    </div>
-                  </div>
-
-                  <div class="integration-email-callout">
-                    <div>
-                      <span class="small">E-mail do StayFlow para notificações</span>
-                      <strong id="onboardingIntegrationEmailText">Carregando e-mail...</strong>
-                      <p>Cadastre este e-mail nas notificações do Airbnb e Booking para o StayFlow identificar reservas, alterações e cancelamentos automaticamente.</p>
-                    </div>
-                    <div class="integration-email-actions">
-                      <button type="button" class="btn-secondary" data-copy-integration-email>Copiar e-mail</button>
-                      <button type="button" class="auth-link-button" id="onboardingEmailUnderstoodBtn">Já entendi</button>
-                    </div>
-                  </div>
-
-                  <div class="integration-guide-label">1. Pegue o link iCal de calendário</div>
-                  <div class="ical-guide-grid">
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Airbnb</span><small>Link iCal</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Entre no anúncio que será conectado ao StayFlow.</span></div>
-                        <div><strong>2</strong><span>Abra a área de calendário ou disponibilidade.</span></div>
-                        <div><strong>3</strong><span>Localize a opção de exportar ou compartilhar calendário.</span></div>
-                        <div><strong>4</strong><span>Copie o link iCal gerado pelo Airbnb.</span></div>
-                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
-                      </div>
-                      <label class="form-field"><span>iCal Airbnb</span><input type="text" id="onboardingAirbnbIcal" placeholder="https://www.airbnb.com/calendar/ical/..." /></label>
-                    </div>
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Booking</span><small>Link iCal</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Entre na extranet ou painel do Booking.</span></div>
-                        <div><strong>2</strong><span>Abra a área de calendário ou sincronização.</span></div>
-                        <div><strong>3</strong><span>Localize o link iCal do imóvel.</span></div>
-                        <div><strong>4</strong><span>Copie o link indicado pela plataforma.</span></div>
-                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
-                      </div>
-                      <label class="form-field"><span>iCal Booking</span><input type="text" id="onboardingBookingIcal" placeholder="https://admin.booking.com/hotel/..." /></label>
-                    </div>
-                  </div>
-
-                  <div class="integration-guide-label">2. Cadastre o e-mail do StayFlow nas notificações</div>
-                  <div class="ical-guide-grid notification-guide-grid">
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Airbnb</span><small>E-mail</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Abra as configurações da conta ou do anúncio.</span></div>
-                        <div><strong>2</strong><span>Procure notificações, contatos ou mensagens por e-mail.</span></div>
-                        <div><strong>3</strong><span>Adicione o e-mail do StayFlow como destinatário quando disponível.</span></div>
-                        <div><strong>4</strong><span>Salve para que eventos cheguem automaticamente ao StayFlow.</span></div>
-                      </div>
-                    </div>
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Booking</span><small>E-mail</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Acesse a extranet do Booking.</span></div>
-                        <div><strong>2</strong><span>Procure conta, contatos ou notificações por e-mail.</span></div>
-                        <div><strong>3</strong><span>Inclua o e-mail do StayFlow como contato de notificações.</span></div>
-                        <div><strong>4</strong><span>Mantenha esse e-mail ativo para receber reservas e alterações.</span></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div id="onboardingCalendarFeedback" class="small"></div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="4">
-                  <div class="grid grid-2">
-                    <div>
-                      <h3>Ative sua primeira automação</h3>
-                      <p class="small">Comece com uma mensagem simples de pré-check-in. Você pode editar tudo depois na aba Automação de mensagens.</p>
-                      <label class="automation-toggle-card">
-                        <input type="checkbox" id="onboardingEnableAutomation" checked />
-                        <span><strong>Ativar automação inicial</strong><small>Preparar mensagem de pré-check-in para hóspedes futuros.</small></span>
-                      </label>
-                    </div>
-                    <div class="message-preview-card">
-                      <span class="small">Preview</span>
-                      <p>Olá {nome_hospede}, seu check-in está chegando. Em breve enviaremos as informações do imóvel {nome_imovel} para deixar sua chegada tranquila.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="5">
-                  <div class="onboarding-complete">
-                    <div class="complete-mark">✓</div>
-                    <h3>Sua conta está pronta para operar</h3>
-                    <p>Você já conectou o caminho essencial: imóvel, calendário, e-mail do StayFlow e automação inicial. Agora o painel passa a ser sua central de operação.</p>
-                    <div class="onboarding-benefits">
-                      <div><strong>✓</strong><span>Imóvel inicial criado</span></div>
-                      <div><strong>✓</strong><span>Calendário e e-mail entendidos</span></div>
-                      <div><strong>✓</strong><span>Painel liberado</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="onboardingMessage"></div>
-
-              <div class="onboarding-actions">
-                <button type="button" class="btn-secondary hidden" id="onboardingBackBtn" aria-label="Voltar etapa do onboarding">Voltar</button>
-                <button type="button" id="onboardingNextBtn" aria-label="Avançar etapa do onboarding">Começar configuração</button>
+              <div class="step">
+                <div class="step-num">4</div>
+                <div><b>Acompanhe e automatize</b><span>Veja alertas, resultado e mensagens automáticas sem depender de conferência manual.</span></div>
               </div>
             </div>
           </div>
 
-          <section id="section-dashboard" class="section">
-            <div class="section-heading dashboard-hero-heading">
-              <div>
-                <div class="brand-kicker">Painel executivo</div>
-                <h2>Como está sua operação agora?</h2>
-                <div class="small">Resultado financeiro, ocupação, próximas estadias e alertas para decidir rápido.</div>
+          <div class="card">
+            <h3>Por que passa mais confiança</h3>
+            <p>
+              Porque a experiência mostra que sua operação tem processo: dados claros, alertas visíveis e cobrança organizada.
+            </p>
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">✓</div>
+                <div><b>Operação organizada</b><span>Menos improviso e mais clareza sobre o que acontece em cada imóvel.</span></div>
               </div>
-              <div class="quick-actions">
-                <button type="button" class="btn-secondary" data-section-jump="properties">Cadastrar imóvel</button>
-                <button type="button" class="btn-success" data-section-jump="reservations">Nova reserva</button>
-                <button type="button" data-section-jump="financial">Novo lançamento</button>
+              <div class="step">
+                <div class="step-num">✓</div>
+                <div><b>Valor fácil de entender</b><span>O usuário vê lucro, ocupação, alertas e próximos eventos rapidamente.</span></div>
               </div>
-            </div>
-
-            <div class="activation-panel" id="activationPanel">
-              <div class="activation-panel-hero">
-                <div>
-                  <div class="brand-kicker">Ativação guiada</div>
-                  <h2>Automatize em 4 passos</h2>
-                  <p>Configure o caminho principal para o StayFlow identificar reservas, sincronizar calendários e enviar mensagens sem trabalho manual.</p>
-                </div>
-                <div class="activation-score">
-                  <span id="activationProgressPercent">0%</span>
-                  <small id="activationProgressText">0 de 4 concluídos</small>
-                </div>
-              </div>
-              <div class="activation-track"><span id="activationProgressBar"></span></div>
-              <div class="activation-next-card">
-                <div>
-                  <span>Próxima ação recomendada</span>
-                  <strong id="activationNextTitle">Criar o primeiro imóvel</strong>
-                  <small id="activationNextDescription">Cadastre o imóvel principal para liberar calendário, reservas e automações.</small>
-                </div>
-                <button type="button" id="activationNextCta">Começar agora</button>
-              </div>
-              <div class="activation-context-note" id="activationContextNote">
-                Comece pelo imóvel principal. Depois o StayFlow guia você para calendário, e-mail de integração e automação.
-              </div>
-              <div class="activation-steps-grid" id="activationStepsGrid"></div>
-            </div>
-
-            <div class="dashboard-kpi-grid">
-              <div class="summary-card dashboard-primary-kpi">
-                <div class="summary-label">Lucro do mês</div>
-                <div class="summary-value profit-value" id="summaryProfit">R$ 0,00</div>
-                <div class="small">Resultado depois das despesas registradas.</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Receita total</div>
-                <div class="summary-value income-value" id="summaryIncome">R$ 0,00</div>
-                <div class="small">Entradas do período selecionado.</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Despesas</div>
-                <div class="summary-value expense-value" id="summaryExpense">R$ 0,00</div>
-                <div class="small">Custos e saídas operacionais.</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Ocupação</div>
-                <div class="summary-value" id="summaryOccupancy">0%</div>
-                <div class="small">Estimativa do mês para o imóvel atual.</div>
+              <div class="step">
+                <div class="step-num">✓</div>
+                <div><b>Produto pronto para operar</b><span>Login, dashboard, cobrança, automações, reservas e operação no mesmo fluxo.</span></div>
               </div>
             </div>
-
-            <div class="dashboard-operations-grid">
-              <div class="card dashboard-panel">
-                <div class="section-heading">
-                  <div>
-                    <h3>Operação</h3>
-                    <div class="small">O que está chegando nos próximos dias.</div>
-                  </div>
-                  <button class="btn-secondary" id="syncPropertyBtn" type="button">Sincronizar imóvel</button>
-                </div>
-                <div class="dashboard-mini-grid">
-                  <div class="dashboard-mini-card">
-                    <span>Próximas reservas</span>
-                    <strong id="dashboardUpcomingReservations">0</strong>
-                    <small id="dashboardUpcomingReservationsText">Nenhuma reserva futura.</small>
-                  </div>
-                  <div class="dashboard-mini-card">
-                    <span>Check-ins próximos</span>
-                    <strong id="dashboardUpcomingCheckins">0</strong>
-                    <small>Entradas nos próximos 7 dias.</small>
-                  </div>
-                  <div class="dashboard-mini-card">
-                    <span>Check-outs próximos</span>
-                    <strong id="dashboardUpcomingCheckouts">0</strong>
-                    <small>Saídas nos próximos 7 dias.</small>
-                  </div>
-                </div>
-                <div class="dashboard-selected-property">
-                  <div id="selectedPropertyInfo" class="small">Selecione um imóvel</div>
-                  <div class="link-box" id="icalLinkBox">Link do iCal aparecerá aqui</div>
-                </div>
-              </div>
-
-              <div class="card dashboard-panel dashboard-alert-panel">
-                <div class="section-heading">
-                  <div>
-                    <h3>Alertas</h3>
-                    <div class="small">Prioridades que podem travar automação ou atendimento.</div>
-                  </div>
-                </div>
-                <div class="dashboard-alert-list">
-                  <div class="dashboard-alert-item">
-                    <span>Reservas sem contato</span>
-                    <strong id="dashboardNoContact">0</strong>
-                    <small>Precisam de e-mail ou telefone útil.</small>
-                  </div>
-                  <div class="dashboard-alert-item">
-                    <span>Problemas de automação</span>
-                    <strong id="dashboardAutomationIssues">0</strong>
-                    <small>Mensagens pendentes, em erro ou sem contato.</small>
-                  </div>
-                  <div class="dashboard-alert-item">
-                    <span>Erros recentes</span>
-                    <strong id="dashboardRecentErrors">0</strong>
-                    <small>Falhas que merecem revisão.</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="dashboard-grid" id="dashboardSecondaryContent">
-              <div class="card dashboard-panel">
-                <div class="section-heading">
-                  <div>
-                    <h3>Performance dos imóveis</h3>
-                    <div class="small">Ranking, melhor imóvel e pior desempenho pelo resultado financeiro.</div>
-                  </div>
-                </div>
-                <div class="dashboard-performance-grid">
-                  <div class="dashboard-mini-card dashboard-best-card">
-                    <span>Melhor imóvel</span>
-                    <strong id="dashboardBestProperty">-</strong>
-                    <small id="dashboardBestPropertyValue">Sem dados suficientes.</small>
-                  </div>
-                  <div class="dashboard-mini-card dashboard-worst-card">
-                    <span>Pior desempenho</span>
-                    <strong id="dashboardWorstProperty">-</strong>
-                    <small id="dashboardWorstPropertyValue">Sem dados suficientes.</small>
-                  </div>
-                </div>
-                <div id="propertyRankingContent" class="ranking-list">
-                  <div class="small">O ranking aparece depois que você tiver imóveis e reservas suficientes para comparar desempenho.</div>
-                </div>
-              </div>
-
-              <div class="card dashboard-panel">
-                <div class="section-heading">
-                  <div>
-                    <h3>Linha de lucro</h3>
-                    <div class="small">Evolução do lucro ao longo dos últimos meses.</div>
-                  </div>
-                  <div class="dashboard-chart-select">
-                    <select id="dashboardChartProperty">
-                      <option value="">Todos os imóveis</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="chart-card">
-                  <div class="chart-legend">
-                    <div class="chart-legend-item">
-                      <span class="chart-legend-line line-profit"></span>
-                      <span>Lucro</span>
-                    </div>
-                  </div>
-                  <div class="chart-wrap" id="lineChartContainer">
-                    <div class="chart-empty">Cadastre seu primeiro imóvel e conecte o iCal para começar a formar histórico de operação.</div>
-                  </div>
-                </div>
-                <div class="hidden">
-                  <div class="chart-wrap" id="propertyProfitChartContainer"></div>
-                  <div id="propertyProfitLegend" class="property-lines-legend"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="hidden" id="summaryPending">R$ 0,00</div>
-            <div id="syncMessage"></div>
-          </section>
-
-          <section id="section-operations" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Operação</h2>
-                <div class="small">Controle de mensagens, inbound emails e ações que precisam de atenção.</div>
-              </div>
-              <div class="actions-inline">
-                <button type="button" class="btn-secondary" id="operationRefreshBtn">Atualizar operação</button>
-              </div>
-            </div>
-            <div id="operationFeedback"></div>
-            <div class="operation-summary-grid">
-              <div class="operation-card"><div class="summary-label">Enviadas hoje</div><div class="summary-value" id="operationSentToday">0</div><div class="small">Mensagens com envio registrado no dia.</div></div>
-              <div class="operation-card"><div class="summary-label">Pendentes</div><div class="summary-value pending-value" id="operationPendingCount">0</div><div class="small">Aguardando processamento ou envio.</div></div>
-              <div class="operation-card"><div class="summary-label">Com erro</div><div class="summary-value expense-value" id="operationFailedCount">0</div><div class="small">Precisam de correção ou reprocessamento.</div></div>
-              <div class="operation-card"><div class="summary-label">Precisam de contato</div><div class="summary-value" id="operationNeedsContactCount">0</div><div class="small">Reservas sem email/telefone útil.</div></div>
-            </div>
-            <div class="card operation-attention-card">
-              <div class="section-heading compact-heading">
-                <div>
-                  <h3>Atenção necessária</h3>
-                  <div class="small">Itens que podem impedir automação correta ou exigir revisão manual.</div>
-                </div>
-              </div>
-              <div id="operationAttentionList" class="operation-attention-list">
-                <div class="operation-empty-row">Carregue a operação para ver prioridades.</div>
-              </div>
-            </div>
-            <div class="card operation-filters-card">
-              <div class="section-heading compact-heading"><div><h3>Filtros</h3><div class="small">Use para reduzir ruído e atuar por prioridade.</div></div></div>
-              <div class="operation-filters-grid">
-                <label><span>Status</span><select id="operationStatusFilter"><option value="">Todos</option><option value="pending">Pendentes</option><option value="queued">Na fila</option><option value="sent">Enviadas / processados</option><option value="failed">Com erro</option><option value="needs_contact">Precisam de contato</option><option value="ignored">Ignorados</option></select></label>
-                <label><span>Imóvel</span><select id="operationPropertyFilter"><option value="">Todos os imóveis</option></select></label>
-                <label><span>De</span><input type="date" id="operationFromFilter" /></label>
-                <label><span>Até</span><input type="date" id="operationToFilter" /></label>
-                <div class="operation-filter-actions"><button type="button" id="operationApplyFiltersBtn">Aplicar</button><button type="button" class="btn-secondary" id="operationClearFiltersBtn">Limpar</button></div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="section-heading"><div><h3>Tabela de mensagens</h3><div class="small">Reprocesse falhas, force envios e veja o contexto de cada automação.</div></div></div>
-              <div class="table-wrap operation-table-wrap"><table class="operation-table"><thead><tr><th>Status</th><th>Hóspede</th><th>Imóvel</th><th>Data agendada</th><th>Canal</th><th>Ação</th></tr></thead><tbody id="operationMessagesTableBody"><tr><td colspan="6">Nenhuma mensagem carregada.</td></tr></tbody></table></div>
-            </div>
-            <div class="card">
-              <div class="section-heading"><div><h3>Inbound emails</h3><div class="small">Audite parser, score, plataforma e reconciliação de reservas.</div></div></div>
-              <div class="table-wrap operation-table-wrap"><table class="operation-table"><thead><tr><th>Status</th><th>Plataforma</th><th>Ação</th><th>Confiança</th><th>Imóvel identificado</th><th>Ação</th></tr></thead><tbody id="operationInboundTableBody"><tr><td colspan="6">Nenhum inbound carregado.</td></tr></tbody></table></div>
-            </div>
-            <div class="card operation-details-card hidden" id="operationDetailsCard">
-              <div class="section-heading"><div><h3>Detalhes</h3><div class="small">Contexto operacional do item selecionado, com resumo e inspeção técnica.</div></div><button type="button" class="btn-secondary" id="operationCloseDetailsBtn">Fechar</button></div>
-              <div id="operationDetailsContent" class="operation-details-content"></div>
-            </div>
-          </section>
-
-          <section id="section-my-info" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Minhas informações</h2>
-                <div class="small">Dados da conta e e-mail de notificações para configurar Airbnb, Booking e outras plataformas.</div>
-              </div>
-              <button type="button" class="btn-secondary" id="refreshMyInfoBtn">Atualizar</button>
-            </div>
-
-            <div class="my-info-grid">
-              <div class="card">
-                <h3>Dados pessoais</h3>
-                <div class="info-list">
-                  <div class="info-row"><span>Nome</span><strong id="myInfoName">-</strong></div>
-                  <div class="info-row"><span>E-mail</span><strong id="myInfoEmail">-</strong></div>
-                  <div class="info-row"><span>CPF</span><strong id="myInfoCpf">-</strong></div>
-                  <div class="info-row"><span>Configuração</span><strong id="myInfoSetupStatus">Pendente</strong></div>
-                </div>
-              </div>
-
-              <div class="card integration-email-reference-card">
-                <div class="section-heading">
-                  <div>
-                    <h3>E-mail do StayFlow</h3>
-                    <div class="small">Cadastre este e-mail nas notificações das plataformas para o StayFlow receber eventos automaticamente.</div>
-                  </div>
-                </div>
-                <div class="integration-email-display" id="myInfoIntegrationEmail">Carregando...</div>
-                <div class="activation-strip">
-                  <span id="myInfoOnboardingStatus">Onboarding pendente</span>
-                  <small>Use este e-mail em Airbnb, Booking e outras plataformas para centralizar notificações.</small>
-                </div>
-                <div class="actions-inline">
-                  <button type="button" class="btn-secondary" id="copyMyIntegrationEmailBtn">Copiar e-mail</button>
-                  <button type="button" id="openOnboardingBtn">Continuar onboarding</button>
-                </div>
-                <div id="myInfoMessage"></div>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>Como usar este e-mail</h3>
-              <p class="small">Ele deve ser cadastrado nas notificações das plataformas. Assim, o StayFlow recebe eventos importantes sem depender de trabalho manual.</p>
-              <div class="ical-guide-grid">
-                <div class="ical-guide-card">
-                  <div class="guide-card-title"><span>Airbnb</span><small>E-mail</small></div>
-                  <div class="visual-steps">
-                    <div><strong>1</strong><span>Abra o anúncio ou configurações da conta.</span></div>
-                    <div><strong>2</strong><span>Procure notificações, contatos ou mensagens.</span></div>
-                    <div><strong>3</strong><span>Adicione o e-mail do StayFlow quando disponível.</span></div>
-                    <div><strong>4</strong><span>Salve e mantenha esse e-mail como contato de eventos.</span></div>
-                  </div>
-                </div>
-                <div class="ical-guide-card">
-                  <div class="guide-card-title"><span>Booking</span><small>E-mail</small></div>
-                  <div class="visual-steps">
-                    <div><strong>1</strong><span>Acesse a extranet do Booking.</span></div>
-                    <div><strong>2</strong><span>Procure conta, contatos ou notificações.</span></div>
-                    <div><strong>3</strong><span>Use o e-mail do StayFlow para receber reservas e alterações.</span></div>
-                    <div><strong>4</strong><span>Confirme a alteração e acompanhe os eventos no painel.</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="section-properties" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Imóveis</h2>
-                <div class="small">Cadastre, selecione e acompanhe os imóveis</div>
-              </div>
-            </div>
-
-            <div class="grid grid-2">
-              <div class="card">
-                <div class="form-card-header">
-                  <h3>Cadastrar imóvel</h3>
-                  <div class="small">Primeiro cadastre o imóvel, depois conecte os links iCal se quiser sincronização.</div>
-                </div>
-
-                <div class="grid">
-  <input type="text" id="propertyName" placeholder="Nome do imóvel" />
-  <textarea id="propertyDescription" placeholder="Descrição"></textarea>
-  <input type="text" id="propertyAddress" placeholder="Endereço" />
-  <input type="text" id="propertyCity" placeholder="Cidade" />
-  <input type="text" id="propertyState" placeholder="Estado" />
-  <input type="text" id="propertyCountry" placeholder="País" value="Brasil" />
-  <input type="text" id="propertyListingUrl" placeholder="Link do anúncio (obrigatório)" />
-  <input type="text" id="propertyAirbnbIcal" placeholder="Link iCal do Airbnb (opcional)" />
-  <input type="text" id="propertyBookingIcal" placeholder="Link iCal do Booking (opcional)" />
-  <div class="small" style="margin-top:-6px;">
-    Informe o link do anúncio para o sistema identificar automaticamente o imóvel nas reservas recebidas por e-mail.
-  </div>
-  <button id="createPropertyBtn" type="button">Cadastrar imóvel</button>
-</div>
-                <div id="propertyMessage"></div>
-              </div>
-
-              <div class="card">
-                <div class="table-title-row">
-                  <div>
-                    <h3>Seus imóveis</h3>
-                    <div class="small">Clique em um imóvel para torná-lo o contexto principal do sistema.</div>
-                  </div>
-                </div>
-                <div class="property-list" id="propertyList"></div>
-              </div>
-            </div>
-          </section>
-
-          <section id="section-reservations" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Reservas</h2>
-                <div class="small">Cadastre reservas manuais ou bloqueios e acompanhe o retorno por reserva</div>
-              </div>
-            </div>
-
-            <div class="grid grid-2">
-              <div class="card">
-                <div class="form-card-header">
-                  <h3>Criar reserva ou bloqueio</h3>
-                  <div class="small">O imóvel selecionado já vem preenchido para reduzir cliques.</div>
-                </div>
-
-                <div class="grid">
-                  <select id="reservationProperty"></select>
-                  <input type="text" id="guestName" placeholder="Nome do hóspede (ou deixe vazio no bloqueio)" />
-                  <input type="email" id="guestEmail" placeholder="E-mail do hóspede (opcional)" />
-                  <input type="text" id="guestPhone" placeholder="Telefone do hóspede (opcional)" />
-                  <input type="date" id="reservationStartDate" />
-                  <input type="date" id="reservationEndDate" />
-                  <input type="number" step="0.01" id="reservationTotalAmount" placeholder="Valor da reserva (opcional)" />
-                  <textarea id="reservationNotes" placeholder="Observações (opcional)"></textarea>
-                  <select id="reservationType">
-                    <option value="manual">Reserva manual</option>
-                    <option value="blocked">Bloqueio</option>
-                  </select>
-                  <button class="btn-success" id="createReservationBtn" type="button">Criar reserva / bloqueio</button>
-                </div>
-                <div id="reservationMessage"></div>
-              </div>
-
-              <div class="card">
-                <h3>Resultado financeiro da reserva</h3>
-                <div class="small">Use o botão “Ver lucro” na tabela para abrir os detalhes completos na área Financeiro.</div>
-                <div class="empty-state" style="margin-top:12px;">
-                  Assim você mantém esta tela focada em cadastro e consulta de reservas, sem misturar lançamentos financeiros aqui.
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="table-title-row">
-                <div>
-                  <h3>Reservas do imóvel selecionado</h3>
-                  <div class="small">Ações rápidas concentradas em uma tabela só.</div>
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Hóspede</th>
-                      <th>Origem</th>
-                      <th>Início</th>
-                      <th>Fim</th>
-                      <th>Valor</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="reservationsTableBody">
-                    <tr>
-                      <td colspan="8">Nenhuma reserva carregada</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="card reservation-details-card hidden" id="reservationDetailsCard">
-              <div class="section-heading">
-                <div>
-                  <h3>Detalhes da reserva</h3>
-                  <div class="small">Visão operacional com hóspede, imóvel, financeiro, mensagens e inbound relacionado.</div>
-                </div>
-                <button type="button" class="btn-secondary" id="closeReservationDetailsBtn">Fechar</button>
-              </div>
-              <div id="reservationDetailsContent" class="reservation-details-content"></div>
-            </div>
-          </section>
-
-          <section id="section-calendar" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Calendário</h2>
-                <div class="small">Visualize rapidamente ocupação, bloqueios e origens das reservas</div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="calendar-helper-grid">
-                <div class="calendar-day-summary">
-                  <div>
-                    <h3 style="margin-bottom: 6px;">Dia selecionado</h3>
-                    <div id="calendarSelectedDateText" class="small">Clique em um dia vazio para criar reserva ou bloqueio. Clique em um evento para abrir a reserva.</div>
-                  </div>
-                  <div id="calendarSelectedDateMeta" class="small">O calendário agora funciona como atalho operacional.</div>
-                </div>
-                <div class="calendar-helper-actions">
-                  <button type="button" class="btn-success" id="calendarCreateReservationBtn" disabled>Criar reserva nessa data</button>
-                  <button type="button" class="btn-danger" id="calendarBlockDateBtn" disabled>Bloquear essa data</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="calendar-header">
-                <h3 id="monthTitle">Calendário</h3>
-                <div class="calendar-nav">
-                  <button id="prevMonthBtn" type="button" aria-label="Ver mês anterior">Mês anterior</button>
-                  <button id="nextMonthBtn" type="button" aria-label="Ver próximo mês">Próximo mês</button>
-                </div>
-              </div>
-
-              <div class="weekdays">
-                <div class="weekday">Dom</div>
-                <div class="weekday">Seg</div>
-                <div class="weekday">Ter</div>
-                <div class="weekday">Qua</div>
-                <div class="weekday">Qui</div>
-                <div class="weekday">Sex</div>
-                <div class="weekday">Sáb</div>
-              </div>
-
-              <div class="calendar-grid" id="calendarGrid"></div>
-
-              <div class="legend">
-                <div class="legend-item"><span class="legend-color" style="background:#2563eb;"></span> Reserva manual</div>
-                <div class="legend-item"><span class="legend-color" style="background:#dc2626;"></span> Bloqueio</div>
-                <div class="legend-item"><span class="legend-color" style="background:#f97316;"></span> Airbnb</div>
-                <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span> Booking</div>
-              </div>
-            </div>
-          </section>
-
-          
-
-          <section id="section-messages" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Automação de mensagens</h2>
-                <div class="small">Configure mensagens automáticas por imóvel e acompanhe os últimos envios</div>
-              </div>
-            </div>
-
-            <div class="grid grid-2">
-              <div class="card" id="messageAutomationFormCard">
-                <div class="form-card-header">
-                  <h3 id="messageAutomationFormTitle">Nova automação</h3>
-                  <div class="small">Defina quando a mensagem será enviada e personalize o texto.</div>
-                </div>
-
-                <div class="grid">
-                  <select id="messageProperty"></select>
-                  <select id="messageTrigger">
-                    <option value="pre_check_in">Pré check-in</option>
-                    <option value="check_in">Check-in</option>
-                    <option value="during_stay">Durante a estadia</option>
-                    <option value="check_out">Check-out</option>
-                    <option value="post_check_out">Pós check-out</option>
-                  </select>
-                  <input type="number" id="messageOffsetDays" placeholder="Dias de antecedência ou atraso (ex: 1, 0, -1)" />
-                  <input type="time" id="messageSendTime" />
-                  <textarea id="messageTemplate" placeholder="Mensagem automática. Exemplo: Olá {nome_hospede}, seu check-in será em {data_checkin}."></textarea>
-                  <select id="messageStatus">
-                    <option value="active">Ativa</option>
-                    <option value="inactive">Inativa</option>
-                  </select>
-                  <div class="hint-box">
-                    Você pode usar textos como {nome_hospede}, {data_checkin}, {data_checkout} e {nome_imovel} se seu backend já fizer essa substituição.
-                  </div>
-                  <div class="actions-inline">
-                    <button class="btn-success" id="saveMessageAutomationBtn" type="button">Salvar automação</button>
-                    <button type="button" class="btn-warning hidden" id="cancelEditMessageAutomationBtn">Cancelar edição</button>
-                  </div>
-                </div>
-                <div id="messageAutomationMessage"></div>
-              </div>
-
-              <div class="stack">
-                <div class="card">
-                  <h3>Resumo da automação</h3>
-                  <div class="info-list">
-                    <div class="info-row"><span>Total de automações</span><strong id="messageAutomationCount">0</strong></div>
-                    <div class="info-row"><span>Ativas</span><strong id="messageAutomationActiveCount">0</strong></div>
-                    <div class="info-row"><span>Inativas</span><strong id="messageAutomationInactiveCount">0</strong></div>
-                    <div class="info-row"><span>Logs gerados</span><strong id="messageAutomationGeneratedCount">0</strong></div>
-                    <div class="info-row"><span>Falhas recentes</span><strong id="messageAutomationFailureCount">0</strong></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="table-title-row">
-                <div>
-                  <h3>Automações cadastradas</h3>
-                  <div class="small">Edite, ative ou exclua cada regra de mensagem.</div>
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Imóvel</th>
-                      <th>Disparo</th>
-                      <th>Dias</th>
-                      <th>Horário</th>
-                      <th>Status</th>
-                      <th>Operação</th>
-                      <th>Mensagem</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="messageAutomationTableBody">
-                    <tr>
-                      <td colspan="8">Nenhuma automação cadastrada</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section id="section-message-status" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Status das mensagens</h2>
-                <div class="small">Acompanhe envios, pendências, erros e contatos ausentes em um único lugar.</div>
-              </div>
-            </div>
-
-                <div class="card">
-                  <div class="section-heading">
-                    <div>
-                      <h3>Operação das mensagens</h3>
-                      <div class="small">Acompanhe pendências, falhas, envios e contatos ausentes em tempo real.</div>
-                    </div>
-                    <div class="actions-inline">
-                      <button type="button" class="btn-secondary" id="refreshMessageLogsBtn">Atualizar logs</button>
-                    </div>
-                  </div>
-
-                  <div class="grid-4 compact-summary-grid">
-                    <div class="summary-card">
-                      <div class="summary-label">Total de logs</div>
-                      <div class="summary-value" id="messageLogTotalCount">0</div>
-                    </div>
-                    <div class="summary-card">
-                      <div class="summary-label">Pendentes</div>
-                      <div class="summary-value" id="messageLogPendingCount">0</div>
-                    </div>
-                    <div class="summary-card">
-                      <div class="summary-label">Sem contato</div>
-                      <div class="summary-value" id="messageLogNeedsContactCount">0</div>
-                    </div>
-                    <div class="summary-card">
-                      <div class="summary-label">Falhas</div>
-                      <div class="summary-value" id="messageLogFailedCount">0</div>
-                    </div>
-                    <div class="summary-card">
-                      <div class="summary-label">Enviadas</div>
-                      <div class="summary-value" id="messageLogSentCount">0</div>
-                    </div>
-                  </div>
-
-                  <div class="section-heading" style="margin-top:16px;">
-                    <div>
-                      <h3>Últimos logs</h3>
-                      <div class="small">Filtre rapidamente para ver o que precisa de ação.</div>
-                    </div>
-                  </div>
-
-                  <div class="actions-inline wrap-actions" id="messageLogFilters">
-                    <button type="button" class="btn-secondary active-filter" data-log-filter="all">Todos</button>
-                    <button type="button" class="btn-secondary" data-log-filter="pending">Pendentes</button>
-                    <button type="button" class="btn-secondary" data-log-filter="needs_contact">Sem contato</button>
-                    <button type="button" class="btn-secondary" data-log-filter="failed">Falhas</button>
-                    <button type="button" class="btn-secondary" data-log-filter="sent">Enviados</button>
-                  </div>
-
-                  <div id="messageLogsList" class="log-list">
-                    <div class="small">Nenhum log carregado.</div>
-                  </div>
-                </div>
-          </section>
-
-          <section id="section-financial" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Financeiro</h2>
-                <div class="small">Agora a leitura está organizada em resumo, filtros, resultado da reserva e lançamentos</div>
-              </div>
-            </div>
-
-            <div class="financial-summary-grid">
-              <div class="summary-card">
-                <div class="summary-label">Receitas do período</div>
-                <div class="summary-value income-value" id="financialSummaryIncomeMirror">R$ 0,00</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Despesas do período</div>
-                <div class="summary-value expense-value" id="financialSummaryExpenseMirror">R$ 0,00</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Lucro do período</div>
-                <div class="summary-value profit-value" id="financialSummaryProfitMirror">R$ 0,00</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">Pendentes</div>
-                <div class="summary-value pending-value" id="financialSummaryPendingMirror">R$ 0,00</div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="table-title-row">
-                <div>
-                  <h3>Filtros do financeiro</h3>
-                  <div class="small">Filtre primeiro. Os indicadores, a tabela e a leitura do período acompanham essa seleção.</div>
-                </div>
-              </div>
-
-              <div class="grid grid-4">
-                <select id="financialFilterProperty">
-                  <option value="">Todos os imóveis</option>
-                </select>
-                <input type="month" id="financialFilterMonth" />
-                <select id="financialFilterType">
-                  <option value="">Todos os tipos</option>
-                  <option value="income">Receitas</option>
-                  <option value="expense">Despesas</option>
-                </select>
-                <select id="financialFilterStatus">
-                  <option value="">Todos os status</option>
-                  <option value="paid">Pagos</option>
-                  <option value="pending">Pendentes</option>
-                  <option value="cancelled">Cancelados</option>
-                </select>
-              </div>
-              <div class="quick-actions" style="margin-top: 12px;">
-                <button class="btn-secondary" id="applyFinancialFiltersBtn" type="button">Aplicar filtros</button>
-              </div>
-            </div>
-
-            <div class="card" id="reservationFinanceCard">
-              <div class="table-title-row">
-                <div>
-                  <h3>Resultado da reserva</h3>
-                  <div id="reservationFinanceInfo" class="small">Selecione uma reserva para ver o resultado financeiro.</div>
-                </div>
-              </div>
-
-              <div class="reservation-summary-grid">
-                <div class="summary-card">
-                  <div class="summary-label">Receitas da reserva</div>
-                  <div class="summary-value income-value" id="reservationIncome">R$ 0,00</div>
-                </div>
-                <div class="summary-card">
-                  <div class="summary-label">Despesas da reserva</div>
-                  <div class="summary-value expense-value" id="reservationExpense">R$ 0,00</div>
-                </div>
-                <div class="summary-card">
-                  <div class="summary-label">Pendentes</div>
-                  <div class="summary-value pending-value" id="reservationPending">R$ 0,00</div>
-                </div>
-                <div class="summary-card">
-                  <div class="summary-label">Lucro da reserva</div>
-                  <div class="summary-value profit-value" id="reservationProfit">R$ 0,00</div>
-                </div>
-              </div>
-
-              <div class="table-wrap" style="margin-top: 16px;">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Tipo</th>
-                      <th>Categoria</th>
-                      <th>Descrição</th>
-                      <th>Valor</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="reservationFinanceTableBody">
-                    <tr>
-                      <td colspan="6">Nenhum lançamento vinculado.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="financial-layout-grid">
-              <div class="card sticky-card" id="financialFormCard">
-                <div class="form-card-header">
-                  <h3 id="financialFormTitle">Novo lançamento financeiro</h3>
-                  <div class="small">Cadastre receita ou despesa com vínculo opcional à reserva.</div>
-                </div>
-
-                <div class="grid">
-                  <select id="financialProperty"></select>
-                  <select id="financialReservation">
-                    <option value="">Sem vincular a reserva</option>
-                  </select>
-                  <select id="financialType">
-                    <option value="income">Receita</option>
-                    <option value="expense">Despesa</option>
-                  </select>
-                  <input type="text" id="financialCategory" placeholder="Categoria (ex: reserva, limpeza, manutenção)" />
-                  <input type="text" id="financialDescription" placeholder="Descrição" />
-                  <input type="number" step="0.01" id="financialAmount" placeholder="Valor" />
-                  <input type="date" id="financialDate" />
-                  <select id="financialStatus">
-                    <option value="paid">Pago</option>
-                    <option value="pending">Pendente</option>
-                    <option value="cancelled">Cancelado</option>
-                  </select>
-                  <input type="text" id="financialSource" placeholder="Origem (ex: manual, airbnb, booking)" />
-                  <div class="actions-inline">
-                    <button class="btn-success" id="createFinancialBtn" type="button">Criar lançamento</button>
-                    <button type="button" class="btn-warning hidden" id="cancelEditFinancialBtn">Cancelar edição</button>
-                  </div>
-                </div>
-                <div id="financialMessage"></div>
-              </div>
-
-              <div class="card">
-                <div class="table-title-row">
-                  <div>
-                    <h3>Lançamentos financeiros</h3>
-                    <div class="small">Tabela única para editar e excluir sem trocar de tela.</div>
-                  </div>
-                </div>
-
-                <div class="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Data</th>
-                        <th>Imóvel</th>
-                        <th>Reserva</th>
-                        <th>Tipo</th>
-                        <th>Categoria</th>
-                        <th>Descrição</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th>Origem</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="financialTableBody">
-                      <tr>
-                        <td colspan="10">Nenhum lançamento financeiro</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="section-billing" class="section hidden">
-            <div class="section-heading">
-              <div>
-                <h2>Assinatura e Cobrança</h2>
-                <div class="small">Acompanhe trial, plano, acesso e histórico de cobranças do StayFlow.</div>
-              </div>
-              <div class="actions-inline">
-                <button type="button" class="btn-secondary" id="refreshBillingBtn">Atualizar</button>
-              </div>
-            </div>
-
-            <div id="billingMessage"></div>
-
-            <div class="billing-alert hidden" id="billingAlert">
-              <strong id="billingAlertTitle">Status da assinatura</strong>
-              <span id="billingAlertText">Carregando informações...</span>
-            </div>
-
-            <div class="billing-layout">
-              <div class="card billing-hero-card">
-                <div class="billing-card-top">
-                  <div>
-                    <div class="brand-kicker">Plano atual</div>
-                    <h3 id="billingPlanName">StayFlow Base</h3>
-                  </div>
-                  <span class="status-badge" id="billingStatusBadge">Carregando</span>
-                </div>
-
-                <div class="billing-status-grid">
-                  <div class="billing-metric">
-                    <span>Status do plano</span>
-                    <strong id="billingPlanStatus">-</strong>
-                  </div>
-                  <div class="billing-metric">
-                    <span>Dias restantes do trial</span>
-                    <strong id="billingTrialDays">-</strong>
-                  </div>
-                  <div class="billing-metric">
-                    <span>Fim do trial</span>
-                    <strong id="billingTrialEndsAt">-</strong>
-                  </div>
-                  <div class="billing-metric">
-                    <span>Acesso atual</span>
-                    <strong id="billingAccessStatus">-</strong>
-                  </div>
-                </div>
-
-                <div class="billing-actions">
-                  <button type="button" id="activateBillingBtn">Ativar assinatura</button>
-                  <button type="button" class="btn-secondary" id="recalculateBillingBtn">Recalcular plano</button>
-                  <button type="button" class="btn-danger" id="cancelBillingBtn">Cancelar assinatura</button>
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="table-title-row">
-                  <div>
-                    <h3>Informações do plano</h3>
-                    <div class="small">O valor acompanha automaticamente a quantidade de imóveis ativos.</div>
-                  </div>
-                </div>
-
-                <div class="billing-price-box">
-                  <span>Valor atual</span>
-                  <strong id="billingCurrentAmount">R$ 0,00</strong>
-                  <small>R$ 49,90 inclui 1 imóvel. Cada imóvel adicional soma R$ 29,90.</small>
-                </div>
-
-                <div class="info-list">
-                  <div class="info-row"><span>Imóveis ativos</span><strong id="billingActiveProperties">0</strong></div>
-                  <div class="info-row"><span>Imóveis adicionais</span><strong id="billingAdditionalProperties">0</strong></div>
-                  <div class="info-row"><span>Plano base</span><strong>R$ 49,90</strong></div>
-                  <div class="info-row"><span>Adicional por imóvel</span><strong>R$ 29,90</strong></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-2">
-              <div class="card">
-                <div class="table-title-row">
-                  <div>
-                    <h3>Próxima cobrança</h3>
-                    <div class="small">Dados da assinatura recorrente cadastrada na Asaas.</div>
-                  </div>
-                </div>
-                <div class="billing-next-charge">
-                  <div>
-                    <span>Data</span>
-                    <strong id="billingNextDate">-</strong>
-                  </div>
-                  <div>
-                    <span>Valor</span>
-                    <strong id="billingNextAmount">R$ 0,00</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="table-title-row">
-                  <div>
-                    <h3>Forma de pagamento</h3>
-                    <div class="small">A ativação usa PIX por padrão. Você pode expandir depois para boleto e cartão.</div>
-                  </div>
-                </div>
-                <label class="form-field">
-                  <span>Tipo de cobrança</span>
-                  <select id="billingTypeSelect">
-                    <option value="PIX">PIX</option>
-                    <option value="BOLETO">Boleto</option>
-                    <option value="CREDIT_CARD">Cartão de crédito</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="table-title-row">
-                <div>
-                  <h3>Pagamentos</h3>
-                  <div class="small">Histórico de cobranças, vencimentos e links de fatura.</div>
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Status</th>
-                      <th>Valor</th>
-                      <th>Vencimento</th>
-                      <th>Pagamento</th>
-                      <th>Fatura</th>
-                    </tr>
-                  </thead>
-                  <tbody id="billingPaymentsTableBody">
-                    <tr>
-                      <td colspan="5">Nenhum pagamento carregado.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
-    </main>
-  </div>
+    </section>
 
-  <script src="app.js"></script>
+    <section class="section" id="planos">
+      <div class="container">
+        <div class="section-head">
+          <h2>Preço simples para começar sem fricção</h2>
+          <p>
+            Comece com <strong>15 dias grátis</strong>. Depois, o plano base custa <strong>R$ 49,90/mês</strong>
+            com 1 imóvel incluso, e cada imóvel adicional custa <strong>R$ 29,90/mês</strong>.
+          </p>
+        </div>
+
+        <div class="pricing">
+          <div class="price-card featured">
+            <span class="pill">Teste grátis incluso</span>
+            <h3>Comece com 1 imóvel</h3>
+            <p>Ideal para validar na prática, organizar a rotina e perceber valor antes de escalar para mais imóveis.</p>
+            <div class="price">R$ 49,90 <small>/mês</small></div>
+            <div class="price-note">Inclui 1 imóvel. Cada imóvel adicional custa R$ 29,90 por mês.</div>
+            <div class="check-list">
+              <div>1 imóvel incluso</div>
+              <div>Calendário unificado</div>
+              <div>Integração via iCal</div>
+              <div>Reservas e operação centralizadas</div>
+              <div>Indicadores e painel operacional</div>
+              <div>Teste grátis de 15 dias</div>
+            </div>
+            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+          </div>
+
+          <div class="price-card">
+            <span class="pill">Escala simples</span>
+            <h3>Imóvel adicional</h3>
+            <p>Conforme sua operação crescer, você só adiciona novas unidades sem trocar de plano nem complicar a cobrança.</p>
+            <div class="price">R$ 29,90 <small>/mês</small></div>
+            <div class="price-note">Cobrado por cada imóvel extra adicionado à sua conta.</div>
+            <div class="check-list">
+              <div>R$ 29,90 por imóvel adicional</div>
+              <div>Mesmo painel e mesma operação</div>
+              <div>Mesmas integrações e recursos</div>
+              <div>Gestão multi-imóveis no mesmo lugar</div>
+              <div>Escala sem perder controle</div>
+            </div>
+            <a class="btn-secondary" href="/app.html">Adicionar imóveis</a>
+          </div>
+
+          <div class="price-card">
+            <span class="pill">Transparente</span>
+            <h3>Condições transparentes</h3>
+            <p>Uma estrutura fácil de entender: teste primeiro, acompanhe a assinatura e escale imóvel por imóvel.</p>
+            <div class="price" style="font-size:1.55rem; line-height:1.35;">Sem fidelidade</div>
+            <div class="price-note">Perfeito para teste, validação e crescimento com clareza.</div>
+            <div class="check-list">
+              <div>Comece com 1 imóvel incluso</div>
+              <div>Escale por unidade adicional</div>
+              <div>Modelo fácil de explicar ao cliente</div>
+              <div>Preço alinhado à operação real</div>
+              <div>Base pronta para cobrança recorrente</div>
+            </div>
+            <a class="btn-secondary" href="#cta-final">Falar com vendas</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-head">
+          <h2>Perguntas frequentes</h2>
+          <p>As dúvidas mais comuns de quem está avaliando uma solução para centralizar reservas e crescer com menos erro.</p>
+        </div>
+
+        <div class="faq-grid">
+          <div class="card faq-item">
+            <h4>Preciso integrar API para começar?</h4>
+            <p>Não. O fluxo inicial usa cadastro de imóvel, links iCal e e-mail do StayFlow para centralizar eventos importantes.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>Funciona com Airbnb e Booking?</h4>
+            <p>Sim. O StayFlow trabalha com iCal para calendário e orienta o uso do e-mail do StayFlow nas notificações das plataformas.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>Serve para operação pequena?</h4>
+            <p>Sim. Você pode começar com 1 imóvel e usar o painel para profissionalizar a rotina antes de crescer.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>O teste grátis dura quanto tempo?</h4>
+            <p>O trial dura 15 dias. Durante esse período você pode cadastrar imóvel, conectar iCal e validar a operação antes da cobrança.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>Como funciona a cobrança?</h4>
+            <p>Depois do trial, o plano base custa R$ 49,90 por mês e inclui 1 imóvel. Cada imóvel adicional custa R$ 29,90 por mês.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>Posso cancelar quando quiser?</h4>
+            <p>Sim. Você pode cancelar a assinatura e manter o controle da cobrança pela própria área de Assinatura e Cobrança.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>Para que serve o e-mail do StayFlow?</h4>
+            <p>Ele deve ser cadastrado nas notificações das plataformas para ajudar o StayFlow a identificar reservas, alterações e cancelamentos.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>O StayFlow substitui Airbnb e Booking?</h4>
+            <p>Não. Ele centraliza a operação e ajuda a reduzir conflito entre canais, sem substituir as plataformas de anúncio.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="cta-final">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Comece a operar com mais clareza em poucos minutos</h2>
+          <p>
+            Saia da conferência manual, organize reservas e acompanhe lucro, ocupação e alertas em um painel feito para aluguel por temporada.
+            O primeiro passo é simples: crie a conta e teste por 15 dias.
+          </p>
+          <div class="cta-row" style="justify-content:center; margin-bottom:0;">
+            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+            <a class="btn-secondary" href="/app.html">Acessar minha conta</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">StayFlow © 2026 — Seu fluxo de reservas, automatizado.</div>
+  </footer>
 </body>
 </html>
