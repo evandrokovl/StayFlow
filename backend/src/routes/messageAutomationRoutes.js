@@ -4,6 +4,12 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const { processMessageAutomations } = require('../services/messageAutomationService');
+const validate = require('../middlewares/validate');
+const logger = require('../utils/logger');
+const {
+  messageAutomationCreateSchema,
+  messageAutomationUpdateSchema
+} = require('../schemas/messageAutomationSchemas');
 
 router.use(authMiddleware);
 
@@ -40,13 +46,13 @@ router.get('/', requireFullBilling, async (req, res) => {
 
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao listar automações:', error.message);
+    logger.error("Erro ao listar automações", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao listar automações' });
   }
 });
 
 // CRIAR automação
-router.post('/', requireWritableBilling, async (req, res) => {
+router.post('/', requireWritableBilling, validate(messageAutomationCreateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const {
@@ -154,13 +160,13 @@ router.post('/', requireWritableBilling, async (req, res) => {
       automation: rows[0]
     });
   } catch (error) {
-    console.error('Erro ao criar automação:', error.message);
+    logger.error("Erro ao criar automação", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao criar automação' });
   }
 });
 
 // ATUALIZAR automação
-router.put('/:id', requireWritableBilling, async (req, res) => {
+router.put('/:id', requireWritableBilling, validate(messageAutomationUpdateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -285,7 +291,7 @@ router.put('/:id', requireWritableBilling, async (req, res) => {
       automation: rows[0]
     });
   } catch (error) {
-    console.error('Erro ao atualizar automação:', error.message);
+    logger.error("Erro ao atualizar automação", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao atualizar automação' });
   }
 });
@@ -330,7 +336,7 @@ router.delete('/:id', requireWritableBilling, async (req, res) => {
       message: 'Automação excluída com sucesso'
     });
   } catch (error) {
-    console.error('Erro ao excluir automação:', error.message);
+    logger.error("Erro ao excluir automação", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao excluir automação' });
   }
 });
@@ -346,7 +352,7 @@ router.post('/process/run', requireWritableBilling, async (req, res) => {
       result
     });
   } catch (error) {
-    console.error('Erro ao processar automações:', error.message);
+    logger.error("Erro ao processar automações", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({
       success: false,
       error: 'Erro ao processar automações'

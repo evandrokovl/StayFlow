@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
+const logger = require('../utils/logger');
 
 router.use(authMiddleware);
 
@@ -23,7 +24,7 @@ router.get('/', requireFullBilling, async (req, res) => {
 
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao listar templates:', error.message);
+    logger.error("Erro ao listar templates", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao listar templates' });
   }
 });
@@ -50,7 +51,7 @@ router.get('/:id', requireFullBilling, async (req, res) => {
 
     res.json(rows[0]);
   } catch (error) {
-    console.error('Erro ao buscar template:', error.message);
+    logger.error("Erro ao buscar template", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao buscar template' });
   }
 });
@@ -94,7 +95,7 @@ router.post('/', requireWritableBilling, async (req, res) => {
       template: rows[0]
     });
   } catch (error) {
-    console.error('Erro ao criar template:', error.message);
+    logger.error("Erro ao criar template", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao criar template' });
   }
 });
@@ -158,7 +159,7 @@ router.put('/:id', requireWritableBilling, async (req, res) => {
       template: rows[0]
     });
   } catch (error) {
-    console.error('Erro ao atualizar template:', error.message);
+    logger.error("Erro ao atualizar template", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao atualizar template' });
   }
 });
@@ -195,7 +196,7 @@ router.delete('/:id', requireWritableBilling, async (req, res) => {
       message: 'Template excluído com sucesso'
     });
   } catch (error) {
-    console.error('Erro ao excluir template:', error.message);
+    logger.error("Erro ao excluir template", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao excluir template' });
   }
 });

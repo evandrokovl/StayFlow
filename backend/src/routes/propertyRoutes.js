@@ -5,6 +5,8 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const billingService = require('../services/billingService');
 const logger = require('../utils/logger');
+const validate = require('../middlewares/validate');
+const { propertyCreateSchema, propertyUpdateSchema } = require('../schemas/propertySchemas');
 
 const router = express.Router();
 
@@ -80,8 +82,39 @@ async function getPropertyListings(propertyId) {
   return rows;
 }
 
-async function buildPropertyResponse(property) {
-  const listings = await getPropertyListings(property.id);
+async function getPropertyListingsMap(propertyIds) {
+  if (!propertyIds.length) return new Map();
+
+  const placeholders = propertyIds.map(() => '?').join(', ');
+  const [rows] = await pool.query(
+    `
+    SELECT
+      id,
+      property_id,
+      platform,
+      listing_url,
+      listing_code,
+      is_active,
+      created_at
+    FROM property_listings
+    WHERE property_id IN (${placeholders})
+    ORDER BY property_id ASC, id ASC
+    `,
+    propertyIds
+  );
+
+  return rows.reduce((map, row) => {
+    const key = Number(row.property_id);
+    if (!map.has(key)) {
+      map.set(key, []);
+    }
+    map.get(key).push(row);
+    return map;
+  }, new Map());
+}
+
+async function buildPropertyResponse(property, preloadedListings = null) {
+  const listings = preloadedListings || await getPropertyListings(property.id);
 
   return {
     ...property,
@@ -133,14 +166,14 @@ router.get('/', requireFullBilling, async (req, res) => {
       [req.user.id]
     );
 
-    const result = [];
-    for (const property of properties) {
-      result.push(await buildPropertyResponse(property));
-    }
+    const listingsMap = await getPropertyListingsMap(properties.map((property) => property.id));
+    const result = properties.map((property) => (
+      buildPropertyResponse(property, listingsMap.get(Number(property.id)) || [])
+    ));
 
     return res.json(result);
   } catch (error) {
-    console.error('Erro ao listar imóveis:', error.message);
+    logger.error("Erro ao listar imóveis", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({ error: 'Erro ao listar imóveis' });
   }
 });
@@ -177,13 +210,13 @@ router.get('/:id', requireFullBilling, async (req, res) => {
 
     return res.json(await buildPropertyResponse(properties[0]));
   } catch (error) {
-    console.error('Erro ao buscar imóvel:', error.message);
+    logger.error("Erro ao buscar imóvel", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({ error: 'Erro ao buscar imóvel' });
   }
 });
 
 // CRIAR IMÓVEL
-router.post('/', requireWritableBilling, async (req, res) => {
+router.post('/', requireWritableBilling, validate(propertyCreateSchema), async (req, res) => {
   let connection;
 
   try {
@@ -302,10 +335,9 @@ router.post('/', requireWritableBilling, async (req, res) => {
       await connection.rollback();
     }
 
-    console.error('Erro ao cadastrar imóvel:', error.message);
+    logger.error("Erro ao cadastrar imóvel", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({
       error: 'Erro ao cadastrar imóvel',
-      details: error.message
     });
   } finally {
     if (connection) {
@@ -315,7 +347,7 @@ router.post('/', requireWritableBilling, async (req, res) => {
 });
 
 // ATUALIZAR IMÓVEL
-router.put('/:id', requireWritableBilling, async (req, res) => {
+router.put('/:id', requireWritableBilling, validate(propertyUpdateSchema), async (req, res) => {
   let connection;
 
   try {
@@ -478,10 +510,9 @@ router.put('/:id', requireWritableBilling, async (req, res) => {
       await connection.rollback();
     }
 
-    console.error('Erro ao atualizar imóvel:', error.message);
+    logger.error("Erro ao atualizar imóvel", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({
       error: 'Erro ao atualizar imóvel',
-      details: error.message
     });
   } finally {
     if (connection) {
@@ -519,7 +550,7 @@ router.delete('/:id', requireWritableBilling, async (req, res) => {
 
     return res.json({ message: 'Imóvel excluído com sucesso' });
   } catch (error) {
-    console.error('Erro ao excluir imóvel:', error.message);
+    logger.error("Erro ao excluir imóvel", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({ error: 'Erro ao excluir imóvel' });
   }
 });

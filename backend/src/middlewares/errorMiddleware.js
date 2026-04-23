@@ -2,6 +2,9 @@ const logger = require('../utils/logger');
 
 function errorMiddleware(err, req, res, next) {
   const statusCode = err.statusCode || 500;
+  const publicMessage = statusCode >= 500
+    ? 'Erro interno do servidor'
+    : (err.message || 'Erro na requisicao');
 
   logger.error('Erro na requisição', {
     service: 'api',
@@ -15,8 +18,7 @@ function errorMiddleware(err, req, res, next) {
 
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Erro interno do servidor',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: publicMessage
   });
 }
 

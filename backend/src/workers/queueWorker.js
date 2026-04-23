@@ -5,6 +5,7 @@ const { processInboundResendWebhook } = require('../services/inboundEmailProcess
 const { syncAllProperties } = require('../services/syncService');
 const { processMessageAutomations } = require('../services/messageAutomationService');
 const { sendGuestEmailFromLog } = require('../services/emailDispatchService');
+const { processAsaasWebhookEvent } = require('../services/asaasWebhookProcessor');
 const logger = require('../utils/logger');
 
 let workerInstance = null;
@@ -22,6 +23,9 @@ async function processJob(job) {
 
     case 'send_guest_email':
       return sendGuestEmailFromLog(job.data.messageLogId);
+
+    case 'asaas_webhook':
+      return processAsaasWebhookEvent(job.data);
 
     default:
       throw new Error(`Tipo de job não suportado: ${job.name}`);

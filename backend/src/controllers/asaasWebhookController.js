@@ -1,8 +1,7 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
 const { env } = require('../config/env');
-const billingService = require('../services/billingService');
-const logger = require('../utils/logger');
+const { enqueueAsaasWebhookEvent } = require('../queues/jobQueue');
 
 function resolveEventId(payload) {
   if (payload.id) return String(payload.id);
@@ -25,7 +24,16 @@ function validateWebhookToken(req) {
   const expectedToken = env.ASAAS_WEBHOOK_TOKEN;
   const receivedToken = req.headers['asaas-access-token'];
 
-  if (!expectedToken || receivedToken !== expectedToken) {
+  if (!expectedToken || !receivedToken) {
+    const err = new Error('Webhook Asaas nao autorizado');
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const received = Buffer.from(String(receivedToken));
+  const expected = Buffer.from(String(expectedToken));
+
+  if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) {
     const err = new Error('Webhook Asaas nao autorizado');
     err.statusCode = 401;
     throw err;
@@ -60,31 +68,17 @@ async function handleAsaasWebhook(req, res, next) {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      received: true
+    const job = await enqueueAsaasWebhookEvent({
+      eventId,
+      eventType,
+      payload
     });
 
-    setImmediate(async () => {
-      try {
-        await billingService.syncPaymentStatusFromWebhook(payload);
-
-        await pool.query(
-          `
-          UPDATE billing_events
-          SET processed = 1, processed_at = NOW()
-          WHERE event_id = ?
-          `,
-          [eventId]
-        );
-      } catch (processingError) {
-        logger.error('Erro ao processar webhook Asaas', {
-          service: 'billing',
-          eventId,
-          eventType,
-          error: processingError
-        });
-      }
+    return res.status(202).json({
+      success: true,
+      received: true,
+      queued: true,
+      job_id: job.id || null
     });
   } catch (error) {
     next(error);

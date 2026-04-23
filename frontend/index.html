@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StayFlow — Centralize reservas, calendário e mensagens para aluguel por temporada</title>
-  <meta name="description" content="StayFlow é um SaaS para anfitriões e gestores centralizarem reservas, calendário, mensagens, financeiro e cobrança em um painel profissional." />
-  <meta property="og:title" content="StayFlow — Gestão de aluguel por temporada em um painel" />
-  <meta property="og:description" content="Centralize reservas, calendário, mensagens e cobrança. Comece com teste grátis de 15 dias." />
+  <title>StayFlow - Controle suas locações em uma única tela</title>
+  <meta name="description" content="StayFlow centraliza reservas, calendário, mensagens, financeiro e cobrança em um painel profissional para aluguel por temporada. Ganhe tempo e controle sua operação com clareza." />
+  <meta property="og:title" content="StayFlow - Operação de aluguel por temporada em uma única tela" />
+  <meta property="og:description" content="Centralize reservas, calendário, mensagens, financeiro e cobrança. Comece com teste grátis de 15 dias." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="StayFlow" />
   <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
@@ -754,6 +754,114 @@
       margin-right: 10px;
     }
 
+    .trust-strip,
+    .persona-grid,
+    .use-case-grid,
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 26px;
+    }
+    .trust-item,
+    .persona-card,
+    .use-case-card,
+    .proof-card {
+      padding: 22px;
+      border-radius: 22px;
+      background: rgba(15, 23, 42, .58);
+      border: 1px solid rgba(148, 163, 184, .12);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, .18);
+    }
+    .trust-item strong,
+    .persona-card strong,
+    .use-case-card strong,
+    .proof-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 1.03rem;
+      margin-bottom: 8px;
+    }
+    .trust-item span,
+    .persona-card span,
+    .use-case-card span,
+    .proof-card span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: .94rem;
+    }
+    .proof-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 180px;
+    }
+    .proof-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(56, 189, 248, .1), rgba(139, 92, 246, .08));
+      opacity: .8;
+      pointer-events: none;
+    }
+    .proof-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    .proof-card em {
+      display: block;
+      color: #dce8fa;
+      font-style: normal;
+      line-height: 1.7;
+      margin-top: 12px;
+    }
+    .value-band {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 22px;
+      align-items: stretch;
+      margin-top: 28px;
+    }
+    .value-panel {
+      padding: 30px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .16), transparent 28%),
+        rgba(15, 23, 42, .68);
+      border: 1px solid rgba(148, 163, 184, .14);
+      box-shadow: var(--shadow);
+    }
+    .value-panel h3 {
+      margin: 0 0 12px;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      letter-spacing: -.7px;
+    }
+    .value-panel p {
+      margin: 0;
+      color: #c0d0e8;
+      line-height: 1.75;
+    }
+    .value-list {
+      display: grid;
+      gap: 14px;
+    }
+    .value-list div {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(8, 16, 29, .62);
+      border: 1px solid rgba(148, 163, 184, .1);
+      color: #dce8fa;
+      line-height: 1.55;
+    }
+    .section-kicker {
+      color: #bae6fd;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: .78rem;
+      margin-bottom: 12px;
+    }
+
     .faq-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -802,7 +910,7 @@
     }
 
     @media (max-width: 1080px) {
-      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard { grid-template-columns: 1fr; }
+      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard, .trust-strip, .persona-grid, .use-case-grid, .proof-grid, .value-band { grid-template-columns: 1fr; }
       h1 { max-width: 12ch; }
       .price-card.featured { transform: none; }
       .dash-row { grid-template-columns: 1fr; }
@@ -817,7 +925,7 @@
       .panel.wide { grid-column: auto; }
       .calendar-mini { grid-template-columns: repeat(4, 1fr); }
       .section { padding: 72px 0; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
+      .stats, .trust-strip, .persona-grid, .use-case-grid, .proof-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 560px) {
       .container { width: min(var(--container), calc(100% - 20px)); }
@@ -828,7 +936,7 @@
       .calendar-mini { grid-template-columns: repeat(3, 1fr); }
       .proof-item { width: 100%; justify-content: center; }
       .cta-box { padding: 28px 20px; }
-      .stats { grid-template-columns: 1fr; }
+      .stats, .trust-strip, .persona-grid, .use-case-grid, .proof-grid { grid-template-columns: 1fr; }
       .screen-header, .billing-top, .hero-top { flex-direction: column; align-items: flex-start; }
       .row, .row.head { grid-template-columns: 1fr; }
     }
@@ -841,12 +949,14 @@
         <div class="brand-mark">S</div>
         <div>
           StayFlow
-          <small>Seu fluxo de reservas, automatizado</small>
+          <small>Operação centralizada para aluguel por temporada</small>
         </div>
       </a>
 
       <nav class="nav-links">
         <a href="#beneficios">Benefícios</a>
+        <a href="#para-quem">Para quem é</a>
+        <a href="#casos-de-uso">Casos de uso</a>
         <a href="#como-funciona">Como funciona</a>
         <a href="#telas">Telas do sistema</a>
         <a href="#planos">Planos</a>
@@ -864,26 +974,26 @@
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">Operação profissional para aluguel por temporada</div>
-          <h1>Centralize reservas, calendário e mensagens para operar com menos falhas.</h1>
+          <div class="eyebrow">Controle profissional para aluguel por temporada</div>
+          <h1>Controle suas locações em uma única tela.</h1>
           <p class="lead">
-            O <strong>StayFlow</strong> reúne operação, agenda, mensagens, financeiro e cobrança em uma visão clara
-            para anfitriões e gestores que querem ganhar tempo, reduzir retrabalho e tomar decisões com mais controle.
+            O <strong>StayFlow</strong> reúne reservas, calendário, mensagens, financeiro e cobrança em um painel só,
+            para você ganhar tempo, reduzir retrabalho e enxergar sua operação com clareza todos os dias.
           </p>
 
           <div class="proof">
-            <div class="proof-item">Sem depender de planilha</div>
-            <div class="proof-item">Menos conflito de agenda</div>
-            <div class="proof-item">Visão centralizada da operação</div>
+            <div class="proof-item">Reservas, agenda e financeiro juntos</div>
+            <div class="proof-item">Menos tempo alternando plataformas</div>
+            <div class="proof-item">Visão clara para decidir rápido</div>
           </div>
 
           <div class="cta-row">
-            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
-            <a class="btn-ghost" href="#como-funciona">Ver como funciona</a>
+            <a class="btn" href="/app.html">Começar teste grátis</a>
+            <a class="btn-ghost" href="#telas">Ver o StayFlow em ação</a>
           </div>
 
           <div class="urgency-box">
-            Teste por 15 dias e veja se o fluxo encaixa na sua operação antes de pagar.
+            Comece em poucos minutos: cadastre um imóvel, conecte as fontes principais e teste a rotina centralizada por 15 dias, sem complicação.
           </div>
         </div>
 
@@ -899,33 +1009,33 @@
               <div class="mini-mark">S</div>
               <div>
                 <b>StayFlow</b>
-                <span>Painel operacional em tempo real</span>
+                <span>Visão executiva da operação</span>
               </div>
             </div>
-            <div class="status-pill">● Operação saudável</div>
+            <div class="status-pill">Operação sob controle</div>
           </div>
 
           <div class="dashboard-preview">
             <div class="panel">
-              <div class="panel-title">Receita prevista do mês</div>
-              <div class="panel-value">R$ 18.420</div>
-              <div class="panel-foot">+12,4% em relação ao mês anterior</div>
+              <div class="panel-title">Lucro do mês</div>
+              <div class="panel-value">R$ 8.740</div>
+              <div class="panel-foot">Resultado claro por imóvel e período</div>
             </div>
 
             <div class="panel">
               <div class="panel-title">Ocupação média</div>
               <div class="panel-value">84%</div>
-              <div class="panel-foot">5 imóveis com alta demanda</div>
+              <div class="panel-foot">Agenda consolidada em tempo real</div>
             </div>
 
             <div class="panel wide">
-              <div class="panel-title">Origem das reservas</div>
+              <div class="panel-title">Operação centralizada</div>
               <div class="mini-bars">
                 <div class="mini-bar"><span style="width:72%"></span></div>
                 <div class="mini-bar"><span style="width:58%"></span></div>
                 <div class="mini-bar"><span style="width:34%"></span></div>
               </div>
-              <div class="panel-foot">Airbnb, Booking e reservas diretas em uma só visão</div>
+              <div class="panel-foot">Reservas, mensagens, financeiro e cobrança conectados em uma só visão</div>
             </div>
 
             <div class="panel wide">
@@ -948,57 +1058,119 @@
     <section class="section" id="beneficios">
       <div class="container">
         <div class="section-head">
-          <h2>Feito para transformar rotina operacional em controle visível</h2>
+          <div class="section-kicker">Da operação espalhada ao painel central</div>
+          <h2>Menos lugares para conferir. Mais clareza para operar.</h2>
           <p>
-            O StayFlow organiza o que costuma ficar espalhado entre plataformas, mensagens e planilhas.
-            Assim você enxerga reservas, calendário, automações e resultado no mesmo fluxo.
+            O StayFlow transforma uma rotina fragmentada em uma visão única: você sabe o que está acontecendo,
+            o que precisa de atenção e como cada imóvel está performando sem montar controles paralelos.
           </p>
         </div>
 
         <div class="stats">
-          <div class="stat"><b>1 painel</b><span>para reservas, calendário, mensagens e cobrança</span></div>
-          <div class="stat"><b>Mais clareza</b><span>sobre lucro, ocupação e próximos eventos</span></div>
-          <div class="stat"><b>Menos retrabalho</b><span>na conferência entre Airbnb, Booking e reservas diretas</span></div>
-          <div class="stat"><b>Mais controle</b><span>para crescer sem perder a operação de vista</span></div>
+          <div class="stat"><b>1 painel</b><span>para reservas, calendário, mensagens, financeiro e cobrança</span></div>
+          <div class="stat"><b>Menos retrabalho</b><span>menos conferência manual entre plataformas, planilhas e conversas</span></div>
+          <div class="stat"><b>Mais clareza</b><span>sobre próximos eventos, lucro, ocupação e pendências</span></div>
+          <div class="stat"><b>Operação profissional</b><span>processo, histórico e visão para crescer com mais controle</span></div>
+        </div>
+
+        <div class="value-band">
+          <div class="value-panel">
+            <h3>A sensação é de finalmente enxergar a operação inteira.</h3>
+            <p>
+              Em vez de descobrir informações aos pedaços, você acompanha reservas, agenda, automações,
+              cobranças e resultado em uma experiência feita para decisão rápida. Menos procura, menos ruído
+              e uma rotina com aparência de gestão profissional.
+            </p>
+          </div>
+          <div class="value-list">
+            <div><strong>Comece pelo essencial:</strong> imóvel, iCal, e-mail do StayFlow e automações iniciais.</div>
+            <div><strong>Ganhe ritmo:</strong> veja entradas, saídas, alertas e resultado antes que a rotina acumule.</div>
+            <div><strong>Cresça com método:</strong> adicione imóveis mantendo uma operação previsível e centralizada.</div>
+          </div>
         </div>
 
         <div class="comparison">
           <div class="comparison-card bad">
             <h3>Antes do StayFlow</h3>
             <div class="comparison-list">
-              <div><span>✕</span><div>Planilhas, abas e conferência manual todos os dias.</div></div>
-              <div><span>✕</span><div>Risco constante de conflito entre Airbnb, Booking e reservas diretas.</div></div>
-              <div><span>✕</span><div>Visão financeira e operacional espalhada em vários lugares.</div></div>
+              <div><span>&times;</span><div>Reservas em uma plataforma, calendário em outra, financeiro em planilha e mensagens em conversas soltas.</div></div>
+              <div><span>&times;</span><div>Tempo perdido conferindo a mesma informação em vários lugares antes de agir.</div></div>
+              <div><span>&times;</span><div>Pouca clareza sobre o que está pendente, o que está rendendo e o que precisa de prioridade.</div></div>
             </div>
           </div>
           <div class="comparison-card good">
             <h3>Depois do StayFlow</h3>
             <div class="comparison-list">
-              <div><span>✓</span><div>Um único painel para enxergar reservas, bloqueios e ocupação.</div></div>
-              <div><span>✓</span><div>Mais controle da agenda e menos chance de overbooking.</div></div>
-              <div><span>✓</span><div>Base profissional para crescer com mais organização.</div></div>
+              <div><span>&check;</span><div>Uma tela para acompanhar reservas, calendário, mensagens, financeiro e cobrança.</div></div>
+              <div><span>&check;</span><div>Rotina mais leve, com menos retrabalho e menos conferência manual entre canais.</div></div>
+              <div><span>&check;</span><div>Operação com processo, histórico e visão de resultado para crescer com controle.</div></div>
             </div>
           </div>
         </div>
 
         <div class="features">
           <div class="feature">
-            <div class="feature-icon">↻</div>
-            <h3>SyncFlow™</h3>
-            <p>Conecte calendários iCal do Airbnb e Booking para reduzir conflito de datas e manter a agenda sempre atualizada.</p>
+            <div class="feature-icon">&bull;</div>
+            <h3>Calendário centralizado</h3>
+            <p>Conecte links iCal para ver disponibilidade e eventos em uma agenda única. Você entende o dia sem abrir plataforma por plataforma.</p>
           </div>
 
           <div class="feature">
-            <div class="feature-icon">◷</div>
-            <h3>FlowCalendar™</h3>
-            <p>Visualize check-ins, check-outs, bloqueios e reservas diretas em uma agenda clara, bonita e realmente profissional.</p>
+            <div class="feature-icon">&bull;</div>
+            <h3>Painel de operação</h3>
+            <p>Veja check-ins, check-outs, reservas futuras e alertas com contexto. O painel mostra o que merece atenção primeiro.</p>
           </div>
 
           <div class="feature">
-            <div class="feature-icon">⚡</div>
-            <h3>Painel operacional</h3>
-            <p>Acompanhe receita prevista, ocupação e pontos de atenção sem abrir várias plataformas ao mesmo tempo.</p>
+            <div class="feature-icon">&bull;</div>
+            <h3>Mensagens com acompanhamento</h3>
+            <p>Organize automações, acompanhe disparos e identifique pendências de contato. Menos perguntas repetidas e mais previsibilidade.</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="confianca">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Confiança para operar melhor</div>
+          <h2>Uma estrutura mais profissional para uma rotina que não deveria depender de memória.</h2>
+          <p>
+            O StayFlow foi pensado para quem quer sair da operação espalhada e acompanhar locações com dados claros,
+            cobrança visível, alertas úteis e um fluxo de trabalho mais previsível.
+          </p>
+        </div>
+
+        <div class="trust-strip">
+          <div class="trust-item"><strong>Painel profissional</strong><span>Uma visão clara para explicar, decidir e acompanhar a operação todos os dias.</span></div>
+          <div class="trust-item"><strong>Rotina organizada</strong><span>Menos dependência de planilhas paralelas, prints, lembretes e conferências manuais.</span></div>
+          <div class="trust-item"><strong>Decisão mais rápida</strong><span>Lucro, ocupação, próximas estadias e pendências aparecem de forma escaneável.</span></div>
+          <div class="trust-item"><strong>Base para crescer</strong><span>O mesmo fluxo atende quem começa com um imóvel e quem adiciona novas unidades.</span></div>
+        </div>
+
+        <div class="proof-grid">
+          <div class="proof-card"><strong>Uso real em construção</strong><em>Anfitriões e gestores já podem centralizar a rotina no StayFlow sem depender de planilhas paralelas.</em><span>Estrutura pronta para receber depoimentos reais.</span></div>
+          <div class="proof-card"><strong>Indicadores claros</strong><em>Imóveis centralizados, reservas acompanhadas, cobranças visíveis e menos tempo de conferência manual.</em><span>Prova de valor ligada à rotina, não a promessa vaga.</span></div>
+          <div class="proof-card"><strong>Feito para operação pequena ou crescente</strong><em>Comece com um imóvel e mantenha o mesmo painel quando adicionar novas unidades.</em><span>Sem inventar logos: confiança construída pelo produto.</span></div>
+          <div class="proof-card"><strong>Produto completo</strong><em>Login, onboarding, billing, calendário, reservas, automações e operação no mesmo fluxo.</em><span>A experiência já nasce conectada ao dia a dia.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="para-quem">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Para quem é</div>
+          <h2>Feito para quem quer profissionalizar a rotina de locações.</h2>
+          <p>
+            Seja para organizar o primeiro imóvel ou ganhar controle sobre várias unidades, o StayFlow ajuda a transformar tarefas soltas em operação acompanhável.
+          </p>
+        </div>
+        <div class="persona-grid">
+          <div class="persona-card"><strong>Anfitriões com 1 ou poucos imóveis</strong><span>Comece com o básico bem feito: agenda, reservas, mensagens e resultado em um só lugar.</span></div>
+          <div class="persona-card"><strong>Gestores com vários imóveis</strong><span>Acompanhe prioridades sem perder tempo abrindo canais diferentes para cada unidade.</span></div>
+          <div class="persona-card"><strong>Quem quer sair da planilha</strong><span>Troque conferências manuais por uma visão operacional mais clara, rápida e confiável.</span></div>
+          <div class="persona-card"><strong>Operações em crescimento</strong><span>Adicione imóveis mantendo uma rotina centralizada, previsível e com cara de negócio profissional.</span></div>
         </div>
       </div>
     </section>
@@ -1006,10 +1178,11 @@
     <section class="section" id="telas">
       <div class="container">
         <div class="section-head">
-          <h2>O painel mostra o que realmente precisa de atenção</h2>
+          <div class="section-kicker">Demonstração do produto</div>
+          <h2>Veja o que importa sem montar a operação manualmente.</h2>
           <p>
-            Em vez de abrir várias abas para entender o dia, você acompanha resultado, estadias, alertas,
-            mensagens e cobrança dentro de uma experiência única.
+            As telas conectam a rotina ao resultado: próximas entradas e saídas, desempenho financeiro,
+            agenda, cobrança e automações em uma experiência feita para leitura rápida.
           </p>
         </div>
 
@@ -1017,7 +1190,7 @@
           <div class="screen">
             <div class="screen-header">
                 <div class="screen-title">Dashboard de resultado</div>
-                <div class="screen-chip">Lucro, ocupação e alertas</div>
+                <div class="screen-chip">Lucro, ocupação e próximos eventos</div>
             </div>
             <div class="screen-body">
               <div class="screen-dashboard">
@@ -1038,7 +1211,7 @@
                   </div>
 
                   <div class="chart-card">
-                    <div class="panel-title">Linha de lucro e performance dos imóveis</div>
+                    <div class="panel-title">Entenda performance sem montar relatório manual</div>
                     <div class="chart">
                       <div style="height:48%"></div>
                       <div style="height:72%"></div>
@@ -1052,11 +1225,11 @@
                   </div>
 
                   <div class="table-card">
-                    <div class="panel-title">Próximas reservas e pontos de atenção</div>
+                    <div class="panel-title">Próximas reservas, pendências e prioridade do dia</div>
                     <div class="table">
                       <div class="row head"><div>Hóspede</div><div>Canal</div><div>Status</div><div>Período</div></div>
-                      <div class="row"><div>Marina Costa</div><div>Airbnb</div><div><span class="status status-ok">Confirmada</span></div><div>14–18 Abr</div></div>
-                      <div class="row"><div>João Nunes</div><div>Booking</div><div><span class="status status-warn">Check-in hoje</span></div><div>21–24 Abr</div></div>
+                      <div class="row"><div>Marina Costa</div><div>Airbnb</div><div><span class="status status-ok">Confirmada</span></div><div>14-18 Abr</div></div>
+                      <div class="row"><div>João Nunes</div><div>Booking</div><div><span class="status status-warn">Check-in hoje</span></div><div>21-24 Abr</div></div>
                     </div>
                   </div>
                 </div>
@@ -1068,18 +1241,18 @@
             <div class="mini-screen">
               <div class="screen-header">
                 <div class="screen-title">Automações de mensagens</div>
-                <div class="screen-chip">Menos trabalho manual</div>
+                <div class="screen-chip">Menos trabalho repetitivo</div>
               </div>
               <div class="mini-content">
                 <div class="message-list">
                   <div class="message-item">
                     <strong>Check-in amanhã</strong>
-                    <span>Template automático para enviar instruções ao hóspede.</span>
+                    <span>Instruções prontas para reduzir perguntas repetidas e padronizar a experiência do hóspede.</span>
                     <span class="status status-ok">Ativa</span>
                   </div>
                   <div class="message-item">
                     <strong>Lembrete de checkout</strong>
-                    <span>Gatilho configurado para o último dia da reserva.</span>
+                    <span>Gatilho configurado para manter a comunicação previsível e acompanhável.</span>
                     <span class="status status-ok">Ativa</span>
                   </div>
                 </div>
@@ -1089,23 +1262,23 @@
             <div class="mini-screen">
               <div class="screen-header">
                 <div class="screen-title">Assinatura e cobrança</div>
-                <div class="screen-chip">Plano simples e transparente</div>
+                <div class="screen-chip">Custo claro por imóvel</div>
               </div>
               <div class="mini-content">
                 <div class="billing-list">
                   <div class="billing-item">
                     <div class="billing-top">
-                      <strong>Plano Pro</strong>
-                      <span class="status status-ok">Ativo</span>
+                      <strong>Plano ativo</strong>
+                      <span class="status status-ok">Em dia</span>
                     </div>
-                    <span>Próxima cobrança em 07/05</span>
+                    <span>Próxima cobrança visível no painel para você entender custo e acesso sem controle paralelo.</span>
                   </div>
                   <div class="billing-item">
                     <div class="billing-top">
                       <strong>Fatura #1048</strong>
                       <span class="status status-ok">Pago</span>
                     </div>
-                    <span>R$ 79,00 • link da fatura disponível</span>
+                    <span>Histórico organizado para acompanhar pagamentos sem abrir outra planilha.</span>
                   </div>
                 </div>
               </div>
@@ -1133,59 +1306,81 @@
       </div>
     </section>
 
+    <section class="section" id="casos-de-uso">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Casos de uso</div>
+          <h2>Use o StayFlow nos momentos em que a operação costuma consumir tempo.</h2>
+          <p>Do calendário ao financeiro, o painel ajuda você a decidir o próximo passo sem garimpar informação.</p>
+        </div>
+        <div class="use-case-grid">
+          <div class="use-case-card"><strong>Acompanhar entradas e saídas</strong><span>Veja check-ins, check-outs e reservas futuras sem garimpar informação em plataformas diferentes.</span></div>
+          <div class="use-case-card"><strong>Centralizar reservas</strong><span>Organize eventos de Airbnb, Booking e reservas diretas em uma experiência única.</span></div>
+          <div class="use-case-card"><strong>Visualizar lucro e ocupação</strong><span>Entenda resultado e desempenho por imóvel com menos esforço de consolidação manual.</span></div>
+          <div class="use-case-card"><strong>Automatizar comunicação</strong><span>Reduza mensagens repetitivas e acompanhe status dos disparos em uma aba operacional.</span></div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="como-funciona">
       <div class="container">
         <div class="section-head">
-          <h2>Configure o fluxo principal em poucos minutos</h2>
+          <div class="section-kicker">Como funciona</div>
+          <h2>Saia do espalhado para o centralizado em poucos minutos.</h2>
           <p>
-            A configuração é simples: você conecta as fontes da operação e passa a acompanhar tudo com mais clareza.
+            A jornada é simples: você conecta as fontes da operação e passa a acompanhar tudo com mais clareza,
+            sem depender de um setup técnico pesado.
           </p>
         </div>
 
         <div class="split">
           <div class="card">
-            <h3>Do cadastro ao controle em 4 passos</h3>
+            <h3>Do primeiro imóvel ao controle em 4 passos</h3>
             <p>
-              Sem setup técnico pesado: o StayFlow guia o básico para sua operação começar a gerar valor.
+              Cada etapa aproxima você de uma operação centralizada: imóvel, calendário, eventos e automações trabalhando no mesmo painel.
             </p>
             <div class="steps">
               <div class="step">
                 <div class="step-num">1</div>
-                <div><b>Cadastre o imóvel</b><span>Crie o contexto da operação e organize cada unidade em um painel único.</span></div>
+                <div><b>Cadastre o imóvel</b><span>Crie a base da operação e organize cada unidade em um painel único.</span></div>
               </div>
               <div class="step">
                 <div class="step-num">2</div>
-                <div><b>Conecte o iCal</b><span>Sincronize disponibilidade de Airbnb e Booking para reduzir conflito de agenda.</span></div>
+                <div><b>Conecte o iCal</b><span>Traga disponibilidade e eventos das plataformas para reduzir conferência manual.</span></div>
               </div>
               <div class="step">
                 <div class="step-num">3</div>
-                <div><b>Receba eventos</b><span>Use o e-mail do StayFlow para centralizar reservas, alterações e cancelamentos.</span></div>
+                <div><b>Configure o e-mail do StayFlow</b><span>Centralize notificações importantes para acompanhar reservas, alterações e cancelamentos.</span></div>
               </div>
               <div class="step">
                 <div class="step-num">4</div>
-                <div><b>Acompanhe e automatize</b><span>Veja alertas, resultado e mensagens automáticas sem depender de conferência manual.</span></div>
+                <div><b>Ative automações</b><span>Reduza tarefas repetitivas e acompanhe o que foi enviado ou precisa de atenção.</span></div>
               </div>
             </div>
           </div>
 
           <div class="card">
-            <h3>Por que passa mais confiança</h3>
+            <h3>O valor aparece no dia a dia</h3>
             <p>
-              Porque a experiência mostra que sua operação tem processo: dados claros, alertas visíveis e cobrança organizada.
+              O StayFlow não é só mais uma tela: é uma forma de acompanhar a operação com menos ruído e mais capacidade de decisão.
             </p>
             <div class="steps">
               <div class="step">
-                <div class="step-num">✓</div>
-                <div><b>Operação organizada</b><span>Menos improviso e mais clareza sobre o que acontece em cada imóvel.</span></div>
+                <div class="step-num">+</div>
+                <div><b>Menos procura</b><span>Você para de alternar entre canais para saber o básico da operação.</span></div>
               </div>
               <div class="step">
-                <div class="step-num">✓</div>
-                <div><b>Valor fácil de entender</b><span>O usuário vê lucro, ocupação, alertas e próximos eventos rapidamente.</span></div>
+                <div class="step-num">+</div>
+                <div><b>Mais clareza</b><span>Reservas, ocupação, lucro, cobrança e mensagens ficam mais fáceis de entender.</span></div>
               </div>
               <div class="step">
-                <div class="step-num">✓</div>
-                <div><b>Produto pronto para operar</b><span>Login, dashboard, cobrança, automações, reservas e operação no mesmo fluxo.</span></div>
+                <div class="step-num">+</div>
+                <div><b>Mais profissionalismo</b><span>A operação ganha processo, histórico e acompanhamento consistente.</span></div>
               </div>
+            </div>
+            <div class="cta-row" style="margin-top:24px;">
+              <a class="btn-secondary" href="#planos">Entender os planos</a>
+              <a class="btn-ghost" href="#faq">Tirar dúvidas</a>
             </div>
           </div>
         </div>
@@ -1195,61 +1390,62 @@
     <section class="section" id="planos">
       <div class="container">
         <div class="section-head">
-          <h2>Preço simples para começar sem fricção</h2>
+          <div class="section-kicker">Preço e custo-benefício</div>
+          <h2>Uma operação organizada custa uma fração do tempo que você economiza.</h2>
           <p>
             Comece com <strong>15 dias grátis</strong>. Depois, o plano base custa <strong>R$ 49,90/mês</strong>
-            com 1 imóvel incluso, e cada imóvel adicional custa <strong>R$ 29,90/mês</strong>.
+            com 1 imóvel incluso, e cada imóvel adicional custa <strong>R$ 29,90/mês</strong>. Simples, previsível e alinhado ao tamanho da sua operação.
           </p>
         </div>
 
         <div class="pricing">
           <div class="price-card featured">
-            <span class="pill">Teste grátis incluso</span>
+            <span class="pill">Teste grátis de 15 dias</span>
             <h3>Comece com 1 imóvel</h3>
-            <p>Ideal para validar na prática, organizar a rotina e perceber valor antes de escalar para mais imóveis.</p>
+            <p>Valide o valor na rotina real: cadastre o imóvel, conecte calendário, veja reservas e acompanhe a operação antes da primeira cobrança.</p>
             <div class="price">R$ 49,90 <small>/mês</small></div>
-            <div class="price-note">Inclui 1 imóvel. Cada imóvel adicional custa R$ 29,90 por mês.</div>
+            <div class="price-note">Menos do que algumas horas de conferência manual. Inclui 1 imóvel e acesso ao painel operacional completo.</div>
             <div class="check-list">
               <div>1 imóvel incluso</div>
-              <div>Calendário unificado</div>
+              <div>Calendário e reservas centralizados</div>
               <div>Integração via iCal</div>
-              <div>Reservas e operação centralizadas</div>
-              <div>Indicadores e painel operacional</div>
-              <div>Teste grátis de 15 dias</div>
+              <div>Mensagens e status operacionais</div>
+              <div>Financeiro, cobrança e visão de resultado</div>
+              <div>Teste grátis de 15 dias para validar sem pressão</div>
             </div>
-            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+            <a class="btn" href="/app.html">Começar meu teste grátis</a>
           </div>
 
           <div class="price-card">
-            <span class="pill">Escala simples</span>
+            <span class="pill">Crescimento por unidade</span>
             <h3>Imóvel adicional</h3>
-            <p>Conforme sua operação crescer, você só adiciona novas unidades sem trocar de plano nem complicar a cobrança.</p>
+            <p>Quando sua operação crescer, você adiciona novas unidades mantendo o mesmo painel, o mesmo processo e a mesma clareza.</p>
             <div class="price">R$ 29,90 <small>/mês</small></div>
             <div class="price-note">Cobrado por cada imóvel extra adicionado à sua conta.</div>
             <div class="check-list">
               <div>R$ 29,90 por imóvel adicional</div>
-              <div>Mesmo painel e mesma operação</div>
+              <div>Mesma visão centralizada</div>
               <div>Mesmas integrações e recursos</div>
               <div>Gestão multi-imóveis no mesmo lugar</div>
-              <div>Escala sem perder controle</div>
+              <div>Escala sem perder controle operacional</div>
             </div>
-            <a class="btn-secondary" href="/app.html">Adicionar imóveis</a>
+            <a class="btn-secondary" href="/app.html">Abrir minha conta</a>
           </div>
 
           <div class="price-card">
-            <span class="pill">Transparente</span>
-            <h3>Condições transparentes</h3>
-            <p>Uma estrutura fácil de entender: teste primeiro, acompanhe a assinatura e escale imóvel por imóvel.</p>
-            <div class="price" style="font-size:1.55rem; line-height:1.35;">Sem fidelidade</div>
-            <div class="price-note">Perfeito para teste, validação e crescimento com clareza.</div>
+            <span class="pill">Clareza para decidir</span>
+            <h3>Sem fidelidade</h3>
+            <p>Uma oferta simples: teste, valide, acompanhe a assinatura e escale imóvel por imóvel conforme o StayFlow fizer sentido para sua rotina.</p>
+            <div class="price" style="font-size:1.55rem; line-height:1.35;">Baixo risco</div>
+            <div class="price-note">Comece pequeno, veja valor e cresça com controle.</div>
             <div class="check-list">
-              <div>Comece com 1 imóvel incluso</div>
-              <div>Escale por unidade adicional</div>
-              <div>Modelo fácil de explicar ao cliente</div>
+              <div>Teste antes de pagar</div>
+              <div>Cobrança transparente</div>
+              <div>Controle da assinatura no próprio painel</div>
               <div>Preço alinhado à operação real</div>
-              <div>Base pronta para cobrança recorrente</div>
+              <div>Estrutura pronta para crescimento gradual</div>
             </div>
-            <a class="btn-secondary" href="#cta-final">Falar com vendas</a>
+            <a class="btn-secondary" href="#como-funciona">Ver como começar</a>
           </div>
         </div>
       </div>
@@ -1258,14 +1454,15 @@
     <section class="section" id="faq">
       <div class="container">
         <div class="section-head">
+          <div class="section-kicker">Dúvidas comuns</div>
           <h2>Perguntas frequentes</h2>
-          <p>As dúvidas mais comuns de quem está avaliando uma solução para centralizar reservas e crescer com menos erro.</p>
+          <p>Respostas diretas para quem quer centralizar a operação sem complicar a rotina.</p>
         </div>
 
         <div class="faq-grid">
           <div class="card faq-item">
             <h4>Preciso integrar API para começar?</h4>
-            <p>Não. O fluxo inicial usa cadastro de imóvel, links iCal e e-mail do StayFlow para centralizar eventos importantes.</p>
+            <p>Não. O fluxo inicial usa cadastro de imóvel, links iCal e e-mail do StayFlow para centralizar eventos importantes sem setup pesado.</p>
           </div>
           <div class="card faq-item">
             <h4>Funciona com Airbnb e Booking?</h4>
@@ -1273,27 +1470,27 @@
           </div>
           <div class="card faq-item">
             <h4>Serve para operação pequena?</h4>
-            <p>Sim. Você pode começar com 1 imóvel e usar o painel para profissionalizar a rotina antes de crescer.</p>
+            <p>Sim. Você pode começar com 1 imóvel e ganhar clareza antes de expandir para novas unidades.</p>
+          </div>
+          <div class="card faq-item">
+            <h4>O que muda na rotina?</h4>
+            <p>Você reduz a necessidade de abrir várias plataformas para entender reservas, calendário, mensagens, financeiro e cobrança. A rotina fica mais rápida e menos fragmentada.</p>
           </div>
           <div class="card faq-item">
             <h4>O teste grátis dura quanto tempo?</h4>
-            <p>O trial dura 15 dias. Durante esse período você pode cadastrar imóvel, conectar iCal e validar a operação antes da cobrança.</p>
+            <p>O trial dura 15 dias. Durante esse período você pode cadastrar imóvel, conectar iCal e validar o painel antes da cobrança.</p>
           </div>
           <div class="card faq-item">
             <h4>Como funciona a cobrança?</h4>
             <p>Depois do trial, o plano base custa R$ 49,90 por mês e inclui 1 imóvel. Cada imóvel adicional custa R$ 29,90 por mês.</p>
           </div>
           <div class="card faq-item">
-            <h4>Posso cancelar quando quiser?</h4>
-            <p>Sim. Você pode cancelar a assinatura e manter o controle da cobrança pela própria área de Assinatura e Cobrança.</p>
-          </div>
-          <div class="card faq-item">
             <h4>Para que serve o e-mail do StayFlow?</h4>
-            <p>Ele deve ser cadastrado nas notificações das plataformas para ajudar o StayFlow a identificar reservas, alterações e cancelamentos.</p>
+            <p>Ele ajuda a centralizar notificações das plataformas para identificar reservas, alterações e cancelamentos automaticamente.</p>
           </div>
           <div class="card faq-item">
             <h4>O StayFlow substitui Airbnb e Booking?</h4>
-            <p>Não. Ele centraliza a operação e ajuda a reduzir conflito entre canais, sem substituir as plataformas de anúncio.</p>
+            <p>Não. Ele complementa as plataformas, centralizando a gestão para você operar com mais controle. Evitar conflito de agenda é um benefício secundário dessa centralização.</p>
           </div>
         </div>
       </div>
@@ -1302,13 +1499,13 @@
     <section class="section" id="cta-final">
       <div class="container">
         <div class="cta-box">
-          <h2>Comece a operar com mais clareza em poucos minutos</h2>
+          <h2>Transforme sua operação espalhada em um painel profissional.</h2>
           <p>
-            Saia da conferência manual, organize reservas e acompanhe lucro, ocupação e alertas em um painel feito para aluguel por temporada.
-            O primeiro passo é simples: crie a conta e teste por 15 dias.
+            Comece com um imóvel, conecte as fontes principais e veja reservas, calendário, mensagens,
+            financeiro e cobrança trabalhando juntos. Em poucos minutos você sai da conferência manual e entra em uma rotina com mais clareza.
           </p>
           <div class="cta-row" style="justify-content:center; margin-bottom:0;">
-            <a class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
+            <a class="btn" href="/app.html">Começar agora com teste grátis</a>
             <a class="btn-secondary" href="/app.html">Acessar minha conta</a>
           </div>
         </div>
@@ -1317,7 +1514,7 @@
   </main>
 
   <footer>
-    <div class="container">StayFlow © 2026 — Seu fluxo de reservas, automatizado.</div>
+    <div class="container">StayFlow © 2026 — Operação centralizada para aluguel por temporada.</div>
   </footer>
 </body>
 </html>

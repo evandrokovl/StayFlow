@@ -52,6 +52,16 @@ async function enqueueInboundResendWebhook(payload) {
   );
 }
 
+async function enqueueAsaasWebhookEvent({ eventId, eventType, payload }) {
+  return jobQueue.add(
+    'asaas_webhook',
+    { eventId, eventType, payload },
+    {
+      jobId: `asaas_webhook_${sanitizeIdPart(eventId)}`
+    }
+  );
+}
+
 async function enqueueSyncAllProperties() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
@@ -81,6 +91,7 @@ module.exports = {
   jobQueue,
   queueName,
   enqueueInboundResendWebhook,
+  enqueueAsaasWebhookEvent,
   enqueueSyncAllProperties,
   enqueueProcessMessageAutomations
 };

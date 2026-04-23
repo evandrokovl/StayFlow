@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling } = require('../middlewares/billingAccessMiddleware');
+const logger = require('../utils/logger');
 
 function formatDateICS(date) {
   const d = new Date(date);
@@ -98,7 +99,7 @@ router.get('/:token.ics', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${property.name}.ics"`);
     res.send(ics);
   } catch (error) {
-    console.error('Erro ao gerar iCal:', error.message);
+    logger.error("Erro ao gerar iCal", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).send('Erro ao gerar iCal');
   }
 });
@@ -129,7 +130,7 @@ router.get('/property/:id', authMiddleware, requireFullBilling, async (req, res)
       ical_url: `http://localhost:3000/ical/${property.internal_ical_token}.ics`
     });
   } catch (error) {
-    console.error('Erro ao buscar link do iCal:', error.message);
+    logger.error("Erro ao buscar link do iCal", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao buscar link do iCal' });
   }
 });

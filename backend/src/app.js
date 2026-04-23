@@ -4,6 +4,7 @@ const helmet = require('helmet');
 
 const pool = require('./config/database');
 const { env } = require('./config/env');
+const logger = require('./utils/logger');
 
 const icalRoutes = require('./routes/icalRoutes');
 const propertyRoutes = require('./routes/propertyRoutes');
@@ -93,11 +94,17 @@ app.get('/health', async (req, res) => {
       service: 'api'
     });
   } catch (error) {
+    logger.error('Health check falhou', {
+      service: 'api',
+      scope: 'health',
+      error
+    });
+
     return res.status(500).json({
       success: false,
       status: 'degraded',
       service: 'api',
-      message: error.message
+      message: 'Servico temporariamente indisponivel'
     });
   }
 });

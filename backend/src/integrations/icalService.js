@@ -1,7 +1,9 @@
 const axios = require('axios');
 const ical = require('node-ical');
-const { validateExternalUrl } = require('../utils/security');
+const { validateExternalUrlAsync } = require('../utils/security');
 const logger = require('../utils/logger');
+
+const MAX_ICAL_REDIRECTS = 3;
 
 async function fetchIcalEvents(icalUrl) {
   try {
@@ -9,23 +11,7 @@ async function fetchIcalEvents(icalUrl) {
       return [];
     }
 
-    const validation = validateExternalUrl(icalUrl);
-
-    if (!validation.valid) {
-      logger.warn('URL de iCal bloqueada por validação de segurança', {
-        service: 'sync',
-        scope: 'ical_fetch',
-        icalUrl,
-        reason: validation.reason
-      });
-      return [];
-    }
-
-    const response = await axios.get(icalUrl, {
-      timeout: 15000,
-      responseType: 'text',
-      maxRedirects: 3
-    });
+    const response = await fetchValidatedIcalUrl(icalUrl);
 
     const rawIcal = response.data;
 
@@ -57,6 +43,54 @@ async function fetchIcalEvents(icalUrl) {
     });
     return [];
   }
+}
+
+async function fetchValidatedIcalUrl(initialUrl) {
+  let currentUrl = initialUrl;
+
+  for (let redirects = 0; redirects <= MAX_ICAL_REDIRECTS; redirects += 1) {
+    const validation = await validateExternalUrlAsync(currentUrl);
+
+    if (!validation.valid) {
+      logger.warn('URL de iCal bloqueada por validação de segurança', {
+        service: 'sync',
+        scope: 'ical_fetch',
+        icalUrl: currentUrl,
+        reason: validation.reason
+      });
+
+      return {
+        data: ''
+      };
+    }
+
+    const response = await axios.get(currentUrl, {
+      timeout: 15000,
+      responseType: 'text',
+      maxRedirects: 0,
+      validateStatus(status) {
+        return (status >= 200 && status < 300) || (status >= 300 && status < 400);
+      }
+    });
+
+    if (response.status >= 300 && response.status < 400 && response.headers.location) {
+      currentUrl = new URL(response.headers.location, currentUrl).toString();
+      continue;
+    }
+
+    return response;
+  }
+
+  logger.warn('URL de iCal bloqueada por excesso de redirecionamentos', {
+    service: 'sync',
+    scope: 'ical_fetch',
+    icalUrl: initialUrl,
+    maxRedirects: MAX_ICAL_REDIRECTS
+  });
+
+  return {
+    data: ''
+  };
 }
 
 function formatDateOnly(date) {

@@ -235,7 +235,10 @@
     }
 
     function showMessage(targetId, text, type = 'success') {
-      document.getElementById(targetId).innerHTML = `<div class="message ${type}">${text}</div>`;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
+      target.innerHTML = `<div class="message ${safeType}">${escapeHtml(text)}</div>`;
     }
 
     function clearMessage(targetId) {
@@ -559,10 +562,10 @@
           <button type="button" class="activation-step-card ${state}" data-activation-section="${step.section}">
             <span class="activation-step-number">${step.done ? '&check;' : index + 1}</span>
             <span>
-              <strong>${step.title}</strong>
-              <small>${step.description}</small>
+              <strong>${escapeHtml(step.title)}</strong>
+              <small>${escapeHtml(step.description)}</small>
             </span>
-            <em>${activationStepStatusLabel(step, index, firstPendingIndex)}</em>
+            <em>${escapeHtml(activationStepStatusLabel(step, index, firstPendingIndex))}</em>
           </button>
         `;
       }).join('');
@@ -1177,20 +1180,22 @@
 
       messageAutomationTableBody.innerHTML = messageAutomations.map(item => {
         const isActive = item.is_active || item.status === 'active';
+        const propertyName = item.property_name || properties.find(property => String(property.id) === String(item.property_id))?.name || '-';
+        const automationId = escapeHtml(item.id);
         return `
           <tr>
-            <td>${item.property_name || properties.find(property => String(property.id) === String(item.property_id))?.name || '-'}</td>
-            <td>${triggerLabel(item.trigger_type || item.automation_type)}</td>
-          <td>${item.offset_days ?? item.days_offset ?? 0}</td>
-          <td>${item.send_time || '-'}</td>
+            <td>${escapeHtml(propertyName)}</td>
+            <td>${escapeHtml(triggerLabel(item.trigger_type || item.automation_type))}</td>
+          <td>${escapeHtml(item.offset_days ?? item.days_offset ?? 0)}</td>
+          <td>${escapeHtml(item.send_time || '-')}</td>
           <td><span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Ativa' : 'Inativa'}</span></td>
             <td>${automationOperationHtml(item)}</td>
             <td><div style="max-width: 320px; white-space: pre-wrap;">${escapeHtml(item.template_text || item.message_template || '-')}</div></td>
             <td>
               <div class="actions-inline">
-                <button type="button" data-action="edit-message-automation" data-id="${item.id}">Editar</button>
-                <button type="button" data-action="toggle-message-automation" data-id="${item.id}">${isActive ? 'Desativar' : 'Ativar'}</button>
-                <button type="button" class="btn-danger" data-action="delete-message-automation" data-id="${item.id}">Excluir</button>
+                <button type="button" data-action="edit-message-automation" data-id="${automationId}">Editar</button>
+                <button type="button" data-action="toggle-message-automation" data-id="${automationId}">${isActive ? 'Desativar' : 'Ativar'}</button>
+                <button type="button" class="btn-danger" data-action="delete-message-automation" data-id="${automationId}">Excluir</button>
               </div>
             </td>
           </tr>
@@ -1273,17 +1278,17 @@
       messageLogsList.innerHTML = messageLogs.map(log => `
         <div class="log-item">
           <div class="log-top">
-            <strong>${log.property_name || '-'} · ${log.guest_name || 'Hóspede'}</strong>
-            <span class="status-badge ${messageLogStatusClass(log.status)}">${messageLogStatusLabel(log.status)}</span>
+            <strong>${escapeHtml(log.property_name || '-')} - ${escapeHtml(log.guest_name || 'Hóspede')}</strong>
+            <span class="status-badge ${messageLogStatusClass(log.status)}">${escapeHtml(messageLogStatusLabel(log.status))}</span>
           </div>
-          <div class="small">${log.automation_name || 'Automação'} · ${log.channel || 'Canal não informado'}</div>
+          <div class="small">${escapeHtml(log.automation_name || 'Automação')} - ${escapeHtml(log.channel || 'Canal não informado')}</div>
           <div class="log-meta-grid">
-            <div class="log-meta-box"><strong>Contato</strong><br>${log.guest_contact || '-'}</div>
-            <div class="log-meta-box"><strong>Agendado</strong><br>${formatDateTimeBR(log.scheduled_for)}</div>
-            <div class="log-meta-box"><strong>Processado</strong><br>${formatDateTimeBR(log.processed_at)}</div>
-            <div class="log-meta-box"><strong>Erro</strong><br>${log.error_message || '-'}</div>
+            <div class="log-meta-box"><strong>Contato</strong><br>${escapeHtml(log.guest_contact || '-')}</div>
+            <div class="log-meta-box"><strong>Agendado</strong><br>${escapeHtml(formatDateTimeBR(log.scheduled_for))}</div>
+            <div class="log-meta-box"><strong>Processado</strong><br>${escapeHtml(formatDateTimeBR(log.processed_at))}</div>
+            <div class="log-meta-box"><strong>Erro</strong><br>${escapeHtml(log.error_message || '-')}</div>
           </div>
-          <div class="template-preview">${log.body_rendered || log.message_text || log.content || 'Sem conteúdo registrado.'}</div>
+          <div class="template-preview">${escapeHtml(log.body_rendered || log.message_text || log.content || 'Sem conteúdo registrado.')}</div>
         </div>
       `).join('');
       renderDashboardAlerts();
@@ -1430,10 +1435,26 @@
         .replace(/'/g, '&#039;');
     }
 
+    function safeExternalUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+
+      try {
+        const url = new URL(raw, window.location.origin);
+        if (!['http:', 'https:', 'webcal:'].includes(url.protocol)) {
+          return '';
+        }
+        return url.href;
+      } catch (error) {
+        return '';
+      }
+    }
+
     function setOperationFeedback(text, type = 'success') {
       const target = document.getElementById('operationFeedback');
       if (!target) return;
-      target.innerHTML = text ? '<div class="message ' + type + '">' + escapeHtml(text) + '</div>' : '';
+      const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
+      target.innerHTML = text ? '<div class="message ' + safeType + '">' + escapeHtml(text) + '</div>' : '';
     }
 
     function getOperationFilters() {
@@ -1452,7 +1473,7 @@
     function updateOperationPropertyOptions() {
       if (!operationPropertyFilter) return;
       const current = operationPropertyFilter.value;
-      operationPropertyFilter.innerHTML = '<option value="">Todos os imóveis</option>' + properties.map(property => '<option value="' + property.id + '">' + escapeHtml(property.name || 'Imóvel') + '</option>').join('');
+      operationPropertyFilter.innerHTML = '<option value="">Todos os imóveis</option>' + properties.map(property => '<option value="' + escapeHtml(property.id) + '">' + escapeHtml(property.name || 'Imóvel') + '</option>').join('');
       operationPropertyFilter.value = current;
     }
 
@@ -1546,19 +1567,19 @@
         const message = hasOperationFilters()
           ? 'Nenhuma mensagem encontrada para os filtros aplicados.'
           : 'Nenhuma mensagem operacional encontrada.';
-        operationMessagesTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + message + '</div></td></tr>';
+        operationMessagesTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + escapeHtml(message) + '</div></td></tr>';
         return;
       }
       operationMessagesTableBody.innerHTML = rows.map(log => '<tr>' +
-        '<td><span class="status-badge ' + messageLogStatusClass(log.status) + '">' + messageLogStatusLabel(log.status) + '</span></td>' +
+        '<td><span class="status-badge ' + messageLogStatusClass(log.status) + '">' + escapeHtml(messageLogStatusLabel(log.status)) + '</span></td>' +
         '<td>' + escapeHtml(log.guest_name || 'Hóspede') + '</td>' +
         '<td>' + escapeHtml(log.property_name || '-') + '</td>' +
         '<td>' + escapeHtml(formatDateTimeBR(log.scheduled_for)) + '</td>' +
         '<td>' + escapeHtml(log.channel || 'email') + '</td>' +
         '<td><div class="row-actions">' +
-          '<button type="button" class="btn-secondary" data-operation-action="reprocess-message" data-id="' + log.id + '">Reprocessar</button>' +
-          '<button type="button" class="btn-success" data-operation-action="force-message" data-id="' + log.id + '">Enviar</button>' +
-          '<button type="button" data-operation-action="details-message" data-id="' + log.id + '">Ver</button>' +
+          '<button type="button" class="btn-secondary" data-operation-action="reprocess-message" data-id="' + escapeHtml(log.id) + '">Reprocessar</button>' +
+          '<button type="button" class="btn-success" data-operation-action="force-message" data-id="' + escapeHtml(log.id) + '">Enviar</button>' +
+          '<button type="button" data-operation-action="details-message" data-id="' + escapeHtml(log.id) + '">Ver</button>' +
         '</div></td></tr>').join('');
     }
 
@@ -1590,18 +1611,18 @@
         const message = hasOperationFilters()
           ? 'Nenhum inbound encontrado para os filtros aplicados.'
           : 'Nenhum inbound email encontrado.';
-        operationInboundTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + message + '</div></td></tr>';
+        operationInboundTableBody.innerHTML = '<tr><td colspan="6"><div class="operation-empty-row">' + escapeHtml(message) + '</div></td></tr>';
         return;
       }
       operationInboundTableBody.innerHTML = rows.map(item => '<tr>' +
-        '<td><span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + inboundStatusLabel(item.parsing_status) + '</span></td>' +
+        '<td><span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + escapeHtml(inboundStatusLabel(item.parsing_status)) + '</span></td>' +
         '<td>' + escapeHtml(item.platform || 'unknown') + '</td>' +
         '<td>' + escapeHtml(actionLabel(item.action)) + '</td>' +
-        '<td><span class="confidence-pill">' + (item.confidence == null ? '-' : item.confidence + '%') + '</span></td>' +
+        '<td><span class="confidence-pill">' + escapeHtml(item.confidence == null ? '-' : item.confidence + '%') + '</span></td>' +
         '<td>' + escapeHtml(item.property_name || 'Não identificado') + '</td>' +
         '<td><div class="row-actions">' +
-          '<button type="button" class="btn-secondary" data-operation-action="reprocess-inbound" data-id="' + item.id + '">Reprocessar</button>' +
-          '<button type="button" data-operation-action="details-inbound" data-id="' + item.id + '">Ver</button>' +
+          '<button type="button" class="btn-secondary" data-operation-action="reprocess-inbound" data-id="' + escapeHtml(item.id) + '">Reprocessar</button>' +
+          '<button type="button" data-operation-action="details-inbound" data-id="' + escapeHtml(item.id) + '">Ver</button>' +
         '</div></td></tr>').join('');
     }
 
@@ -1688,9 +1709,9 @@
       }
 
       operationAttentionList.innerHTML = items.map(item =>
-        '<div class="operation-attention-item ' + item.severity + '">' +
+        '<div class="operation-attention-item ' + escapeHtml(item.severity) + '">' +
           '<div><strong>' + escapeHtml(item.title) + '</strong><div class="small">' + escapeHtml(item.detail) + '</div></div>' +
-          '<button type="button" class="btn-secondary" data-attention-type="' + item.type + '" data-id="' + item.id + '">Abrir</button>' +
+          '<button type="button" class="btn-secondary" data-attention-type="' + escapeHtml(item.type) + '" data-id="' + escapeHtml(item.id) + '">Abrir</button>' +
         '</div>'
       ).join('');
     }
@@ -1750,7 +1771,7 @@
     }
 
     function renderMessageOperationDetails(item) {
-      const status = '<span class="status-badge ' + messageLogStatusClass(item.status) + '">' + messageLogStatusLabel(item.status) + '</span>';
+      const status = '<span class="status-badge ' + messageLogStatusClass(item.status) + '">' + escapeHtml(messageLogStatusLabel(item.status)) + '</span>';
       return '<div class="operation-detail-layout">' +
         '<div class="operation-detail-summary">' +
           '<div><div class="summary-label">Mensagem</div><h3>' + escapeHtml(item.subject || 'Mensagem sem assunto') + '</h3></div>' +
@@ -1773,7 +1794,7 @@
     }
 
     function renderInboundOperationDetails(item) {
-      const status = '<span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + inboundStatusLabel(item.parsing_status) + '</span>';
+      const status = '<span class="status-badge ' + inboundStatusClass(item.parsing_status) + '">' + escapeHtml(inboundStatusLabel(item.parsing_status)) + '</span>';
       return '<div class="operation-detail-layout">' +
         '<div class="operation-detail-summary">' +
           '<div><div class="summary-label">Inbound email</div><h3>' + escapeHtml(item.subject || 'Email sem assunto') + '</h3></div>' +
@@ -2307,10 +2328,10 @@
       legendContainer.innerHTML = seriesList.map(series => `
         <div class="property-lines-legend-item">
           <div class="property-lines-legend-left">
-            <span class="property-lines-dot" style="background:${series.color};"></span>
-            <span class="property-lines-name">${series.name}</span>
+            <span class="property-lines-dot" style="background:${escapeHtml(series.color)};"></span>
+            <span class="property-lines-name">${escapeHtml(series.name)}</span>
           </div>
-          <div class="property-lines-value ${series.total >= 0 ? 'income-value' : 'expense-value'}">${formatMoney(series.total)}</div>
+          <div class="property-lines-value ${series.total >= 0 ? 'income-value' : 'expense-value'}">${escapeHtml(formatMoney(series.total))}</div>
         </div>
       `).join('');
     }
@@ -2368,12 +2389,12 @@
       container.innerHTML = ranking.map((item, index) => `
         <div class="ranking-item">
           <div class="ranking-top">
-            <div class="ranking-name">${index + 1}. ${item.property_name}</div>
-            <div class="${item.profit >= 0 ? 'income-value' : 'expense-value'}">${formatMoney(item.profit)}</div>
+            <div class="ranking-name">${index + 1}. ${escapeHtml(item.property_name)}</div>
+            <div class="${item.profit >= 0 ? 'income-value' : 'expense-value'}">${escapeHtml(formatMoney(item.profit))}</div>
           </div>
           <div class="ranking-meta">
-            <span>Receitas: <strong>${formatMoney(item.income)}</strong></span>
-            <span>Despesas: <strong>${formatMoney(item.expense)}</strong></span>
+            <span>Receitas: <strong>${escapeHtml(formatMoney(item.income))}</strong></span>
+            <span>Despesas: <strong>${escapeHtml(formatMoney(item.expense))}</strong></span>
           </div>
         </div>
       `).join('');
@@ -2815,7 +2836,7 @@
       }
 
       billingPaymentsTableBody.innerHTML = billingPayments.map(payment => {
-        const invoiceUrl = payment.invoice_url || payment.invoiceUrl || '';
+        const invoiceUrl = safeExternalUrl(payment.invoice_url || payment.invoiceUrl || '');
         const status = payment.status || 'PENDING';
         const paidAt = payment.payment_date || payment.paymentDate || payment.confirmed_date || payment.confirmedDate;
 
@@ -2825,7 +2846,7 @@
             <td>${escapeHtml(formatMoney(payment.value))}</td>
             <td>${escapeHtml(formatBillingDate(payment.due_date || payment.dueDate))}</td>
             <td>${escapeHtml(formatBillingDate(paidAt))}</td>
-            <td>${invoiceUrl ? `<a href="${escapeHtml(invoiceUrl)}" target="_blank" rel="noopener">Abrir fatura</a>` : '-'}</td>
+            <td>${invoiceUrl ? `<a href="${escapeHtml(invoiceUrl)}" target="_blank" rel="noopener noreferrer">Abrir fatura</a>` : '-'}</td>
           </tr>
         `;
       }).join('');
@@ -3051,24 +3072,24 @@ function renderPropertyList() {
     const listingUrl = property.listing_url || 'Link do anúncio não informado';
 
     div.innerHTML = `
-      <div class="property-title">${property.name}</div>
-      <div class="small">${cityState || ''}</div>
-      <div class="small">${property.address || ''}</div>
-      <div class="small"><strong>Plataforma:</strong> ${listingPlatform}</div>
-      <div class="small"><strong>${listingCode}</strong></div>
-      <div class="small" style="word-break: break-all;"><strong>Anúncio:</strong> ${listingUrl}</div>
+      <div class="property-title">${escapeHtml(property.name)}</div>
+      <div class="small">${escapeHtml(cityState || '')}</div>
+      <div class="small">${escapeHtml(property.address || '')}</div>
+      <div class="small"><strong>Plataforma:</strong> ${escapeHtml(listingPlatform)}</div>
+      <div class="small"><strong>${escapeHtml(listingCode)}</strong></div>
+      <div class="small" style="word-break: break-all;"><strong>Anúncio:</strong> ${escapeHtml(listingUrl)}</div>
     `;
 
     div.addEventListener('click', async () => {
       selectedPropertyId = property.id;
 
       selectedPropertyInfo.innerHTML = `
-        <div><strong>${property.name}</strong></div>
-        <div>${cityState || 'Cidade não informada'}</div>
-        <div>${property.address || 'Endereço não informado'}</div>
-        <div><strong>Plataforma:</strong> ${listingPlatform}</div>
-        <div><strong>${listingCode}</strong></div>
-        <div style="word-break: break-all;"><strong>Anúncio:</strong> ${listingUrl}</div>
+        <div><strong>${escapeHtml(property.name)}</strong></div>
+        <div>${escapeHtml(cityState || 'Cidade não informada')}</div>
+        <div>${escapeHtml(property.address || 'Endereço não informado')}</div>
+        <div><strong>Plataforma:</strong> ${escapeHtml(listingPlatform)}</div>
+        <div><strong>${escapeHtml(listingCode)}</strong></div>
+        <div style="word-break: break-all;"><strong>Anúncio:</strong> ${escapeHtml(listingUrl)}</div>
       `;
 
       renderPropertyList();
@@ -3083,8 +3104,6 @@ function renderPropertyList() {
 
     propertyList.appendChild(div);
   });
-
-  renderActivationGuide();
 }
 
     function renderPropertySelects() {
@@ -3458,25 +3477,26 @@ function renderPropertyList() {
       const property = properties.find(p => Number(p.id) === Number(selectedPropertyId));
 
       if (!property) {
-        selectedPropertyInfo.innerHTML = 'Selecione ou cadastre um imóvel para ver reservas, calendário e links iCal.';
+        selectedPropertyInfo.textContent = 'Selecione ou cadastre um imóvel para ver reservas, calendário e links iCal.';
         if (selectedPropertyBadge) selectedPropertyBadge.textContent = 'Nenhum imóvel selecionado';
-        icalLinkBox.innerHTML = 'Conecte o iCal para começar a sincronizar calendário.';
+        icalLinkBox.textContent = 'Conecte o iCal para começar a sincronizar calendário.';
         return;
       }
 
       selectedPropertyInfo.innerHTML = `
-        <strong>${property.name}</strong><br>
-        ${property.city || ''} ${property.state ? '- ' + property.state : ''}<br>
-        ${property.address || ''}<br>
-        Reservas/bloqueios: <strong>${reservations.length}</strong>
+        <strong>${escapeHtml(property.name)}</strong><br>
+        ${escapeHtml(property.city || '')} ${property.state ? '- ' + escapeHtml(property.state) : ''}<br>
+        ${escapeHtml(property.address || '')}<br>
+        Reservas/bloqueios: <strong>${escapeHtml(reservations.length)}</strong>
       `;
 
       if (selectedPropertyBadge) {
         selectedPropertyBadge.textContent = `Imóvel: ${property.name}`;
       }
 
-      icalLinkBox.innerHTML = property.internal_ical_url
-        ? `<a href="${property.internal_ical_url}" target="_blank">${property.internal_ical_url}</a>`
+      const internalIcalUrl = safeExternalUrl(property.internal_ical_url);
+      icalLinkBox.innerHTML = internalIcalUrl
+        ? `<a href="${escapeHtml(internalIcalUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(internalIcalUrl)}</a>`
         : 'iCal não disponível';
     }
 
@@ -3486,25 +3506,28 @@ function renderPropertyList() {
         return;
       }
 
-      reservationsTableBody.innerHTML = reservations.map(item => `
-        <tr class="${item.source !== 'blocked' ? 'reservation-row-clickable' : ''} ${Number(selectedReservationId) === Number(item.id) ? 'active-row' : ''} ${isReservationCancelled(item) ? 'reservation-row-cancelled' : ''}" data-id="${item.id}">
-          <td>${item.id}</td>
-          <td>${item.guest_name || '-'}</td>
-          <td>${sourceLabel(item.source)}</td>
-          <td>${formatDateBR(item.start_date)}</td>
-          <td>${formatDateBR(item.end_date)}</td>
-          <td>${item.total_amount !== null && item.total_amount !== undefined ? formatMoney(item.total_amount) : '-'}</td>
-          <td><span class="status-badge ${reservationStatusClass(item.status)}">${reservationStatusLabel(item.status)}</span></td>
+      reservationsTableBody.innerHTML = reservations.map(item => {
+        const reservationId = escapeHtml(item.id);
+        return `
+        <tr class="${item.source !== 'blocked' ? 'reservation-row-clickable' : ''} ${Number(selectedReservationId) === Number(item.id) ? 'active-row' : ''} ${isReservationCancelled(item) ? 'reservation-row-cancelled' : ''}" data-id="${reservationId}">
+          <td>${reservationId}</td>
+          <td>${escapeHtml(item.guest_name || '-')}</td>
+          <td>${escapeHtml(sourceLabel(item.source))}</td>
+          <td>${escapeHtml(formatDateBR(item.start_date))}</td>
+          <td>${escapeHtml(formatDateBR(item.end_date))}</td>
+          <td>${escapeHtml(item.total_amount !== null && item.total_amount !== undefined ? formatMoney(item.total_amount) : '-')}</td>
+          <td><span class="status-badge ${reservationStatusClass(item.status)}">${escapeHtml(reservationStatusLabel(item.status))}</span></td>
           <td>
             <div class="row-actions">
-              <button type="button" data-action="view-reservation-details" data-id="${item.id}">Detalhes</button>
+              <button type="button" data-action="view-reservation-details" data-id="${reservationId}">Detalhes</button>
               ${item.source !== 'blocked'
-                ? `<button type="button" class="btn-secondary" data-action="view-reservation-finance" data-id="${item.id}">Ver lucro</button>`
+                ? `<button type="button" class="btn-secondary" data-action="view-reservation-finance" data-id="${reservationId}">Ver lucro</button>`
                 : ''}
             </div>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function highlightSelectedReservationRow() {
@@ -3741,11 +3764,11 @@ function renderPropertyList() {
 
         const reservation = data.reservation;
         document.getElementById('reservationFinanceInfo').innerHTML = `
-          <strong>Reserva #${reservation.id}</strong><br>
-          Imóvel: ${reservation.property_name}<br>
-          Hóspede: ${reservation.guest_name || '-'}<br>
-          Status: ${reservationStatusLabel(reservation.status)}<br>
-          Período: ${formatDateBR(reservation.start_date)} até ${formatDateBR(reservation.end_date)}
+          <strong>Reserva #${escapeHtml(reservation.id)}</strong><br>
+          Imóvel: ${escapeHtml(reservation.property_name)}<br>
+          Hóspede: ${escapeHtml(reservation.guest_name || '-')}<br>
+          Status: ${escapeHtml(reservationStatusLabel(reservation.status))}<br>
+          Período: ${escapeHtml(formatDateBR(reservation.start_date))} até ${escapeHtml(formatDateBR(reservation.end_date))}
         `;
 
         updateReservationFinanceSummary(data.summary || {});
@@ -3756,12 +3779,12 @@ function renderPropertyList() {
         } else {
           tbody.innerHTML = data.entries.map(entry => `
             <tr>
-              <td>${formatDateBR(entry.entry_date)}</td>
+              <td>${escapeHtml(formatDateBR(entry.entry_date))}</td>
               <td>${entry.type === 'income' ? 'Receita' : 'Despesa'}</td>
-              <td>${entry.category || '-'}</td>
-              <td>${entry.description || '-'}</td>
-              <td>${formatMoney(entry.amount)}</td>
-              <td>${financialStatusLabel(entry.status)}</td>
+              <td>${escapeHtml(entry.category || '-')}</td>
+              <td>${escapeHtml(entry.description || '-')}</td>
+              <td>${escapeHtml(formatMoney(entry.amount))}</td>
+              <td>${escapeHtml(financialStatusLabel(entry.status))}</td>
             </tr>
           `).join('');
         }
@@ -4154,33 +4177,36 @@ function renderPropertyList() {
         return;
       }
 
-      financialTableBody.innerHTML = financialEntries.map(entry => `
+      financialTableBody.innerHTML = financialEntries.map(entry => {
+        const entryId = escapeHtml(entry.id);
+        return `
         <tr class="${isFinancialEntryCancelled(entry) ? 'reservation-row-cancelled' : ''}">
-          <td>${formatDateBR(entry.entry_date)}</td>
-          <td>${entry.property_name || '-'}</td>
-          <td>${entry.reservation_id ? `#${entry.reservation_id} - ${entry.guest_name || '-'}` : '-'}</td>
+          <td>${escapeHtml(formatDateBR(entry.entry_date))}</td>
+          <td>${escapeHtml(entry.property_name || '-')}</td>
+          <td>${escapeHtml(entry.reservation_id ? `#${entry.reservation_id} - ${entry.guest_name || '-'}` : '-')}</td>
           <td>
             <span class="tag ${entry.type === 'income' ? 'tag-income' : 'tag-expense'}">
               ${entry.type === 'income' ? 'Receita' : 'Despesa'}
             </span>
           </td>
-          <td>${entry.category || '-'}</td>
-          <td>${entry.description || '-'}</td>
-          <td>${formatMoney(entry.amount)}</td>
+          <td>${escapeHtml(entry.category || '-')}</td>
+          <td>${escapeHtml(entry.description || '-')}</td>
+          <td>${escapeHtml(formatMoney(entry.amount))}</td>
           <td>
             <span class="tag ${financialStatusClass(entry.status)}">
-              ${financialStatusLabel(entry.status)}
+              ${escapeHtml(financialStatusLabel(entry.status))}
             </span>
           </td>
-          <td>${entry.source || '-'}</td>
+          <td>${escapeHtml(entry.source || '-')}</td>
           <td>
             <div class="actions-inline">
-              <button type="button" data-action="edit-financial" data-id="${entry.id}">Editar</button>
-              <button type="button" class="btn-danger" data-action="delete-financial" data-id="${entry.id}">Excluir</button>
+              <button type="button" data-action="edit-financial" data-id="${entryId}">Editar</button>
+              <button type="button" class="btn-danger" data-action="delete-financial" data-id="${entryId}">Excluir</button>
             </div>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     async function deleteFinancialEntry(id) {

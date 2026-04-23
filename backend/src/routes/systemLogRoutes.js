@@ -5,6 +5,7 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 const { requireFullBilling } = require('../middlewares/billingAccessMiddleware');
+const logger = require('../utils/logger');
 
 router.use(authMiddleware);
 router.use(adminMiddleware);
@@ -68,7 +69,7 @@ router.get('/', async (req, res) => {
       logs: parsedRows
     });
   } catch (error) {
-    console.error('Erro ao listar system_logs:', error.message);
+    logger.error("Erro ao listar system_logs", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     return res.status(500).json({
       success: false,
       message: 'Erro ao listar logs do sistema'

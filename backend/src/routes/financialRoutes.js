@@ -3,6 +3,9 @@ const router = express.Router();
 const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
+const validate = require('../middlewares/validate');
+const { financialCreateSchema, financialUpdateSchema } = require('../schemas/financialSchemas');
+const logger = require('../utils/logger');
 
 router.use(authMiddleware);
 
@@ -68,7 +71,7 @@ router.get('/', requireFullBilling, async (req, res) => {
 
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao listar lançamentos financeiros:', error.message);
+    logger.error("Erro ao listar lançamentos financeiros", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao listar lançamentos financeiros' });
   }
 });
@@ -119,7 +122,7 @@ router.get('/summary', requireFullBilling, async (req, res) => {
       profit: totalIncome - totalExpense
     });
   } catch (error) {
-    console.error('Erro ao gerar resumo financeiro:', error.message);
+    logger.error("Erro ao gerar resumo financeiro", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao gerar resumo financeiro' });
   }
 });
@@ -208,13 +211,13 @@ router.get('/by-reservation/:id', requireFullBilling, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao gerar resumo financeiro por reserva:', error.message);
+    logger.error("Erro ao gerar resumo financeiro por reserva", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao gerar resumo financeiro por reserva' });
   }
 });
 
 // CRIAR LANÇAMENTO
-router.post('/', requireWritableBilling, async (req, res) => {
+router.post('/', requireWritableBilling, validate(financialCreateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -337,13 +340,13 @@ router.post('/', requireWritableBilling, async (req, res) => {
       entry: entries[0]
     });
   } catch (error) {
-    console.error('Erro ao criar lançamento financeiro:', error.message);
+    logger.error("Erro ao criar lançamento financeiro", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao criar lançamento financeiro' });
   }
 });
 
 // ATUALIZAR LANÇAMENTO
-router.put('/:id', requireWritableBilling, async (req, res) => {
+router.put('/:id', requireWritableBilling, validate(financialUpdateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -485,7 +488,7 @@ router.put('/:id', requireWritableBilling, async (req, res) => {
       entry: entries[0]
     });
   } catch (error) {
-    console.error('Erro ao atualizar lançamento financeiro:', error.message);
+    logger.error("Erro ao atualizar lançamento financeiro", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao atualizar lançamento financeiro' });
   }
 });
@@ -522,7 +525,7 @@ router.delete('/:id', requireWritableBilling, async (req, res) => {
 
     res.json({ message: 'Lançamento excluído com sucesso' });
   } catch (error) {
-    console.error('Erro ao excluir lançamento financeiro:', error.message);
+    logger.error("Erro ao excluir lançamento financeiro", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao excluir lançamento financeiro' });
   }
 });

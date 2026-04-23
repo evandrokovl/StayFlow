@@ -63,6 +63,12 @@ function publicForgotPasswordMessage() {
   return 'Se o e-mail estiver cadastrado, enviaremos as instrucoes para redefinir sua senha.';
 }
 
+function invalidLoginError() {
+  const err = new Error('E-mail ou senha invalidos');
+  err.statusCode = 400;
+  return err;
+}
+
 function maskCpf(cpf) {
   const digits = normalizeCpf(cpf);
   if (digits.length !== 11) return cpf || null;
@@ -212,9 +218,7 @@ router.post('/login', loginRateLimit, validate(loginSchema), async (req, res, ne
     );
 
     if (users.length === 0) {
-      const err = new Error('Usuario nao encontrado');
-      err.statusCode = 400;
-      throw err;
+      throw invalidLoginError();
     }
 
     const user = users[0];
@@ -222,9 +226,7 @@ router.post('/login', loginRateLimit, validate(loginSchema), async (req, res, ne
     const passwordIsValid = await bcrypt.compare(password, user.password);
 
     if (!passwordIsValid) {
-      const err = new Error('Senha invalida');
-      err.statusCode = 400;
-      throw err;
+      throw invalidLoginError();
     }
 
     const token = jwt.sign(

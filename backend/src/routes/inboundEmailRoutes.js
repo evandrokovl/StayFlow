@@ -27,12 +27,16 @@ function getWebhookSignature(req) {
 
 function validateWebhookSecret(req) {
   const signature = getWebhookSignature(req);
+  const expectedSecret = env.WEBHOOK_SECRET;
 
-  if (!env.WEBHOOK_SECRET) {
-    return !env.IS_PRODUCTION;
+  if (!expectedSecret || !signature) {
+    return false;
   }
 
-  return signature && String(signature) === env.WEBHOOK_SECRET;
+  const received = Buffer.from(String(signature));
+  const expected = Buffer.from(String(expectedSecret));
+
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
 }
 
 function buildFallbackJobId(payload) {
