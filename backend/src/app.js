@@ -27,29 +27,40 @@ const app = express();
 
 app.disable('x-powered-by');
 
+const allowedCorsOrigins = Array.from(new Set([
+  'https://app.stayflowapp.online',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'null',
+  ...env.CORS_ORIGINS
+]));
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedCorsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origem nao permitida pelo CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (!env.IS_PRODUCTION) {
-      return callback(null, true);
-    }
-
-    if (env.CORS_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Origem não permitida pelo CORS'));
-  }
-}));
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(express.json({ limit: '2mb' }));
 
