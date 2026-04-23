@@ -2580,6 +2580,25 @@ button {
   background: rgba(7,12,24,0.48);
 }
 
+.pagination-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pagination-control button {
+  min-width: 92px;
+}
+
+.pagination-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 table {
   border-collapse: separate;
   border-spacing: 0;

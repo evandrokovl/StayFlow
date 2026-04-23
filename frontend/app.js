@@ -35,6 +35,7 @@
     let loggedUser = getStoredUser();
     let properties = [];
     let reservations = [];
+    let reservationTableRows = [];
     let financialEntries = [];
     let allFinancialEntries = [];
     let selectedPropertyId = null;
@@ -47,6 +48,9 @@
     let messageLogs = [];
     let messageLogSummary = { total: 0, pending: 0, needs_contact: 0, sent: 0, failed: 0 };
     let currentMessageLogFilter = 'all';
+    let reservationPagination = { page: 1, limit: 25, total: 0, totalPages: 1 };
+    let financialPagination = { page: 1, limit: 25, total: 0, totalPages: 1 };
+    let messageLogPagination = { page: 1, limit: 25, total: 0, totalPages: 1 };
     let editingMessageAutomationId = null;
     let operationMessageLogs = [];
     let operationInboundEmails = [];
@@ -868,6 +872,7 @@
 
       properties = [];
       reservations = [];
+      reservationTableRows = [];
       financialEntries = [];
       allFinancialEntries = [];
       messageAutomations = [];
@@ -1296,6 +1301,10 @@
 
       if (!messageLogs.length) {
         messageLogsList.innerHTML = '<div class="small">Nenhum log de mensagem encontrado para esse filtro.</div>';
+        messageLogsList.after(renderPaginationControl('messageLogsPagination', messageLogPagination, (page) => {
+          messageLogPagination.page = page;
+          loadMessageLogs(currentMessageLogFilter);
+        }));
         renderDashboardAlerts();
         return;
       }
@@ -1316,6 +1325,10 @@
           <div class="template-preview">${escapeHtml(log.body_rendered || log.message_text || log.content || 'Sem conteúdo registrado.')}</div>
         </div>
       `).join('');
+      messageLogsList.after(renderPaginationControl('messageLogsPagination', messageLogPagination, (page) => {
+        messageLogPagination.page = page;
+        loadMessageLogs(currentMessageLogFilter);
+      }));
       renderDashboardAlerts();
     }
 
@@ -1349,13 +1362,17 @@
       currentMessageLogFilter = filter;
       updateMessageLogFilterButtons();
 
-      let endpoint = `${API_URL}/message-logs`;
-      if (filter === 'pending') endpoint = `${API_URL}/message-logs/pending`;
-      if (filter === 'failed') endpoint = `${API_URL}/message-logs/failed`;
-      if (filter === 'needs_contact') endpoint = `${API_URL}/message-logs/needs-contact`;
+      const params = new URLSearchParams({
+        page: String(messageLogPagination.page || 1),
+        limit: String(messageLogPagination.limit || 25)
+      });
+
+      if (filter !== 'all') {
+        params.set('status', filter);
+      }
 
       try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(`${API_URL}/message-logs?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1367,18 +1384,9 @@
           return;
         }
 
-        if (filter === 'all') {
-          messageLogs = Array.isArray(data) ? data.slice(0, 20) : [];
-        } else if (filter === 'sent') {
-          const allLogsResponse = await fetch(`${API_URL}/message-logs`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const allLogsData = await allLogsResponse.json();
-          const allLogs = Array.isArray(allLogsData) ? allLogsData : [];
-          messageLogs = allLogs.filter(item => item.status === 'sent').slice(0, 20);
-        } else {
-          messageLogs = Array.isArray(data.logs) ? data.logs.slice(0, 20) : [];
-        }
+        const normalized = normalizePaginatedResponse(data, messageLogPagination.limit);
+        messageLogs = normalized.data;
+        messageLogPagination = normalized.pagination;
 
         renderMessageLogs();
         await loadMessageLogSummary();
@@ -1400,7 +1408,7 @@
           fetch(`${API_URL}/message-automations`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(`${API_URL}/message-logs`, {
+          fetch(`${API_URL}/message-logs?page=1&limit=100`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -1416,7 +1424,7 @@
         }
 
         messageAutomations = Array.isArray(data) ? data : [];
-        messageAutomationLogs = logsResponse.ok && Array.isArray(logsData) ? logsData : [];
+        messageAutomationLogs = logsResponse.ok ? normalizePaginatedResponse(logsData, 100).data : [];
         renderMessageAutomationTable();
       } catch (error) {
         messageAutomations = [];
@@ -1429,7 +1437,7 @@
       if (!token) return;
 
       try {
-        const response = await fetch(`${API_URL}/message-logs`, {
+        const response = await fetch(`${API_URL}/message-logs?page=1&limit=10`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1441,7 +1449,7 @@
           return;
         }
 
-        messageLogs = Array.isArray(data) ? data.slice(0, 10) : [];
+        messageLogs = normalizePaginatedResponse(data, 10).data;
         renderMessageLogs();
       } catch (error) {
         messageLogs = [];
@@ -1458,6 +1466,67 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function normalizePaginatedResponse(payload, fallbackLimit = 25) {
+      if (Array.isArray(payload)) {
+        return {
+          data: payload,
+          pagination: {
+            page: 1,
+            limit: fallbackLimit,
+            total: payload.length,
+            totalPages: 1
+          }
+        };
+      }
+
+      const data = Array.isArray(payload?.data) ? payload.data : [];
+      const pagination = payload?.pagination || {};
+
+      return {
+        data,
+        pagination: {
+          page: Number(pagination.page || 1),
+          limit: Number(pagination.limit || fallbackLimit),
+          total: Number(pagination.total || data.length),
+          totalPages: Number(pagination.totalPages || 1)
+        }
+      };
+    }
+
+    function renderPaginationControl(targetId, state, onPageChange) {
+      let container = document.getElementById(targetId);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = targetId;
+        container.className = 'pagination-control';
+      }
+
+      const totalPages = Math.max(1, Number(state.totalPages || 1));
+      const page = Math.min(Math.max(1, Number(state.page || 1)), totalPages);
+      const total = Number(state.total || 0);
+
+      container.innerHTML = `
+        <button type="button" class="btn-secondary" data-page-action="prev" ${page <= 1 ? 'disabled' : ''}>Anterior</button>
+        <span>Página ${escapeHtml(page)} de ${escapeHtml(totalPages)} · ${escapeHtml(total)} registros</span>
+        <button type="button" class="btn-secondary" data-page-action="next" ${page >= totalPages ? 'disabled' : ''}>Próxima</button>
+      `;
+
+      container.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', () => {
+          const direction = button.dataset.pageAction === 'next' ? 1 : -1;
+          const nextPage = Math.min(Math.max(1, page + direction), totalPages);
+          if (nextPage !== page) onPageChange(nextPage);
+        });
+      });
+
+      return container;
+    }
+
+    function placePaginationAfter(anchor, control) {
+      const target = anchor?.closest?.('.table-wrap') || anchor;
+      if (target && control) target.after(control);
     }
 
     function safeExternalUrl(value) {
@@ -1754,20 +1823,22 @@
       renderOperationLoading();
       try {
         const filters = getOperationFilters();
+        const messageParams = new URLSearchParams({ page: '1', limit: '100' });
+        if (filters.propertyId) messageParams.set('property_id', filters.propertyId);
         const inboundParams = new URLSearchParams();
         if (filters.propertyId) inboundParams.set('property_id', filters.propertyId);
         if (filters.from) inboundParams.set('from', filters.from);
         if (filters.to) inboundParams.set('to', filters.to);
         inboundParams.set('limit', '100');
         const responses = await Promise.all([
-          fetch(API_URL + '/message-logs', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch(API_URL + '/message-logs?' + messageParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } }),
           fetch(API_URL + '/inbound-emails?' + inboundParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         const messageData = await responses[0].json();
         const inboundData = await responses[1].json();
         if (!responses[0].ok) throw new Error(messageData.message || messageData.error || 'Erro ao carregar mensagens.');
         if (!responses[1].ok) throw new Error(inboundData.message || inboundData.error || 'Erro ao carregar inbound emails.');
-        operationMessageLogs = Array.isArray(messageData) ? messageData : [];
+        operationMessageLogs = normalizePaginatedResponse(messageData, 100).data;
         operationInboundEmails = Array.isArray(inboundData.emails) ? inboundData.emails : [];
         updateOperationSummary(filterOperationMessageLogs(operationMessageLogs));
         renderOperationAttentionPanel();
@@ -2570,15 +2641,48 @@
       try {
         setButtonLoading(registerBtn, true, 'Cadastrando...');
 
-        const data = await apiFetch('/auth/register', {
+        await apiFetch('/auth/register', {
           method: 'POST',
           auth: false,
           body: { name, email, cpf, password },
           errorMessage: 'Não foi possível cadastrar este usuário.'
         });
 
-        showMessage('authMessage', 'Usuário cadastrado com sucesso. Agora faça login.', 'success');
-        document.getElementById('registerPassword').value = '';
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPassword').value = password;
+        showMessage('authMessage', 'Conta criada com sucesso. Entrando no StayFlow...', 'success');
+
+        try {
+          setButtonLoading(loginBtn, true, 'Entrando...');
+
+          const loginData = await apiFetch('/auth/login', {
+            method: 'POST',
+            auth: false,
+            body: { email, password },
+            errorMessage: 'A conta foi criada, mas não foi possível entrar automaticamente.'
+          });
+
+          token = loginData?.data?.token || loginData.token || '';
+          loggedUser = loginData?.data?.user || loginData.user || null;
+
+          if (!token || !loggedUser) {
+            throw new Error('A conta foi criada, mas o login automático recebeu uma resposta inválida.');
+          }
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(loggedUser));
+
+          await enterApp();
+          if (hasFullBillingAccess()) {
+            await loadProperties();
+          }
+          document.getElementById('registerPassword').value = '';
+          return;
+        } catch (autoLoginError) {
+          showMessage('authMessage', autoLoginError.message || 'Conta criada com sucesso. Faça login para continuar.', 'success');
+        } finally {
+          setButtonLoading(loginBtn, false);
+        }
       } catch (error) {
         showMessage('authMessage', error.message || 'Erro ao conectar com o backend.', 'error');
       } finally {
@@ -3107,6 +3211,8 @@ function renderPropertyList() {
 
     div.addEventListener('click', async () => {
       selectedPropertyId = property.id;
+      reservationPagination.page = 1;
+      financialPagination.page = 1;
 
       selectedPropertyInfo.innerHTML = `
         <div><strong>${escapeHtml(property.name)}</strong></div>
@@ -3475,18 +3581,38 @@ function renderPropertyList() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/reservations`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const pagedParams = new URLSearchParams({
+          page: String(reservationPagination.page || 1),
+          limit: String(reservationPagination.limit || 25)
         });
+        const allParams = new URLSearchParams();
 
-        const data = await response.json();
+        if (selectedPropertyId) {
+          pagedParams.set('property_id', String(selectedPropertyId));
+          allParams.set('property_id', String(selectedPropertyId));
+        }
 
-        if (!response.ok) {
+        const [pagedResponse, fullResponse] = await Promise.all([
+          fetch(`${API_URL}/reservations?${pagedParams.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_URL}/reservations?${allParams.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        const data = await pagedResponse.json();
+        const fullData = await fullResponse.json();
+
+        if (!pagedResponse.ok || !fullResponse.ok) {
           alert(data.error || 'Erro ao carregar reservas');
           return;
         }
 
-        reservations = data.filter(item => Number(item.property_id) === Number(selectedPropertyId));
+        const normalized = normalizePaginatedResponse(data, reservationPagination.limit);
+        reservationTableRows = normalized.data;
+        reservationPagination = normalized.pagination;
+        reservations = Array.isArray(fullData) ? fullData : normalizePaginatedResponse(fullData, 200).data;
 
         renderSelectedPropertyInfo();
         renderReservationsTable();
@@ -3512,7 +3638,7 @@ function renderPropertyList() {
         <strong>${escapeHtml(property.name)}</strong><br>
         ${escapeHtml(property.city || '')} ${property.state ? '- ' + escapeHtml(property.state) : ''}<br>
         ${escapeHtml(property.address || '')}<br>
-        Reservas/bloqueios: <strong>${escapeHtml(reservations.length)}</strong>
+        Reservas/bloqueios: <strong>${escapeHtml(reservationPagination.total || reservations.length)}</strong>
       `;
 
       if (selectedPropertyBadge) {
@@ -3526,12 +3652,16 @@ function renderPropertyList() {
     }
 
     function renderReservationsTable() {
-      if (!reservations.length) {
+      if (!reservationTableRows.length) {
         reservationsTableBody.innerHTML = '<tr><td colspan="8">Nenhuma reserva ainda. Conecte o iCal ou cadastre uma reserva manual para começar.</td></tr>';
+        placePaginationAfter(reservationsTableBody, renderPaginationControl('reservationsPagination', reservationPagination, (page) => {
+          reservationPagination.page = page;
+          loadReservations();
+        }));
         return;
       }
 
-      reservationsTableBody.innerHTML = reservations.map(item => {
+      reservationsTableBody.innerHTML = reservationTableRows.map(item => {
         const reservationId = escapeHtml(item.id);
         return `
         <tr class="${item.source !== 'blocked' ? 'reservation-row-clickable' : ''} ${Number(selectedReservationId) === Number(item.id) ? 'active-row' : ''} ${isReservationCancelled(item) ? 'reservation-row-cancelled' : ''}" data-id="${reservationId}">
@@ -3553,6 +3683,10 @@ function renderPropertyList() {
         </tr>
       `;
       }).join('');
+      placePaginationAfter(reservationsTableBody, renderPaginationControl('reservationsPagination', reservationPagination, (page) => {
+        reservationPagination.page = page;
+        loadReservations();
+      }));
     }
 
     function highlightSelectedReservationRow() {
@@ -3734,12 +3868,12 @@ function renderPropertyList() {
 
     async function fetchRelatedReservationActivity(reservationId) {
       const [logsResponse, inboundResponse] = await Promise.all([
-        fetch(`${API_URL}/message-logs`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/message-logs?page=1&limit=100`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/inbound-emails?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       const logsData = await logsResponse.json().catch(() => []);
       const inboundData = await inboundResponse.json().catch(() => ({ emails: [] }));
-      const logs = Array.isArray(logsData) ? logsData.filter(log => Number(log.reservation_id) === Number(reservationId)) : [];
+      const logs = normalizePaginatedResponse(logsData, 100).data.filter(log => Number(log.reservation_id) === Number(reservationId));
       const inbound = Array.isArray(inboundData.emails) ? inboundData.emails.filter(item => Number(item.created_reservation_id) === Number(reservationId)) : [];
       return { logs, inbound };
     }
@@ -4131,6 +4265,8 @@ function renderPropertyList() {
         if (month) params.append('month', month);
         if (type) params.append('type', type);
         if (status) params.append('status', status);
+        params.append('page', String(financialPagination.page || 1));
+        params.append('limit', String(financialPagination.limit || 25));
 
         const response = await fetch(`${API_URL}/financial?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -4189,7 +4325,9 @@ function renderPropertyList() {
           return;
         }
 
-        financialEntries = Array.isArray(data) ? data : [];
+        const normalized = normalizePaginatedResponse(data, financialPagination.limit);
+        financialEntries = normalized.data;
+        financialPagination = normalized.pagination;
         renderFinancialTable();
       } catch (error) {
         financialTableBody.innerHTML = '<tr><td colspan="10">Erro ao carregar lançamentos</td></tr>';
@@ -4199,6 +4337,10 @@ function renderPropertyList() {
     function renderFinancialTable() {
       if (!financialEntries.length) {
         financialTableBody.innerHTML = '<tr><td colspan="10">Nenhum lançamento financeiro</td></tr>';
+        placePaginationAfter(financialTableBody, renderPaginationControl('financialPagination', financialPagination, (page) => {
+          financialPagination.page = page;
+          loadFinancialEntries();
+        }));
         return;
       }
 
@@ -4232,6 +4374,10 @@ function renderPropertyList() {
         </tr>
       `;
       }).join('');
+      placePaginationAfter(financialTableBody, renderPaginationControl('financialPagination', financialPagination, (page) => {
+        financialPagination.page = page;
+        loadFinancialEntries();
+      }));
     }
 
     async function deleteFinancialEntry(id) {
@@ -4477,6 +4623,7 @@ function renderPropertyList() {
       messageLogFilters.addEventListener('click', (event) => {
         const button = event.target.closest('[data-log-filter]');
         if (!button) return;
+        messageLogPagination.page = 1;
         loadMessageLogs(button.dataset.logFilter || 'all');
       });
     }
@@ -4497,6 +4644,7 @@ function renderPropertyList() {
     createFinancialBtn.addEventListener('click', createFinancialEntry);
 
     applyFinancialFiltersBtn.addEventListener('click', async () => {
+      financialPagination.page = 1;
       await loadFinancialSummary();
       await loadFinancialEntries();
     });
@@ -4526,6 +4674,8 @@ function renderPropertyList() {
 
     reservationProperty.addEventListener('change', async (e) => {
       selectedPropertyId = Number(e.target.value);
+      reservationPagination.page = 1;
+      financialPagination.page = 1;
       renderPropertyList();
       renderPropertySelects();
       resetFinancialForm();

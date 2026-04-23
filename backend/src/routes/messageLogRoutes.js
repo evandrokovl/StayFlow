@@ -5,6 +5,7 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const { jobQueue } = require('../queues/jobQueue');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 router.use(authMiddleware);
 router.use(requireFullBilling);
@@ -329,6 +330,25 @@ router.post('/:id/force-send', requireWritableBilling, async (req, res, next) =>
 router.get('/', async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const { hasPagination, page, limit, offset } = parsePagination(req.query, {
+      defaultLimit: 25,
+      maxLimit: 100
+    });
+    const status = req.query.status ? String(req.query.status).trim() : '';
+    const propertyId = req.query.property_id ? String(req.query.property_id).trim() : '';
+
+    let whereSql = 'WHERE ma.user_id = ?';
+    const params = [userId];
+
+    if (status) {
+      whereSql += ' AND ml.status = ?';
+      params.push(status);
+    }
+
+    if (propertyId) {
+      whereSql += ' AND ml.property_id = ?';
+      params.push(propertyId);
+    }
 
     const [rows] = await pool.query(
       `
@@ -353,13 +373,32 @@ router.get('/', async (req, res, next) => {
       FROM message_logs ml
       JOIN message_automations ma ON ma.id = ml.automation_id
       JOIN properties p ON p.id = ml.property_id
-      WHERE ma.user_id = ?
+      ${whereSql}
       ORDER BY ml.id DESC
+      ${hasPagination ? 'LIMIT ? OFFSET ?' : ''}
       `,
-      [userId]
+      hasPagination ? [...params, limit, offset] : params
     );
 
-    res.json(rows);
+    if (!hasPagination) {
+      return res.json(rows);
+    }
+
+    const [countRows] = await pool.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM message_logs ml
+      JOIN message_automations ma ON ma.id = ml.automation_id
+      JOIN properties p ON p.id = ml.property_id
+      ${whereSql}
+      `,
+      params
+    );
+
+    return res.json({
+      data: rows,
+      pagination: buildPaginationMeta(countRows[0]?.total, page, limit)
+    });
   } catch (error) {
     next(error);
   }

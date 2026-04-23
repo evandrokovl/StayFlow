@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const validate = require('../middlewares/validate');
 const { createReservationSchema } = require('../schemas/reservationSchemas');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 router.use(authMiddleware);
 
@@ -36,6 +37,19 @@ function normalizeMoney(value) {
 router.get('/', requireFullBilling, async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const { hasPagination, page, limit, offset } = parsePagination(req.query, {
+      defaultLimit: 25,
+      maxLimit: 100
+    });
+    const propertyId = req.query.property_id || '';
+
+    let whereSql = 'WHERE properties.user_id = ?';
+    const params = [userId];
+
+    if (propertyId) {
+      whereSql += ' AND reservations.property_id = ?';
+      params.push(propertyId);
+    }
 
     const [rows] = await pool.execute(
       `
@@ -55,13 +69,31 @@ router.get('/', requireFullBilling, async (req, res, next) => {
         reservations.total_amount
       FROM reservations
       JOIN properties ON reservations.property_id = properties.id
-      WHERE properties.user_id = ?
+      ${whereSql}
       ORDER BY reservations.start_date ASC, reservations.id DESC
+      ${hasPagination ? 'LIMIT ? OFFSET ?' : ''}
       `,
-      [userId]
+      hasPagination ? [...params, limit, offset] : params
     );
 
-    res.json(rows);
+    if (!hasPagination) {
+      return res.json(rows);
+    }
+
+    const [countRows] = await pool.execute(
+      `
+      SELECT COUNT(*) AS total
+      FROM reservations
+      JOIN properties ON reservations.property_id = properties.id
+      ${whereSql}
+      `,
+      params
+    );
+
+    return res.json({
+      data: rows,
+      pagination: buildPaginationMeta(countRows[0]?.total, page, limit)
+    });
   } catch (error) {
     next(error);
   }

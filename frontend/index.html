@@ -131,42 +131,55 @@
       top: 0;
       z-index: 30;
       backdrop-filter: blur(16px);
-      background: rgba(8, 16, 29, .68);
+      background: linear-gradient(180deg, rgba(8, 16, 29, .82), rgba(8, 16, 29, .62));
       border-bottom: 1px solid rgba(148, 163, 184, .08);
+      box-shadow: 0 18px 44px rgba(2, 8, 23, .18);
     }
     .nav-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
-      padding: 18px 0;
+      gap: 20px;
+      padding: 16px 0;
+    }
+    .nav-shell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, .1);
+      background: rgba(7, 12, 24, .6);
+      box-shadow: 0 22px 52px rgba(2, 8, 23, .2);
     }
     .nav-center {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 6px;
-      border: 1px solid rgba(148, 163, 184, .1);
-      background: rgba(15, 23, 42, .38);
-      border-radius: 18px;
-      box-shadow: 0 16px 36px rgba(2, 8, 23, .18);
+      padding: 5px;
+      border: 1px solid rgba(148, 163, 184, .08);
+      background: rgba(15, 23, 42, .46);
+      border-radius: 16px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .02);
     }
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
     }
     .nav-links a,
     .nav-more summary {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 38px;
-      padding: 9px 13px;
+      min-height: 36px;
+      padding: 8px 12px;
       border-radius: 12px;
-      color: #c8d8ee;
-      font-size: .92rem;
+      color: #ccd8eb;
+      font-size: .9rem;
       font-weight: 700;
       cursor: pointer;
       transition: .2s ease;
@@ -211,10 +224,11 @@
       font-weight: 800;
       font-size: 1.15rem;
       letter-spacing: .2px;
+      min-width: 0;
     }
     .brand-mark {
-      width: 46px;
-      height: 46px;
+      width: 44px;
+      height: 44px;
       border-radius: 16px;
       display: grid;
       place-items: center;
@@ -229,19 +243,32 @@
       color: var(--muted);
       font-weight: 600;
       letter-spacing: .1px;
+      margin-top: 3px;
     }
     .nav-actions .btn,
     .nav-actions .btn-ghost {
-      min-height: 46px;
-      padding: 12px 18px;
+      min-height: 44px;
+      padding: 11px 18px;
       white-space: nowrap;
     }
     .nav-actions {
       display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .nav-actions-row {
+      display: flex;
       gap: 12px;
-      flex-wrap: wrap;
       justify-content: flex-end;
       align-items: center;
+    }
+    .nav-meta {
+      color: #93c5fd;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
     .btn, .btn-secondary, .btn-ghost {
@@ -313,11 +340,36 @@
       max-width: 62ch;
       margin: 0 0 28px;
     }
+    .hero-trust-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 18px;
+      color: #9fb3ce;
+      font-size: .92rem;
+      line-height: 1.6;
+    }
+    .hero-trust-line span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, .08);
+      border: 1px solid rgba(148, 163, 184, .1);
+    }
     .cta-row {
       display: flex;
       flex-wrap: wrap;
       gap: 14px;
-      margin-bottom: 22px;
+      margin-bottom: 14px;
+    }
+    .cta-note {
+      color: #98afd0;
+      font-size: .92rem;
+      line-height: 1.7;
+      margin-bottom: 20px;
     }
     .proof {
       display: flex;
@@ -957,6 +1009,86 @@
       line-height: 1.7;
       margin-top: 12px;
     }
+    .pilot-proof {
+      margin-top: 22px;
+      padding: 22px;
+      border-radius: 22px;
+      border: 1px solid rgba(59, 130, 246, .22);
+      background: linear-gradient(135deg, rgba(59, 130, 246, .14), rgba(139, 92, 246, .10));
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items: center;
+    }
+    .pilot-proof strong {
+      display: block;
+      color: var(--text);
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+    .pilot-proof p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .pilot-proof .pilot-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .pilot-proof .pilot-tags span {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(248, 250, 252, .12);
+      background: rgba(11, 15, 26, .44);
+      color: #dbeafe;
+      font-size: .86rem;
+      font-weight: 700;
+    }
+    .inbound-highlight {
+      margin-top: 28px;
+      padding: 28px;
+      border-radius: 26px;
+      border: 1px solid rgba(139, 92, 246, .24);
+      background:
+        radial-gradient(circle at top right, rgba(139, 92, 246, .22), transparent 32%),
+        linear-gradient(135deg, rgba(15, 23, 42, .82), rgba(30, 41, 59, .54));
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+      box-shadow: 0 24px 70px rgba(2, 8, 23, .28);
+    }
+    .inbound-highlight h3 {
+      margin: 0 0 12px;
+      font-size: clamp(1.35rem, 2vw, 2rem);
+    }
+    .inbound-highlight p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+    .inbound-flow {
+      display: grid;
+      gap: 12px;
+    }
+    .inbound-flow div {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, .12);
+      background: rgba(11, 15, 26, .52);
+      color: #dbeafe;
+      font-weight: 800;
+    }
+    .inbound-flow span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: .9rem;
+      line-height: 1.5;
+    }
     .value-band {
       display: grid;
       grid-template-columns: 1.15fr .85fr;
@@ -1052,11 +1184,12 @@
     }
 
     @media (max-width: 1080px) {
-      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard, .trust-strip, .persona-grid, .use-case-grid, .proof-grid, .value-band { grid-template-columns: 1fr; }
+      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard, .trust-strip, .persona-grid, .use-case-grid, .proof-grid, .value-band, .pilot-proof, .inbound-highlight { grid-template-columns: 1fr; }
       h1 { max-width: 12ch; }
       .price-card.featured { transform: none; }
       .dash-row { grid-template-columns: 1fr; }
       .row, .row.head { grid-template-columns: 1fr 1fr; }
+      .nav-shell { flex-wrap: wrap; }
       .nav-center { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
       .nav-inner { flex-wrap: wrap; }
     }
@@ -1064,6 +1197,13 @@
       .hero { padding-top: 48px; }
       .nav-inner {
         align-items: flex-start;
+      }
+      .nav-shell {
+        padding: 12px;
+        border-radius: 22px;
+      }
+      .brand {
+        width: 100%;
       }
       .dashboard-preview { grid-template-columns: 1fr; }
       .panel.wide { grid-column: auto; }
@@ -1082,9 +1222,27 @@
     }
     @media (max-width: 560px) {
       .container { width: min(var(--container), calc(100% - 20px)); }
-      .cta-row, .nav-actions { flex-direction: column; }
+      .cta-row { flex-direction: column; }
       .nav-inner { gap: 14px; }
-      .nav-actions { width: 100%; }
+      .nav-shell { padding: 12px; }
+      .nav-actions {
+        width: 100%;
+        align-items: stretch;
+      }
+      .nav-links {
+        width: 100%;
+      }
+      .nav-links a,
+      .nav-more {
+        flex: 1 1 0;
+      }
+      .nav-more summary {
+        width: 100%;
+      }
+      .nav-actions-row {
+        width: 100%;
+        flex-direction: column;
+      }
       .btn, .btn-secondary, .btn-ghost { width: 100%; }
       .nav-center { width: 100%; }
       .nav-more-menu { right: auto; left: 0; width: min(82vw, 260px); }
@@ -1092,42 +1250,58 @@
       .proof-item { width: 100%; justify-content: center; }
       .cta-box { padding: 28px 20px; }
       .stats, .trust-strip, .persona-grid, .use-case-grid, .proof-grid { grid-template-columns: 1fr; }
+      .pilot-proof .pilot-tags { justify-content: flex-start; }
       .screen-header, .billing-top, .hero-top { flex-direction: column; align-items: flex-start; }
       .row, .row.head { grid-template-columns: 1fr; }
+      h1 {
+        font-size: clamp(2.2rem, 11vw, 3rem);
+        max-width: 100%;
+        letter-spacing: -1.2px;
+      }
+      .lead {
+        font-size: 1rem;
+      }
+      .hero-card {
+        padding: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <header class="navbar">
     <div class="container nav-inner">
-      <a href="#topo" class="brand">
-        <div class="brand-mark">S</div>
-        <div>
-          StayFlow
-          <small>Operação centralizada para aluguel por temporada</small>
+      <div class="nav-shell">
+        <a href="#topo" class="brand">
+          <div class="brand-mark">S</div>
+          <div>
+            StayFlow
+            <small>Operação centralizada para aluguel por temporada</small>
+          </div>
+        </a>
+
+        <div class="nav-center" aria-label="Navegação principal">
+          <nav class="nav-links">
+            <a href="#como-funciona">Como funciona</a>
+            <a href="#planos">Planos</a>
+            <details class="nav-more">
+              <summary>Explorar</summary>
+              <div class="nav-more-menu">
+                <a href="#telas">Telas do sistema</a>
+                <a href="#confianca">Confiança</a>
+                <a href="#casos-de-uso">Casos de uso</a>
+                <a href="#faq">FAQ</a>
+              </div>
+            </details>
+          </nav>
         </div>
-      </a>
 
-      <div class="nav-center" aria-label="Navegação principal">
-        <nav class="nav-links">
-          <a href="#beneficios">Produto</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#planos">Planos</a>
-          <details class="nav-more">
-            <summary>Mais</summary>
-            <div class="nav-more-menu">
-              <a href="#telas">Telas do sistema</a>
-              <a href="#para-quem">Para quem é</a>
-              <a href="#casos-de-uso">Casos de uso</a>
-              <a href="#faq">FAQ</a>
-            </div>
-          </details>
-        </nav>
-      </div>
-
-      <div class="nav-actions">
-        <a class="btn-ghost" href="/app.html" data-track="landing_login_click">Acessar minha conta</a>
-        <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar teste grátis de 15 dias</a>
+        <div class="nav-actions">
+          <div class="nav-meta">Teste grátis de 15 dias</div>
+          <div class="nav-actions-row">
+            <a class="btn-ghost" href="/app.html" data-track="landing_login_click">Acessar minha conta</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar agora</a>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -1137,11 +1311,16 @@
       <div class="container hero-grid">
         <div>
           <div class="eyebrow">Controle profissional para aluguel por temporada</div>
-          <h1>Controle suas locações em uma única tela.</h1>
+          <h1>Centralize reservas, calendário, mensagens e cobrança em uma única tela.</h1>
           <p class="lead">
-            O <strong>StayFlow</strong> reúne reservas, calendário, mensagens, financeiro e cobrança em um painel só,
-            para você ganhar tempo, reduzir retrabalho e enxergar sua operação com clareza todos os dias.
+            O <strong>StayFlow</strong> transforma uma operação espalhada em um painel claro e profissional,
+            para você ganhar tempo, reduzir retrabalho e acompanhar cada imóvel com mais controle todos os dias.
           </p>
+
+          <div class="hero-trust-line">
+            <span>Visão operacional mais clara desde o primeiro imóvel</span>
+            <span>Teste grátis de 15 dias para validar a rotina</span>
+          </div>
 
           <div class="proof">
             <div class="proof-item">Reservas, agenda e financeiro juntos</div>
@@ -1150,9 +1329,11 @@
           </div>
 
           <div class="cta-row">
-            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar teste grátis</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar teste grátis de 15 dias</a>
             <a class="btn-ghost" href="#telas" data-track="landing_product_preview_click">Ver o StayFlow em ação</a>
           </div>
+
+          <div class="cta-note">Acesso imediato ao painel. Sem setup pesado para começar.</div>
 
           <div class="urgency-box">
             Comece em poucos minutos: cadastre um imóvel, conecte as fontes principais e teste a rotina centralizada por 15 dias, sem complicação.
@@ -1311,10 +1492,25 @@
         </div>
 
         <div class="proof-grid">
-          <div class="proof-card"><strong>Controle sem planilha paralela</strong><em>Reservas, calendário, mensagens, financeiro e cobrança ficam conectados no mesmo painel.</em><span>Menos troca de contexto e mais clareza operacional.</span></div>
-          <div class="proof-card"><strong>Indicadores que ajudam a decidir</strong><em>Próximas estadias, ocupação, lucro e pendências aparecem de forma organizada.</em><span>Você entende a operação sem montar relatórios manuais.</span></div>
-          <div class="proof-card"><strong>Feito para crescer com método</strong><em>Comece com um imóvel e mantenha o mesmo fluxo ao adicionar novas unidades.</em><span>A estrutura acompanha a rotina sem aumentar a bagunça.</span></div>
-          <div class="proof-card"><strong>Produto conectado ao dia a dia</strong><em>Onboarding, billing, calendário, reservas, automações e operação trabalham no mesmo fluxo.</em><span>O valor aparece na rotina, não apenas em uma tela bonita.</span></div>
+          <div class="proof-card"><strong>Construído para operação real</strong><em>Reservas, calendário, mensagens, financeiro e cobrança conversam no mesmo fluxo.</em><span>Você deixa de operar por partes e passa a acompanhar a rotina com visão mais clara.</span></div>
+          <div class="proof-card"><strong>Entrada rápida, sem setup pesado</strong><em>Cadastro do imóvel, iCal, e-mail do StayFlow e automações formam um caminho simples para chegar ao primeiro valor.</em><span>O produto ajuda desde o início sem parecer técnico demais.</span></div>
+          <div class="proof-card"><strong>Mais previsibilidade na rotina</strong><em>Pendências, próximas estadias, disparos e cobrança aparecem no painel em vez de ficarem espalhados.</em><span>Você entende o que precisa de atenção sem montar controles paralelos.</span></div>
+          <div class="proof-card"><strong>Estrutura para crescer com método</strong><em>O mesmo fluxo atende quem está começando e quem precisa ganhar consistência ao adicionar unidades.</em><span>Mais profissionalização sem aumentar a bagunça operacional.</span></div>
+        </div>
+
+        <div class="pilot-proof">
+          <div>
+            <strong>Um produto organizado para onboarding, operação e cobrança desde o primeiro acesso.</strong>
+            <p>
+              O StayFlow já combina onboarding guiado, cobrança integrada, páginas jurídicas e rastreamento pronto para aquisição,
+              sem perder o foco na clareza operacional que sustenta o uso no dia a dia.
+            </p>
+          </div>
+          <div class="pilot-tags" aria-label="Pilares de confiança">
+            <span>Onboarding guiado</span>
+            <span>Billing integrado</span>
+            <span>Operação centralizada</span>
+          </div>
         </div>
       </div>
     </section>
@@ -1480,6 +1676,7 @@
           <div class="use-case-card"><strong>Centralizar reservas</strong><span>Organize eventos de Airbnb, Booking e reservas diretas em uma experiência única.</span></div>
           <div class="use-case-card"><strong>Visualizar lucro e ocupação</strong><span>Entenda resultado e desempenho por imóvel com menos esforço de consolidação manual.</span></div>
           <div class="use-case-card"><strong>Automatizar comunicação</strong><span>Reduza mensagens repetitivas e acompanhe status dos disparos em uma aba operacional.</span></div>
+          <div class="use-case-card"><strong>Receber eventos por e-mail</strong><span>Use o e-mail do StayFlow nas plataformas para centralizar reservas, alterações e cancelamentos no fluxo operacional.</span></div>
         </div>
       </div>
     </section>
@@ -1512,7 +1709,7 @@
               </div>
               <div class="step">
                 <div class="step-num">3</div>
-                <div><b>Configure o e-mail do StayFlow</b><span>Centralize notificações importantes para acompanhar reservas, alterações e cancelamentos.</span></div>
+                <div><b>Configure o e-mail do StayFlow</b><span>Receba notificações das plataformas em um endereço de integração para transformar eventos em operação acompanhável.</span></div>
               </div>
               <div class="step">
                 <div class="step-num">4</div>
@@ -1544,6 +1741,22 @@
               <a class="btn-secondary" href="#planos">Entender os planos</a>
               <a class="btn-ghost" href="#faq">Tirar dúvidas</a>
             </div>
+          </div>
+        </div>
+
+        <div class="inbound-highlight" id="email-stayflow">
+          <div>
+            <div class="section-kicker">E-mail inbound do StayFlow</div>
+            <h3>Receba reservas, alterações e cancelamentos no lugar certo.</h3>
+            <p>
+              Além do iCal para calendário, o StayFlow oferece um e-mail próprio para notificações das plataformas.
+              Isso centraliza eventos importantes, reduz retrabalho e dá mais controle sobre a operação sem depender de conferência manual o tempo todo.
+            </p>
+          </div>
+          <div class="inbound-flow">
+            <div>1. Cadastre o e-mail do StayFlow<span>Use esse endereço nas notificações do Airbnb, Booking e outras plataformas compatíveis.</span></div>
+            <div>2. Centralize o que muda na operação<span>Reservas novas, alterações e cancelamentos deixam de ficar perdidos entre caixas de entrada e canais diferentes.</span></div>
+            <div>3. Ganhe leitura rápida do que importa<span>O painel mostra o que aconteceu e o que precisa de atenção para você agir com mais clareza.</span></div>
           </div>
         </div>
       </div>

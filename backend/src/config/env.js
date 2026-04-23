@@ -28,6 +28,21 @@ function getNumberEnv(name, defaultValue) {
   return parsed;
 }
 
+function getBooleanEnv(name, defaultValue = false) {
+  const raw = process.env[name];
+
+  if (raw === undefined || raw === null || String(raw).trim() === '') {
+    return defaultValue;
+  }
+
+  const normalized = String(raw).trim().toLowerCase();
+
+  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+
+  throw new Error(`Variavel de ambiente invalida (boolean esperado): ${name}`);
+}
+
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 const appBaseUrl = requireEnv('APP_BASE_URL', { defaultValue: 'http://localhost:3000' });
@@ -44,6 +59,8 @@ const env = {
   DB_USER: requireEnv('DB_USER'),
   DB_PASSWORD: requireEnv('DB_PASSWORD'),
   DB_NAME: requireEnv('DB_NAME'),
+  DB_SSL_ENABLED: getBooleanEnv('DB_SSL_ENABLED', false),
+  DB_SSL_REJECT_UNAUTHORIZED: getBooleanEnv('DB_SSL_REJECT_UNAUTHORIZED', true),
 
   APP_BASE_URL: appBaseUrl,
   FRONTEND_BASE_URL: requireEnv('FRONTEND_BASE_URL', { defaultValue: appBaseUrl }),

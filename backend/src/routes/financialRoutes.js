@@ -6,6 +6,7 @@ const { requireFullBilling, requireWritableBilling } = require('../middlewares/b
 const validate = require('../middlewares/validate');
 const { financialCreateSchema, financialUpdateSchema } = require('../schemas/financialSchemas');
 const logger = require('../utils/logger');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 router.use(authMiddleware);
 
@@ -14,8 +15,46 @@ router.get('/', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
     const { property_id, type, status, month, reservation_id } = req.query;
+    const { hasPagination, page, limit, offset } = parsePagination(req.query, {
+      defaultLimit: 25,
+      maxLimit: 100
+    });
 
-    let sql = `
+    let fromSql = `
+      FROM financial_entries f
+      JOIN properties p ON f.property_id = p.id
+      LEFT JOIN reservations r ON f.reservation_id = r.id
+      WHERE f.user_id = ?
+    `;
+
+    const params = [userId];
+
+    if (property_id) {
+      fromSql += ' AND f.property_id = ?';
+      params.push(property_id);
+    }
+
+    if (reservation_id) {
+      fromSql += ' AND f.reservation_id = ?';
+      params.push(reservation_id);
+    }
+
+    if (type) {
+      fromSql += ' AND f.type = ?';
+      params.push(type);
+    }
+
+    if (status) {
+      fromSql += ' AND f.status = ?';
+      params.push(status);
+    }
+
+    if (month) {
+      fromSql += ' AND DATE_FORMAT(f.entry_date, "%Y-%m") = ?';
+      params.push(month);
+    }
+
+    const sql = `
       SELECT
         f.id,
         f.user_id,
@@ -32,44 +71,26 @@ router.get('/', requireFullBilling, async (req, res) => {
         f.updated_at,
         p.name AS property_name,
         r.guest_name
-      FROM financial_entries f
-      JOIN properties p ON f.property_id = p.id
-      LEFT JOIN reservations r ON f.reservation_id = r.id
-      WHERE f.user_id = ?
+      ${fromSql}
+      ORDER BY f.entry_date DESC, f.id DESC
+      ${hasPagination ? 'LIMIT ? OFFSET ?' : ''}
     `;
 
-    const params = [userId];
+    const [rows] = await pool.query(sql, hasPagination ? [...params, limit, offset] : params);
 
-    if (property_id) {
-      sql += ' AND f.property_id = ?';
-      params.push(property_id);
+    if (!hasPagination) {
+      return res.json(rows);
     }
 
-    if (reservation_id) {
-      sql += ' AND f.reservation_id = ?';
-      params.push(reservation_id);
-    }
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) AS total ${fromSql}`,
+      params
+    );
 
-    if (type) {
-      sql += ' AND f.type = ?';
-      params.push(type);
-    }
-
-    if (status) {
-      sql += ' AND f.status = ?';
-      params.push(status);
-    }
-
-    if (month) {
-      sql += ' AND DATE_FORMAT(f.entry_date, "%Y-%m") = ?';
-      params.push(month);
-    }
-
-    sql += ' ORDER BY f.entry_date DESC, f.id DESC';
-
-    const [rows] = await pool.query(sql, params);
-
-    res.json(rows);
+    return res.json({
+      data: rows,
+      pagination: buildPaginationMeta(countRows[0]?.total, page, limit)
+    });
   } catch (error) {
     logger.error("Erro ao listar lançamentos financeiros", { service: 'api', route: req.originalUrl, userId: req.user?.id || null, error });
     res.status(500).json({ error: 'Erro ao listar lançamentos financeiros' });
