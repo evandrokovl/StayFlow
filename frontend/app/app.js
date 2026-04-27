@@ -1,6 +1,6 @@
     const stayFlowApi = window.StayFlowApi;
     const stayFlowUi = window.StayFlowUi;
-    const API_URL = stayFlowApi.API_URL;
+    const API_BASE_URL = stayFlowApi.API_BASE_URL;
     const extractApiError = stayFlowApi.extractApiError;
     const clearMessage = stayFlowUi.clearMessage;
     const compactEmptyState = stayFlowUi.compactEmptyState;
@@ -1359,7 +1359,7 @@
       if (!token) return;
 
       try {
-        const response = await fetch(`${API_URL}/message-logs/summary`, {
+        const response = await fetch(`${API_BASE_URL}/message-logs/summary`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1395,7 +1395,7 @@
       }
 
       try {
-        const response = await fetch(`${API_URL}/message-logs?${params.toString()}`, {
+        const response = await fetch(`${API_BASE_URL}/message-logs?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1428,10 +1428,10 @@
 
       try {
         const [response, logsResponse] = await Promise.all([
-          fetch(`${API_URL}/message-automations`, {
+          fetch(`${API_BASE_URL}/message-automations`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(`${API_URL}/message-logs?page=1&limit=100`, {
+          fetch(`${API_BASE_URL}/message-logs?page=1&limit=100`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -1460,7 +1460,7 @@
       if (!token) return;
 
       try {
-        const response = await fetch(`${API_URL}/message-logs?page=1&limit=10`, {
+        const response = await fetch(`${API_BASE_URL}/message-logs?page=1&limit=10`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1854,8 +1854,8 @@
         if (filters.to) inboundParams.set('to', filters.to);
         inboundParams.set('limit', '100');
         const responses = await Promise.all([
-          fetch(API_URL + '/message-logs?' + messageParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } }),
-          fetch(API_URL + '/inbound-emails?' + inboundParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } })
+          fetch(API_BASE_URL + '/message-logs?' + messageParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch(API_BASE_URL + '/inbound-emails?' + inboundParams.toString(), { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         const messageData = await responses[0].json();
         const inboundData = await responses[1].json();
@@ -2074,7 +2074,7 @@
       if (!confirmed) return;
 
       try {
-        const response = await fetch(`${API_URL}/message-automations/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/message-automations/${id}`, {
           method: 'PUT',
           headers: authHeaders(),
           body: JSON.stringify({
@@ -2105,7 +2105,7 @@
       if (!confirmed) return;
 
       try {
-        const response = await fetch(`${API_URL}/message-automations/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/message-automations/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -2641,7 +2641,7 @@
       if (!hasFullBillingAccess()) return;
 
       try {
-        const response = await fetch(`${API_URL}/financial`, {
+        const response = await fetch(`${API_BASE_URL}/financial`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -3607,7 +3607,7 @@ function renderPropertyList() {
         return false;
       }
 
-      const response = await fetch(`${API_URL}/properties`, {
+      const response = await fetch(`${API_BASE_URL}/properties`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(body)
@@ -3644,7 +3644,7 @@ function renderPropertyList() {
         return false;
       }
 
-      const response = await fetch(`${API_URL}/properties/${property.id}`, {
+      const response = await fetch(`${API_BASE_URL}/properties/${property.id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -3669,7 +3669,7 @@ function renderPropertyList() {
       await loadProperties();
       updateOnboardingProgress({ calendar_connected: true });
       try {
-        await fetch(`${API_URL}/sync/${property.id}`, {
+        await fetch(`${API_BASE_URL}/sync/${property.id}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -3689,7 +3689,7 @@ function renderPropertyList() {
         return true;
       }
 
-      const response = await fetch(`${API_URL}/message-automations`, {
+      const response = await fetch(`${API_BASE_URL}/message-automations`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
@@ -4133,7 +4133,7 @@ function renderPropertyList() {
     async function fetchReservationFinanceSafe(reservationId, reservation) {
       if (!reservation || isBlockingReservationSource(reservation.source)) return { reservation, summary: {}, entries: [] };
       try {
-        const response = await fetch(`${API_URL}/financial/by-reservation/${reservationId}`, {
+        const response = await fetch(`${API_BASE_URL}/financial/by-reservation/${reservationId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json().catch(() => ({}));
@@ -4146,8 +4146,8 @@ function renderPropertyList() {
 
     async function fetchRelatedReservationActivity(reservationId) {
       const [logsResponse, inboundResponse] = await Promise.all([
-        fetch(`${API_URL}/message-logs?page=1&limit=100`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/inbound-emails?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_BASE_URL}/message-logs?page=1&limit=100`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/inbound-emails?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       const logsData = await logsResponse.json().catch(() => []);
       const inboundData = await inboundResponse.json().catch(() => ({ emails: [] }));
@@ -4184,7 +4184,7 @@ function renderPropertyList() {
 
     async function loadReservationFinance(reservationId) {
       try {
-        const response = await fetch(`${API_URL}/financial/by-reservation/${reservationId}`, {
+        const response = await fetch(`${API_BASE_URL}/financial/by-reservation/${reservationId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -4546,7 +4546,7 @@ function renderPropertyList() {
         params.append('page', String(financialPagination.page || 1));
         params.append('limit', String(financialPagination.limit || 25));
 
-        const response = await fetch(`${API_URL}/financial?${params.toString()}`, {
+        const response = await fetch(`${API_BASE_URL}/financial?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -4594,7 +4594,7 @@ function renderPropertyList() {
         if (status) params.append('status', status);
         if (source) params.append('source', source);
 
-        const response = await fetch(`${API_URL}/financial?${params.toString()}`, {
+        const response = await fetch(`${API_BASE_URL}/financial?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -4806,7 +4806,7 @@ function renderPropertyList() {
       const button = event.target.closest('[data-log-action="retry-message"]');
       if (!button) return;
       try {
-        await runOperationAction(API_URL + '/message-logs/' + button.dataset.id + '/reprocess', 'Mensagem reenfileirada para nova tentativa.', button);
+        await runOperationAction(API_BASE_URL + '/message-logs/' + button.dataset.id + '/reprocess', 'Mensagem reenfileirada para nova tentativa.', button);
         await loadMessageLogs(currentMessageLogFilter);
       } catch (error) {
         showMessage('messageStatusMessage', error.message || 'Não foi possível tentar reenviar a mensagem.', 'error');
@@ -4839,11 +4839,11 @@ function renderPropertyList() {
         if (action === 'details-message') return showOperationDetails('message', id);
         if (action === 'reprocess-message') {
           if (!confirm('Deseja reprocessar esta mensagem? Um novo job será colocado na fila.')) return;
-          return runOperationAction(API_URL + '/message-logs/' + id + '/reprocess', 'Mensagem reenfileirada.', button);
+          return runOperationAction(API_BASE_URL + '/message-logs/' + id + '/reprocess', 'Mensagem reenfileirada.', button);
         }
         if (action === 'force-message') {
           if (!confirm('Deseja forçar o envio agora? Isso pode disparar email para o hóspede.')) return;
-          return runOperationAction(API_URL + '/message-logs/' + id + '/force-send', 'Envio forçado enfileirado.', button);
+          return runOperationAction(API_BASE_URL + '/message-logs/' + id + '/force-send', 'Envio forçado enfileirado.', button);
         }
       } catch (error) {
         setOperationFeedback(error.message || 'Falha ao executar ação.', 'error');
@@ -4858,7 +4858,7 @@ function renderPropertyList() {
         if (action === 'details-inbound') return showOperationDetails('inbound', id);
         if (action === 'reprocess-inbound') {
           if (!confirm('Deseja reprocessar este inbound? Ele pode atualizar/criar ações derivadas se o backend identificar mudanças.')) return;
-          return runOperationAction(API_URL + '/inbound-emails/' + id + '/reprocess', 'Inbound reenfileirado.', button);
+          return runOperationAction(API_BASE_URL + '/inbound-emails/' + id + '/reprocess', 'Inbound reenfileirado.', button);
         }
       } catch (error) {
         setOperationFeedback(error.message || 'Falha ao executar ação.', 'error');

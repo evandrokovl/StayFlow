@@ -1,15 +1,22 @@
 (function setupStayFlowApi(window) {
-  const API_URL = (() => {
+  function normalizeApiBaseUrl(url) {
+    const baseUrl = String(url || '').replace(/\/+$/, '');
+    return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  }
+
+  const API_BASE_URL = (() => {
     const configuredUrl = window.STAYFLOW_API_URL;
-    if (configuredUrl) return configuredUrl.replace(/\/$/, '');
+    if (configuredUrl) return normalizeApiBaseUrl(configuredUrl);
 
-    const isLocalHost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
-    const isLocalFile = window.location.protocol === 'file:';
+    const hostname = window.location.hostname;
+    const isLocalHost = hostname.includes('localhost') || hostname === '127.0.0.1' || hostname === '';
 
-    if (isLocalFile || isLocalHost) return 'http://localhost:3000';
+    if (isLocalHost) return 'http://localhost:3000/api';
 
-    return 'https://api.stayflowapp.online';
+    return 'https://api.stayflowapp.online/api';
   })();
+
+  const API_URL = API_BASE_URL;
 
   function extractApiError(data, fallback) {
     if (data?.error) return data.error;
@@ -82,7 +89,7 @@
     const rawUrl = typeof input === 'string' ? input : input?.url;
     if (!rawUrl) return false;
 
-    return rawUrl.startsWith(API_URL) || rawUrl.startsWith(`${window.location.origin}/`);
+    return rawUrl.startsWith(API_BASE_URL) || rawUrl.startsWith(`${window.location.origin}/`);
   }
 
   function createClient({ getToken, onUnauthorized } = {}) {
@@ -119,7 +126,7 @@
 
       const url = endpoint.startsWith('http')
         ? endpoint
-        : `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
       const headers = { ...customHeaders };
       let requestBody = body;
@@ -152,6 +159,7 @@
     }
 
     return {
+      API_BASE_URL,
       API_URL,
       authHeaders,
       fetch: fetchApi
@@ -159,6 +167,7 @@
   }
 
   window.StayFlowApi = {
+    API_BASE_URL,
     API_URL,
     appendRequestId,
     createApiError,
