@@ -60,6 +60,25 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+function setCorsHeaders(req, res, next) {
+  const origin = req.headers.origin;
+
+  if (origin && allowedCorsOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', corsOptions.methods.join(','));
+    res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(','));
+    res.header('Access-Control-Expose-Headers', corsOptions.exposedHeaders.join(','));
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  return next();
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
@@ -74,8 +93,8 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
+app.use(setCorsHeaders);
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
 
 app.use(express.json({ limit: '2mb' }));
 
