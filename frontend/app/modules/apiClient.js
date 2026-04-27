@@ -1,7 +1,6 @@
 (function setupStayFlowApi(window) {
   function normalizeApiBaseUrl(url) {
-    const baseUrl = String(url || '').replace(/\/+$/, '');
-    return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+    return String(url || '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
   }
 
   const API_BASE_URL = (() => {
@@ -9,11 +8,11 @@
     if (configuredUrl) return normalizeApiBaseUrl(configuredUrl);
 
     const hostname = window.location.hostname;
-    const isLocalHost = hostname.includes('localhost') || hostname === '127.0.0.1' || hostname === '';
+    const isLocalHost = hostname.includes('localhost') || hostname === '127.0.0.1';
 
-    if (isLocalHost) return 'http://localhost:3000/api';
+    if (isLocalHost) return 'http://localhost:3000';
 
-    return 'https://api.stayflowapp.online/api';
+    return 'https://api.stayflowapp.online';
   })();
 
   const API_URL = API_BASE_URL;
