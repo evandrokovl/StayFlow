@@ -36,7 +36,8 @@ async function main() {
           'uq_inbound_emails_provider_email_id',
           'uq_inbound_emails_fingerprint',
           'uq_reservations_property_external_id',
-          'uq_message_logs_automation_reservation_schedule'
+          'uq_message_logs_automation_reservation_schedule',
+          'uq_property_ical_feeds_property_channel_url'
         )
       GROUP BY TABLE_NAME, INDEX_NAME
       ORDER BY TABLE_NAME, INDEX_NAME
@@ -44,9 +45,20 @@ async function main() {
       [env.DB_NAME]
     );
 
+    const [propertyIcalFeedsTable] = await connection.query(
+      `
+      SELECT TABLE_NAME
+      FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = ?
+        AND TABLE_NAME = 'property_ical_feeds'
+      `,
+      [env.DB_NAME]
+    );
+
     console.log(JSON.stringify({
       fingerprintColumn,
-      indexes
+      indexes,
+      propertyIcalFeedsTable
     }, null, 2));
   } finally {
     await connection.end();

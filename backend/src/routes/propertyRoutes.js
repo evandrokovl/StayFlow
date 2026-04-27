@@ -6,6 +6,7 @@ const { requireFullBilling, requireWritableBilling } = require('../middlewares/b
 const billingService = require('../services/billingService');
 const logger = require('../utils/logger');
 const validate = require('../middlewares/validate');
+const { idParamSchema } = require('../schemas/commonSchemas');
 const { propertyCreateSchema, propertyUpdateSchema } = require('../schemas/propertySchemas');
 
 const router = express.Router();
@@ -113,8 +114,151 @@ async function getPropertyListingsMap(propertyIds) {
   }, new Map());
 }
 
-async function buildPropertyResponse(property, preloadedListings = null) {
+async function getPropertyIcalFeeds(propertyId) {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        id,
+        property_id,
+        channel,
+        ical_url,
+        is_active,
+        last_synced_at,
+        last_error,
+        last_event_count,
+        created_at,
+        updated_at
+      FROM property_ical_feeds
+      WHERE property_id = ?
+      ORDER BY id ASC
+      `,
+      [propertyId]
+    );
+
+    return rows;
+  } catch (error) {
+    if (error.code === 'ER_NO_SUCH_TABLE') return [];
+    throw error;
+  }
+}
+
+async function getPropertyIcalFeedsMap(propertyIds) {
+  if (!propertyIds.length) return new Map();
+
+  const placeholders = propertyIds.map(() => '?').join(', ');
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        id,
+        property_id,
+        channel,
+        ical_url,
+        is_active,
+        last_synced_at,
+        last_error,
+        last_event_count,
+        created_at,
+        updated_at
+      FROM property_ical_feeds
+      WHERE property_id IN (${placeholders})
+      ORDER BY property_id ASC, id ASC
+      `,
+      propertyIds
+    );
+
+    return rows.reduce((map, row) => {
+      const key = Number(row.property_id);
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key).push(row);
+      return map;
+    }, new Map());
+  } catch (error) {
+    if (error.code === 'ER_NO_SUCH_TABLE') return new Map();
+    throw error;
+  }
+}
+
+function normalizeIcalChannel(value) {
+  const text = normalizeText(value) || 'other';
+  return text.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').slice(0, 60) || 'other';
+}
+
+function buildIcalFeedsFromBody(body) {
+  const feeds = [];
+
+  if (normalizeText(body.airbnb_ical_url)) {
+    feeds.push({ channel: 'airbnb', ical_url: normalizeText(body.airbnb_ical_url), is_active: true });
+  }
+
+  if (normalizeText(body.booking_ical_url)) {
+    feeds.push({ channel: 'booking', ical_url: normalizeText(body.booking_ical_url), is_active: true });
+  }
+
+  if (Array.isArray(body.ical_feeds)) {
+    body.ical_feeds.forEach((feed) => {
+      const icalUrl = normalizeText(feed?.ical_url);
+      if (!icalUrl) return;
+      feeds.push({
+        channel: normalizeIcalChannel(feed.channel),
+        ical_url: icalUrl,
+        is_active: feed.is_active !== false
+      });
+    });
+  }
+
+  const seen = new Set();
+  return feeds.filter((feed) => {
+    const key = `${feed.channel}|${feed.ical_url}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 10);
+}
+
+async function replacePropertyIcalFeeds(connection, propertyId, body) {
+  const feeds = buildIcalFeedsFromBody(body);
+
+  try {
+    await connection.query('DELETE FROM property_ical_feeds WHERE property_id = ?', [propertyId]);
+
+    for (const feed of feeds) {
+      await connection.query(
+        `
+        INSERT INTO property_ical_feeds (
+          property_id,
+          channel,
+          ical_url,
+          is_active
+        ) VALUES (?, ?, ?, ?)
+        `,
+        [
+          propertyId,
+          feed.channel,
+          feed.ical_url,
+          feed.is_active ? 1 : 0
+        ]
+      );
+    }
+  } catch (error) {
+    if (error.code === 'ER_NO_SUCH_TABLE') {
+      logger.warn('Tabela property_ical_feeds nao existe; mantendo apenas campos legados de iCal', {
+        service: 'api',
+        propertyId
+      });
+      return;
+    }
+    throw error;
+  }
+}
+
+async function buildPropertyResponse(property, preloadedListings = null, preloadedIcalFeeds = null) {
   const listings = preloadedListings || await getPropertyListings(property.id);
+  const icalFeeds = preloadedIcalFeeds || await getPropertyIcalFeeds(property.id);
 
   return {
     ...property,
@@ -122,7 +266,8 @@ async function buildPropertyResponse(property, preloadedListings = null) {
     listing_url: listings[0]?.listing_url || null,
     listing_platform: listings[0]?.platform || null,
     listing_code: listings[0]?.listing_code || null,
-    property_listings: listings
+    property_listings: listings,
+    ical_feeds: icalFeeds
   };
 }
 
@@ -166,10 +311,16 @@ router.get('/', requireFullBilling, async (req, res) => {
       [req.user.id]
     );
 
-    const listingsMap = await getPropertyListingsMap(properties.map((property) => property.id));
-    const result = properties.map((property) => (
-      buildPropertyResponse(property, listingsMap.get(Number(property.id)) || [])
-    ));
+    const propertyIds = properties.map((property) => property.id);
+    const listingsMap = await getPropertyListingsMap(propertyIds);
+    const icalFeedsMap = await getPropertyIcalFeedsMap(propertyIds);
+    const result = await Promise.all(properties.map((property) => (
+      buildPropertyResponse(
+        property,
+        listingsMap.get(Number(property.id)) || [],
+        icalFeedsMap.get(Number(property.id)) || []
+      )
+    )));
 
     return res.json(result);
   } catch (error) {
@@ -179,7 +330,7 @@ router.get('/', requireFullBilling, async (req, res) => {
 });
 
 // BUSCAR IMÓVEL POR ID
-router.get('/:id', requireFullBilling, async (req, res) => {
+router.get('/:id', requireFullBilling, validate(idParamSchema), async (req, res) => {
   try {
     const [properties] = await pool.query(
       `
@@ -299,6 +450,8 @@ router.post('/', requireWritableBilling, validate(propertyCreateSchema), async (
         listingCode
       ]
     );
+
+    await replacePropertyIcalFeeds(connection, result.insertId, req.body);
 
     await connection.commit();
     await recalculateBillingSafely(req.user.id);
@@ -475,6 +628,8 @@ router.put('/:id', requireWritableBilling, validate(propertyUpdateSchema), async
       );
     }
 
+    await replacePropertyIcalFeeds(connection, req.params.id, req.body);
+
     await connection.commit();
     await recalculateBillingSafely(req.user.id);
 
@@ -522,7 +677,7 @@ router.put('/:id', requireWritableBilling, validate(propertyUpdateSchema), async
 });
 
 // EXCLUIR IMÓVEL
-router.delete('/:id', requireWritableBilling, async (req, res) => {
+router.delete('/:id', requireWritableBilling, validate(idParamSchema), async (req, res) => {
   try {
     const [existing] = await pool.query(
       `

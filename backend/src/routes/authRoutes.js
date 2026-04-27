@@ -33,6 +33,13 @@ const authRateLimit = createRateLimiter({
   message: 'Muitas tentativas na autenticacao. Tente novamente em alguns minutos.'
 });
 
+const registerRateLimit = createRateLimiter({
+  name: 'auth_register',
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: 'Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente.'
+});
+
 const loginRateLimit = createRateLimiter({
   name: 'auth_login',
   windowMs: 15 * 60 * 1000,
@@ -130,7 +137,7 @@ async function userSelectFields({ includePassword = false } = {}) {
 // REGISTER
 // =========================
 
-router.post('/register', authRateLimit, validate(registerSchema), async (req, res, next) => {
+router.post('/register', authRateLimit, registerRateLimit, validate(registerSchema), async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     const cpf = normalizeCpf(req.body.cpf);

@@ -175,7 +175,9 @@ async function syncOneProperty(propertyId) {
 }
 
 async function syncPropertyFeeds(property) {
-  if (!property.airbnb_ical_url && !property.booking_ical_url) {
+  const feeds = await getConfiguredIcalFeeds(property);
+
+  if (!feeds.length) {
     logger.warn('Imóvel sem iCal configurado. Sincronização ignorada', {
       service: 'sync',
       scope: 'property',
@@ -194,22 +196,26 @@ async function syncPropertyFeeds(property) {
   let updated = 0;
   let skipped = 0;
 
-  if (property.airbnb_ical_url) {
-    const airbnbEvents = await fetchIcalEvents(property.airbnb_ical_url);
-    const airbnbResult = await saveEvents(property.id, 'airbnb', airbnbEvents);
+  for (const feed of feeds) {
+    try {
+      const events = await fetchIcalEvents(feed.ical_url);
+      const result = await saveEvents(property.id, feed.channel, events);
 
-    inserted += airbnbResult.inserted;
-    updated += airbnbResult.updated;
-    skipped += airbnbResult.skipped;
-  }
+      inserted += result.inserted;
+      updated += result.updated;
+      skipped += result.skipped;
 
-  if (property.booking_ical_url) {
-    const bookingEvents = await fetchIcalEvents(property.booking_ical_url);
-    const bookingResult = await saveEvents(property.id, 'booking', bookingEvents);
-
-    inserted += bookingResult.inserted;
-    updated += bookingResult.updated;
-    skipped += bookingResult.skipped;
+      await updateIcalFeedStatus(property.id, feed.channel, feed.ical_url, events.length, null);
+    } catch (error) {
+      await updateIcalFeedStatus(property.id, feed.channel, feed.ical_url, 0, error.message);
+      logger.error('Erro ao sincronizar feed iCal', {
+        service: 'sync',
+        scope: 'feed',
+        propertyId: property.id,
+        source: feed.channel,
+        error
+      });
+    }
   }
 
   return {
@@ -217,6 +223,86 @@ async function syncPropertyFeeds(property) {
     updated,
     skipped
   };
+}
+
+async function getConfiguredIcalFeeds(property) {
+  const feeds = [];
+
+  if (property.airbnb_ical_url) {
+    feeds.push({ channel: 'airbnb', ical_url: property.airbnb_ical_url });
+  }
+
+  if (property.booking_ical_url) {
+    feeds.push({ channel: 'booking', ical_url: property.booking_ical_url });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT channel, ical_url
+      FROM property_ical_feeds
+      WHERE property_id = ?
+        AND is_active = 1
+      ORDER BY id ASC
+      `,
+      [property.id]
+    );
+
+    rows.forEach((row) => {
+      feeds.push({
+        channel: row.channel || 'other',
+        ical_url: row.ical_url
+      });
+    });
+  } catch (error) {
+    if (error.code !== 'ER_NO_SUCH_TABLE') {
+      throw error;
+    }
+  }
+
+  const seen = new Set();
+  return feeds.filter((feed) => {
+    if (!feed.ical_url) return false;
+    const key = `${feed.channel}|${feed.ical_url}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function updateIcalFeedStatus(propertyId, channel, icalUrl, eventCount, errorMessage) {
+  try {
+    await pool.query(
+      `
+      UPDATE property_ical_feeds
+      SET
+        last_synced_at = NOW(),
+        last_error = ?,
+        last_event_count = ?,
+        updated_at = NOW()
+      WHERE property_id = ?
+        AND channel = ?
+        AND ical_url = ?
+      `,
+      [
+        errorMessage ? String(errorMessage).slice(0, 500) : null,
+        Number.isFinite(eventCount) ? eventCount : 0,
+        propertyId,
+        channel,
+        icalUrl
+      ]
+    );
+  } catch (error) {
+    if (error.code !== 'ER_NO_SUCH_TABLE') {
+      logger.warn('Falha ao atualizar status do feed iCal', {
+        service: 'sync',
+        scope: 'feed_status',
+        propertyId,
+        channel,
+        error
+      });
+    }
+  }
 }
 
 async function saveEvents(propertyId, source, events) {

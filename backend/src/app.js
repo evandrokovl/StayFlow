@@ -20,19 +20,24 @@ const messageLogRoutes = require('./routes/messageLogRoutes');
 const financialRoutes = require('./routes/financialRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const asaasWebhookRoutes = require('./routes/asaasWebhookRoutes');
+const statusRoutes = require('./routes/statusRoutes');
 
+const { requestIdMiddleware } = require('./middlewares/requestIdMiddleware');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
 
 app.disable('x-powered-by');
+app.use(requestIdMiddleware);
 
 const allowedCorsOrigins = Array.from(new Set([
   'https://app.stayflowapp.online',
+  'https://www.stayflowapp.online',
+  'https://stayflowapp.online',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'null',
+  ...(env.IS_PRODUCTION ? [] : ['null']),
   ...env.CORS_ORIGINS
 ]));
 
@@ -49,13 +54,22 @@ const corsOptions = {
     return callback(new Error('Origem nao permitida pelo CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  exposedHeaders: ['X-Request-Id'],
   credentials: true,
   optionsSuccessStatus: 204
 };
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      formAction: ["'none'"],
+      frameAncestors: ["'none'"]
+    }
+  },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
@@ -79,6 +93,7 @@ app.use('/message-logs', messageLogRoutes);
 app.use('/financial', financialRoutes);
 app.use('/billing', billingRoutes);
 app.use('/webhooks', asaasWebhookRoutes);
+app.use('/status', statusRoutes);
 
 app.get('/', (req, res) => {
   res.send('API funcionando');
@@ -100,11 +115,13 @@ app.get('/health', async (req, res) => {
     logger.error('Health check falhou', {
       service: 'api',
       scope: 'health',
+      requestId: req.requestId || req.id || null,
       error
     });
 
     return res.status(500).json({
       success: false,
+      requestId: req.requestId || req.id || null,
       status: 'degraded',
       service: 'api',
       message: 'Serviço temporariamente indisponível',

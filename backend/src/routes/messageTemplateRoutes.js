@@ -4,6 +4,12 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const logger = require('../utils/logger');
+const validate = require('../middlewares/validate');
+const { idParamSchema } = require('../schemas/commonSchemas');
+const {
+  messageTemplateCreateSchema,
+  messageTemplateUpdateSchema
+} = require('../schemas/messageTemplateSchemas');
 
 router.use(authMiddleware);
 
@@ -30,7 +36,7 @@ router.get('/', requireFullBilling, async (req, res) => {
 });
 
 // BUSCAR template por id
-router.get('/:id', requireFullBilling, async (req, res) => {
+router.get('/:id', requireFullBilling, validate(idParamSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -57,7 +63,7 @@ router.get('/:id', requireFullBilling, async (req, res) => {
 });
 
 // CRIAR template
-router.post('/', requireWritableBilling, async (req, res) => {
+router.post('/', requireWritableBilling, validate(messageTemplateCreateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, channel, subject, body } = req.body;
@@ -101,7 +107,7 @@ router.post('/', requireWritableBilling, async (req, res) => {
 });
 
 // ATUALIZAR template
-router.put('/:id', requireWritableBilling, async (req, res) => {
+router.put('/:id', requireWritableBilling, validate(messageTemplateUpdateSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
@@ -165,7 +171,7 @@ router.put('/:id', requireWritableBilling, async (req, res) => {
 });
 
 // EXCLUIR template
-router.delete('/:id', requireWritableBilling, async (req, res) => {
+router.delete('/:id', requireWritableBilling, validate(idParamSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;

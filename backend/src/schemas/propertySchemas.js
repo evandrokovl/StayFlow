@@ -10,6 +10,12 @@ const optionalUrl = z.preprocess(
   z.string().trim().url('URL invalida').nullable()
 );
 
+const icalFeedSchema = z.object({
+  channel: z.string().trim().min(1, 'channel e obrigatorio').max(60, 'channel muito longo').default('other'),
+  ical_url: z.string().trim().url('ical_url invalida'),
+  is_active: z.boolean().optional().default(true)
+});
+
 const propertyBodySchema = z.object({
   name: z.string().trim().min(1, 'name e obrigatorio'),
   description: optionalText,
@@ -19,6 +25,10 @@ const propertyBodySchema = z.object({
   country: optionalText,
   airbnb_ical_url: optionalUrl,
   booking_ical_url: optionalUrl,
+  ical_feeds: z.preprocess(
+    (value) => (value === undefined || value === null || value === '' ? [] : value),
+    z.array(icalFeedSchema).max(10, 'Limite de 10 feeds iCal por imovel')
+  ).optional(),
   listing_url: z.string().trim().url('listing_url invalida')
 });
 

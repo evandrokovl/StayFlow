@@ -33,6 +33,20 @@ async function hasIndex(connection, tableName, indexName) {
   return Number(rows[0]?.total || 0) > 0;
 }
 
+async function hasTable(connection, tableName) {
+  const [rows] = await connection.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = ?
+    `,
+    [tableName]
+  );
+
+  return Number(rows[0]?.total || 0) > 0;
+}
+
 async function runStep(label, callback) {
   process.stdout.write(`${label}... `);
   await callback();
@@ -204,6 +218,45 @@ async function addUserCpfAndPasswordResetTokens(connection) {
   }
 }
 
+async function addPropertyIcalFeeds(connection) {
+  if (!(await hasTable(connection, 'property_ical_feeds'))) {
+    await connection.query(`
+      CREATE TABLE property_ical_feeds (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        property_id BIGINT UNSIGNED NOT NULL,
+        channel VARCHAR(60) NOT NULL DEFAULT 'other',
+        ical_url VARCHAR(2048) NOT NULL,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        last_synced_at DATETIME NULL,
+        last_error VARCHAR(500) NULL,
+        last_event_count INT UNSIGNED NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_property_ical_feeds_property (property_id),
+        KEY idx_property_ical_feeds_active (is_active),
+        UNIQUE KEY uq_property_ical_feeds_property_channel_url (property_id, channel, ical_url(191))
+      )
+    `);
+  }
+
+  await connection.query(`
+    INSERT IGNORE INTO property_ical_feeds (property_id, channel, ical_url, is_active)
+    SELECT id, 'airbnb', airbnb_ical_url, 1
+    FROM properties
+    WHERE airbnb_ical_url IS NOT NULL
+      AND airbnb_ical_url <> ''
+  `);
+
+  await connection.query(`
+    INSERT IGNORE INTO property_ical_feeds (property_id, channel, ical_url, is_active)
+    SELECT id, 'booking', booking_ical_url, 1
+    FROM properties
+    WHERE booking_ical_url IS NOT NULL
+      AND booking_ical_url <> ''
+  `);
+}
+
 async function main() {
   const connection = await mysql.createConnection({
     host: env.DB_HOST,
@@ -218,6 +271,7 @@ async function main() {
     await runStep('Applying reservation external_id index', () => addReservationExternalIdIndex(connection));
     await runStep('Applying message log automation index', () => addMessageLogAutomationIndex(connection));
     await runStep('Applying user CPF and password reset tokens', () => addUserCpfAndPasswordResetTokens(connection));
+    await runStep('Applying property iCal feeds table', () => addPropertyIcalFeeds(connection));
   } finally {
     await connection.end();
   }

@@ -8,8 +8,13 @@
     "start": "node server.js",
     "worker": "nodemon worker.js",
     "worker:start": "node worker.js",
+    "migrate": "node scripts/applyMigrations.js",
+    "migrate:verify": "node scripts/verifyMigrations.js",
+    "seed": "npm run seed:demo",
+    "seed:demo": "node scripts/seedDemo.js",
     "check:encoding": "node scripts/checkEncoding.js",
-    "test": "node --test --test-isolation=none test/*.test.js"
+    "test": "node --test --test-isolation=none test/*.test.js",
+    "test:e2e": "node --test --test-isolation=none test/e2eApi.test.js"
   },
   "keywords": [],
   "author": "",

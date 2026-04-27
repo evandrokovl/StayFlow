@@ -67,6 +67,7 @@ function createRateLimiter(options = {}) {
 
         return res.status(429).json({
           success: false,
+          requestId: req.requestId || req.id || null,
           message,
           retry_after_seconds: retryAfterSeconds
         });
@@ -86,6 +87,7 @@ function createRateLimiter(options = {}) {
 
       return res.status(503).json({
         success: false,
+        requestId: req.requestId || req.id || null,
         message: 'Servico temporariamente indisponivel. Tente novamente em instantes.'
       });
     }

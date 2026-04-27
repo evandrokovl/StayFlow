@@ -5,6 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const { processMessageAutomations } = require('../services/messageAutomationService');
 const validate = require('../middlewares/validate');
+const { idParamSchema } = require('../schemas/commonSchemas');
 const logger = require('../utils/logger');
 const {
   messageAutomationCreateSchema,
@@ -297,7 +298,7 @@ router.put('/:id', requireWritableBilling, validate(messageAutomationUpdateSchem
 });
 
 // EXCLUIR automação
-router.delete('/:id', requireWritableBilling, async (req, res) => {
+router.delete('/:id', requireWritableBilling, validate(idParamSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;

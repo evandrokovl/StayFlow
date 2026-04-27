@@ -4,6 +4,8 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling } = require('../middlewares/billingAccessMiddleware');
 const logger = require('../utils/logger');
+const validate = require('../middlewares/validate');
+const { icalFeedSchema, icalPropertySchema } = require('../schemas/icalSchemas');
 
 function formatDateICS(date) {
   const d = new Date(date);
@@ -21,7 +23,7 @@ function escapeICS(text = '') {
     .replace(/;/g, '\\;');
 }
 
-router.get('/:token.ics', async (req, res) => {
+router.get('/:token.ics', validate(icalFeedSchema), async (req, res) => {
   try {
     const { token } = req.params;
 
@@ -104,7 +106,7 @@ router.get('/:token.ics', async (req, res) => {
   }
 });
 
-router.get('/property/:id', authMiddleware, requireFullBilling, async (req, res) => {
+router.get('/property/:id', authMiddleware, requireFullBilling, validate(icalPropertySchema), async (req, res) => {
   try {
     const { id } = req.params;
 

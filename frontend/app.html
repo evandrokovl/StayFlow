@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StayFlow</title>
   <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="app/styles.css" />
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
@@ -29,11 +29,17 @@
         <button type="button" class="nav-btn" data-section-btn="reservations">Reservas</button>
         <button type="button" class="nav-btn" data-section-btn="message-status">Status das mensagens</button>
         <button type="button" class="nav-btn" data-section-btn="billing">Assinatura e Cobrança</button>
+        <button type="button" class="nav-btn" data-section-btn="system-status">Status do sistema</button>
       </div>
       <div class="sidebar-value-card">
         <span>Setup recomendado</span>
         <strong>Automatize em 4 passos</strong>
         <small>Imóvel, iCal, e-mail do StayFlow e automação.</small>
+      </div>
+      <div class="sidebar-legal-links" aria-label="Links legais">
+        <a href="/privacy.html">Privacidade</a>
+        <a href="/terms.html">Termos</a>
+        <a href="/data-request.html">Conta e dados</a>
       </div>
     </aside>
 
@@ -69,6 +75,7 @@
               <div class="auth-panel-heading">
                 <h2>Cadastrar usuário</h2>
                 <div class="small">CPF obrigatório para proteger a conta e evitar duplicidade.</div>
+                <div class="trial-note">Teste grátis ativo por 15 dias. Próximo passo após cadastro: configurar seu primeiro imóvel.</div>
               </div>
               <div class="grid">
                 <label class="form-field">
@@ -359,6 +366,19 @@
               <div class="activation-steps-grid" id="activationStepsGrid"></div>
             </div>
 
+            <div class="property-assistant-card" id="propertySetupAssistant">
+              <div class="section-heading">
+                <div>
+                  <div class="brand-kicker">Assistente por imóvel</div>
+                  <h3 id="propertyAssistantTitle">Configure um imóvel para começar</h3>
+                  <div class="small" id="propertyAssistantSubtitle">O progresso acompanha dados reais do painel e não bloqueia o uso do sistema.</div>
+                </div>
+                <button type="button" class="btn-secondary" id="propertyAssistantCta">Abrir próxima etapa</button>
+              </div>
+              <div class="property-assistant-progress"><span id="propertyAssistantProgressBar"></span></div>
+              <div class="property-assistant-steps" id="propertyAssistantSteps"></div>
+            </div>
+
             <div class="dashboard-kpi-grid">
               <div class="summary-card dashboard-primary-kpi">
                 <div class="summary-label">Lucro do mês</div>
@@ -643,8 +663,9 @@
   <input type="text" id="propertyListingUrl" placeholder="Link do anúncio (obrigatório)" />
   <input type="text" id="propertyAirbnbIcal" placeholder="Link iCal do Airbnb (opcional)" />
   <input type="text" id="propertyBookingIcal" placeholder="Link iCal do Booking (opcional)" />
+  <textarea id="propertyExtraIcalFeeds" placeholder="Feeds iCal adicionais, um por linha. Exemplo: vrbo | https://..."></textarea>
   <div class="small" style="margin-top:-6px;">
-    Informe o link do anúncio para o sistema identificar automaticamente o imóvel nas reservas recebidas por e-mail.
+    Informe o link do anúncio para o sistema identificar automaticamente o imóvel nas reservas recebidas por e-mail. Para outros canais, use "canal | URL" ou apenas a URL.
   </div>
   <button id="createPropertyBtn" type="button">Cadastrar imóvel</button>
 </div>
@@ -690,6 +711,7 @@
                   <select id="reservationType">
                     <option value="manual">Reserva manual</option>
                     <option value="blocked">Bloqueio</option>
+                    <option value="maintenance">Manutenção</option>
                   </select>
                   <button class="btn-success" id="createReservationBtn" type="button">Criar reserva / bloqueio</button>
                 </div>
@@ -831,6 +853,12 @@
                   <input type="number" id="messageOffsetDays" placeholder="Dias de antecedência ou atraso (ex: 1, 0, -1)" />
                   <input type="time" id="messageSendTime" />
                   <textarea id="messageTemplate" placeholder="Mensagem automática. Exemplo: Olá {nome_hospede}, seu check-in será em {data_checkin}."></textarea>
+                  <div class="template-quick-actions" id="templateQuickActions" aria-label="Templates prontos">
+                    <button type="button" class="btn-secondary" data-template-preset="pre_check_in">Pré-check-in</button>
+                    <button type="button" class="btn-secondary" data-template-preset="check_in">Check-in</button>
+                    <button type="button" class="btn-secondary" data-template-preset="checkout">Checkout</button>
+                  </div>
+                  <div class="message-preview-card" id="messageTemplatePreview">Prévia da mensagem aparecerá aqui antes de ativar.</div>
                   <select id="messageStatus">
                     <option value="active">Ativa</option>
                     <option value="inactive">Inativa</option>
@@ -899,6 +927,7 @@
                 <div class="small">Acompanhe envios, pendências, erros e contatos ausentes em um único lugar.</div>
               </div>
             </div>
+            <div id="messageStatusMessage"></div>
 
                 <div class="card">
                   <div class="section-heading">
@@ -1005,6 +1034,13 @@
                   <option value="paid">Pagos</option>
                   <option value="pending">Pendentes</option>
                   <option value="cancelled">Cancelados</option>
+                </select>
+                <select id="financialFilterSource">
+                  <option value="">Todas as origens</option>
+                  <option value="manual">Manual</option>
+                  <option value="airbnb">Airbnb</option>
+                  <option value="booking">Booking</option>
+                  <option value="asaas">Asaas</option>
                 </select>
               </div>
               <div class="quick-actions" style="margin-top: 12px;">
@@ -1272,11 +1308,71 @@
               </div>
             </div>
           </section>
+
+          <section id="section-system-status" class="section hidden">
+            <div class="section-heading">
+              <div>
+                <h2>Status do sistema</h2>
+                <div class="small">Acompanhe disponibilidade da API, banco, Redis, fila, e-mail e inbound sem expor dados sensiveis.</div>
+              </div>
+              <div class="actions-inline">
+                <button type="button" class="btn-secondary" id="refreshSystemStatusBtn">Atualizar</button>
+              </div>
+            </div>
+
+            <div id="systemStatusMessage"></div>
+
+            <div class="grid grid-3 system-status-grid">
+              <div class="summary-card">
+                <span>Status geral</span>
+                <strong id="systemStatusOverall">-</strong>
+                <small id="systemStatusUpdatedAt">Aguardando atualizacao.</small>
+              </div>
+              <div class="summary-card">
+                <span>Request ID</span>
+                <strong id="systemStatusRequestId">-</strong>
+                <small>Use este identificador ao investigar falhas.</small>
+              </div>
+              <div class="summary-card">
+                <span>Servico</span>
+                <strong id="systemStatusService">API</strong>
+                <small id="systemStatusUptime">Uptime ainda nao carregado.</small>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="table-title-row">
+                <div>
+                  <h3>Dependencias</h3>
+                  <div class="small">Falhas aparecem como degraded, mantendo a resposta do endpoint estavel.</div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Componente</th>
+                      <th>Status</th>
+                      <th>Latencia</th>
+                      <th>Detalhes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="systemStatusTableBody">
+                    <tr>
+                      <td colspan="4">Status ainda nao carregado.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app/modules/apiClient.js"></script>
+  <script src="app/modules/uiHelpers.js"></script>
+  <script src="app/app.js"></script>
 </body>
 </html>

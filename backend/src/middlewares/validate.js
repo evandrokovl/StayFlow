@@ -22,6 +22,7 @@ function validate(schema) {
 
       return res.status(400).json({
         success: false,
+        requestId: req.requestId || req.id || null,
         message: 'Erro de validação',
         errors: details
       });

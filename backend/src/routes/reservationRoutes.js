@@ -134,10 +134,13 @@ router.post('/', requireWritableBilling, validate(createReservationSchema), asyn
       throw err;
     }
 
-    const source = type === 'blocked' ? 'blocked' : 'manual';
+    const source = ['blocked', 'maintenance'].includes(type) ? type : 'manual';
+    const reservationStatus = source === 'manual' ? 'confirmed' : 'blocked';
     const safeGuestName =
       source === 'blocked'
         ? normalizeOptionalText(guest_name) || 'Bloqueio'
+        : source === 'maintenance'
+          ? normalizeOptionalText(guest_name) || 'Manutenção'
         : normalizeOptionalText(guest_name);
 
     const safeGuestEmail = normalizeOptionalText(guest_email);
@@ -161,7 +164,7 @@ router.post('/', requireWritableBilling, validate(createReservationSchema), asyn
         guest_email,
         guest_phone,
         total_amount
-      ) VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         property_id,
@@ -169,6 +172,7 @@ router.post('/', requireWritableBilling, validate(createReservationSchema), asyn
         source,
         start_date,
         end_date,
+        reservationStatus,
         safeNotes,
         safeGuestEmail,
         safeGuestPhone,

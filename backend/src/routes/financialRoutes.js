@@ -4,6 +4,7 @@ const pool = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireFullBilling, requireWritableBilling } = require('../middlewares/billingAccessMiddleware');
 const validate = require('../middlewares/validate');
+const { idParamSchema } = require('../schemas/commonSchemas');
 const { financialCreateSchema, financialUpdateSchema } = require('../schemas/financialSchemas');
 const logger = require('../utils/logger');
 const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
@@ -14,7 +15,7 @@ router.use(authMiddleware);
 router.get('/', requireFullBilling, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { property_id, type, status, month, reservation_id } = req.query;
+    const { property_id, type, status, month, reservation_id, source } = req.query;
     const { hasPagination, page, limit, offset } = parsePagination(req.query, {
       defaultLimit: 25,
       maxLimit: 100
@@ -47,6 +48,11 @@ router.get('/', requireFullBilling, async (req, res) => {
     if (status) {
       fromSql += ' AND f.status = ?';
       params.push(status);
+    }
+
+    if (source) {
+      fromSql += ' AND f.source = ?';
+      params.push(source);
     }
 
     if (month) {
@@ -515,7 +521,7 @@ router.put('/:id', requireWritableBilling, validate(financialUpdateSchema), asyn
 });
 
 // EXCLUIR LANÇAMENTO
-router.delete('/:id', requireWritableBilling, async (req, res) => {
+router.delete('/:id', requireWritableBilling, validate(idParamSchema), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;

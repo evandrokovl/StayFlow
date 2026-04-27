@@ -8,6 +8,7 @@ function errorMiddleware(err, req, res, next) {
 
   logger.error('Erro na requisição', {
     service: 'api',
+    requestId: req.requestId || req.id || null,
     method: req.method,
     url: req.originalUrl,
     statusCode,
@@ -18,6 +19,7 @@ function errorMiddleware(err, req, res, next) {
 
   res.status(statusCode).json({
     success: false,
+    requestId: req.requestId || req.id || null,
     message: publicMessage
   });
 }

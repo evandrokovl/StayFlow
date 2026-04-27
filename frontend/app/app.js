@@ -1,14 +1,12 @@
-    const API_URL = (() => {
-      const configuredUrl = window.STAYFLOW_API_URL;
-      if (configuredUrl) return configuredUrl.replace(/\/$/, '');
-
-      const isLocalHost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
-      const isLocalFile = window.location.protocol === 'file:';
-
-      if (isLocalFile || isLocalHost) return 'http://localhost:3000';
-
-      return 'https://api.stayflowapp.online';
-    })();
+    const stayFlowApi = window.StayFlowApi;
+    const stayFlowUi = window.StayFlowUi;
+    const API_URL = stayFlowApi.API_URL;
+    const extractApiError = stayFlowApi.extractApiError;
+    const clearMessage = stayFlowUi.clearMessage;
+    const compactEmptyState = stayFlowUi.compactEmptyState;
+    const setButtonLoading = stayFlowUi.setButtonLoading;
+    const showMessage = stayFlowUi.showMessage;
+    const tableStateRow = stayFlowUi.tableStateRow;
 
     function getStoredUser() {
       const rawUser = localStorage.getItem('user');
@@ -31,6 +29,7 @@
       localStorage.removeItem('token');
       token = '';
     }
+    let sessionExpiredHandled = false;
 
     let loggedUser = getStoredUser();
     let properties = [];
@@ -104,6 +103,7 @@
     const financialProperty = document.getElementById('financialProperty');
     const financialReservation = document.getElementById('financialReservation');
     const financialFilterProperty = document.getElementById('financialFilterProperty');
+    const financialFilterSource = document.getElementById('financialFilterSource');
     const dashboardChartProperty = document.getElementById('dashboardChartProperty');
     const financialTableBody = document.getElementById('financialTableBody');
     const financialFormTitle = document.getElementById('financialFormTitle');
@@ -114,6 +114,8 @@
     const messageOffsetDays = document.getElementById('messageOffsetDays');
     const messageSendTime = document.getElementById('messageSendTime');
     const messageTemplate = document.getElementById('messageTemplate');
+    const messageTemplatePreview = document.getElementById('messageTemplatePreview');
+    const templateQuickActions = document.getElementById('templateQuickActions');
     const messageStatus = document.getElementById('messageStatus');
     const saveMessageAutomationBtn = document.getElementById('saveMessageAutomationBtn');
     const cancelEditMessageAutomationBtn = document.getElementById('cancelEditMessageAutomationBtn');
@@ -156,11 +158,17 @@
     const recalculateBillingBtn = document.getElementById('recalculateBillingBtn');
     const billingPaymentsTableBody = document.getElementById('billingPaymentsTableBody');
     const billingTypeSelect = document.getElementById('billingTypeSelect');
+    const refreshSystemStatusBtn = document.getElementById('refreshSystemStatusBtn');
     const accessRestrictionBanner = document.getElementById('accessRestrictionBanner');
     const accessRestrictionTitle = document.getElementById('accessRestrictionTitle');
     const accessRestrictionText = document.getElementById('accessRestrictionText');
     const accessRestrictionCta = document.getElementById('accessRestrictionCta');
     const activationNextCta = document.getElementById('activationNextCta');
+    const propertyAssistantTitle = document.getElementById('propertyAssistantTitle');
+    const propertyAssistantSubtitle = document.getElementById('propertyAssistantSubtitle');
+    const propertyAssistantProgressBar = document.getElementById('propertyAssistantProgressBar');
+    const propertyAssistantSteps = document.getElementById('propertyAssistantSteps');
+    const propertyAssistantCta = document.getElementById('propertyAssistantCta');
     const reservationDetailsCard = document.getElementById('reservationDetailsCard');
     const reservationDetailsContent = document.getElementById('reservationDetailsContent');
     const closeReservationDetailsBtn = document.getElementById('closeReservationDetailsBtn');
@@ -195,6 +203,7 @@
         'message-status': 'Status das mensagens',
         'my-info': 'Minhas informações'
       };
+      titles['system-status'] = 'Status do sistema';
       return titles[section] || 'Painel';
     }
 
@@ -221,7 +230,11 @@
       if (section === 'billing') {
         loadBillingDashboard();
       }
+      if (section === 'system-status') {
+        loadSystemStatus();
+      }
       renderActivationGuide();
+      renderPropertySetupAssistant();
     }
 
     function updateSummaryMirrors(data) {
@@ -238,42 +251,23 @@
       });
     }
 
-    function showMessage(targetId, text, type = 'success') {
-      const target = document.getElementById(targetId);
-      if (!target) return;
-      const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'success';
-      target.innerHTML = `<div class="message ${safeType}">${escapeHtml(text)}</div>`;
+    function showFriendlyError(targetId, error, fallback) {
+      showMessage(targetId, error?.message || fallback || 'Nao foi possivel concluir a acao agora.', 'error');
     }
 
-    function clearMessage(targetId) {
-      document.getElementById(targetId).innerHTML = '';
+    function handleSessionExpired(message) {
+      if (sessionExpiredHandled) return;
+      sessionExpiredHandled = true;
+      logout({
+        message: message || 'Sua sessão expirou. Faça login novamente para continuar.',
+        type: 'warning'
+      });
     }
 
-    function setButtonLoading(button, isLoading, loadingText) {
-      if (!button) return;
-
-      if (isLoading) {
-        button.dataset.originalText = button.textContent;
-        button.textContent = loadingText || 'Processando...';
-        button.disabled = true;
-        button.classList.add('is-loading');
-        return;
-      }
-
-      button.textContent = button.dataset.originalText || button.textContent;
-      button.disabled = false;
-      button.classList.remove('is-loading');
-      delete button.dataset.originalText;
-    }
-
-    function extractApiError(data, fallback) {
-      if (data?.error) return data.error;
-      if (data?.message) return data.message;
-      if (Array.isArray(data?.errors) && data.errors.length) {
-        return data.errors.map(item => item.message).join(' ');
-      }
-      return fallback;
-    }
+    const apiClient = stayFlowApi.createClient({
+      getToken: () => token,
+      onUnauthorized: handleSessionExpired
+    });
 
     function onlyDigits(value) {
       return String(value || '').replace(/\D/g, '');
@@ -581,6 +575,69 @@
       if (activationStepsGrid) activationStepsGrid.innerHTML = stepsHtml;
     }
 
+    function getPropertyAssistantSteps(property) {
+      const hasProperty = Boolean(property);
+      const hasIcal = hasProperty && propertyIcalFeeds(property).length > 0;
+      const hasInboundAlias = Boolean(currentUserDetails?.inbound_alias || loggedUser?.inbound_alias);
+      const hasAutomation = hasProperty && messageAutomations.some(automation => (
+        Number(automation.property_id) === Number(property.id)
+        && (automation.is_active || automation.status === 'active')
+      ));
+      const hasImportedReservation = hasProperty && reservations.some(reservation => (
+        Number(reservation.property_id) === Number(property.id)
+        && !isBlockingReservationSource(reservation.source)
+      ));
+
+      return [
+        { title: 'Criar imóvel', description: 'Cadastre dados básicos e link do anúncio.', done: hasProperty, section: 'properties' },
+        { title: 'Conectar iCal', description: 'Adicione Airbnb, Booking ou outros canais por feed iCal.', done: hasIcal, section: 'properties' },
+        { title: 'Configurar e-mail inbound', description: 'Use o e-mail do StayFlow nas notificações das plataformas.', done: hasInboundAlias, section: 'my-info' },
+        { title: 'Criar primeira automação', description: 'Ative um template para pré-check-in, check-in ou checkout.', done: hasAutomation, section: 'messages' },
+        { title: 'Ver primeira reserva importada', description: 'Sincronize o calendário e confira a reserva no painel.', done: hasImportedReservation, section: 'reservations' }
+      ];
+    }
+
+    function renderPropertySetupAssistant() {
+      if (!propertyAssistantSteps) return;
+
+      const property = properties.find(item => Number(item.id) === Number(selectedPropertyId)) || properties[0] || null;
+      const steps = getPropertyAssistantSteps(property);
+      const completed = steps.filter(step => step.done).length;
+      const percent = Math.round((completed / steps.length) * 100);
+      const nextStep = steps.find(step => !step.done) || {
+        title: 'Imóvel pronto para operar',
+        description: 'A configuração principal deste imóvel está completa.',
+        section: 'operations'
+      };
+
+      if (propertyAssistantTitle) {
+        propertyAssistantTitle.textContent = property
+          ? `Setup guiado: ${property.name}`
+          : 'Configure um imóvel para começar';
+      }
+
+      if (propertyAssistantSubtitle) {
+        propertyAssistantSubtitle.textContent = property
+          ? `${completed} de ${steps.length} etapas concluídas para este imóvel.`
+          : 'Crie o primeiro imóvel para liberar o checklist guiado.';
+      }
+
+      if (propertyAssistantProgressBar) propertyAssistantProgressBar.style.width = `${percent}%`;
+
+      if (propertyAssistantCta) {
+        propertyAssistantCta.textContent = nextStep.done ? 'Ver operação' : nextStep.title;
+        propertyAssistantCta.dataset.assistantSection = nextStep.section;
+      }
+
+      propertyAssistantSteps.innerHTML = steps.map((step, index) => `
+        <button type="button" class="property-assistant-step ${step.done ? 'completed' : step === nextStep ? 'current' : 'pending'}" data-assistant-section="${step.section}">
+          <span>${step.done ? '&check;' : index + 1}</span>
+          <strong>${escapeHtml(step.title)}</strong>
+          <small>${escapeHtml(step.description)}</small>
+        </button>
+      `).join('');
+    }
+
     function goToActivationSection(section) {
       if (!section || !canAccessSection(section)) {
         showSection(preferredSectionForBillingAccess());
@@ -623,67 +680,17 @@
     }
 
     function authHeaders() {
-      return {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
+      return apiClient.authHeaders();
     }
 
     async function apiFetch(endpoint, options = {}) {
-      const {
-        auth = true,
-        errorMessage = 'Não foi possível concluir a solicitação.',
-        headers: customHeaders = {},
-        body,
-        ...fetchOptions
-      } = options;
-
-      const url = /^https?:\/\//i.test(endpoint)
-        ? endpoint
-        : `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
-      const headers = { ...customHeaders };
-      let requestBody = body;
-
-      if (auth && token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      if (requestBody !== undefined && !(requestBody instanceof FormData) && typeof requestBody !== 'string') {
-        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
-        requestBody = JSON.stringify(requestBody);
-      }
-
-      const response = await fetch(url, {
-        ...fetchOptions,
-        headers,
-        body: requestBody
-      });
-
-      const raw = await response.text();
-      let data = {};
-
-      if (raw) {
-        try {
-          data = JSON.parse(raw);
-        } catch (error) {
-          data = raw;
-        }
-      }
-
-      if (!response.ok) {
-        const error = new Error(extractApiError(data, errorMessage));
-        error.response = response;
-        error.data = data;
-        throw error;
-      }
-
-      return data;
+      return apiClient.fetch(endpoint, options);
     }
 
     function sourceClass(source) {
       if (source === 'manual') return 'manual';
       if (source === 'blocked' || source === 'bloqueio') return 'blocked';
+      if (source === 'maintenance' || source === 'manutencao' || source === 'manutenção') return 'maintenance';
       if (source === 'airbnb') return 'airbnb';
       if (source === 'booking') return 'booking';
       return 'manual';
@@ -692,9 +699,14 @@
     function sourceLabel(source) {
       if (source === 'manual') return 'Manual';
       if (source === 'blocked' || source === 'bloqueio') return 'Bloqueio';
+      if (source === 'maintenance' || source === 'manutencao' || source === 'manutenção') return 'Manutenção';
       if (source === 'airbnb') return 'Airbnb';
       if (source === 'booking') return 'Booking';
       return source || 'Reserva';
+    }
+
+    function isBlockingReservationSource(source) {
+      return ['blocked', 'bloqueio', 'maintenance', 'manutencao', 'manutenção'].includes(String(source || '').toLowerCase());
     }
 
     function financialStatusLabel(status) {
@@ -838,11 +850,11 @@
 
     function canAccessSection(section) {
       if (billingAccessState.accessStatus === 'BLOCKED') {
-        return section === 'billing';
+        return ['billing', 'system-status'].includes(section);
       }
 
       if (billingAccessState.accessStatus === 'READ_ONLY') {
-        return ['billing', 'my-info'].includes(section);
+        return ['billing', 'my-info', 'system-status'].includes(section);
       }
 
       return true;
@@ -1107,6 +1119,7 @@
       if (messageSendTime) messageSendTime.value = '09:00';
       if (messageTemplate) messageTemplate.value = '';
       if (messageStatus) messageStatus.value = 'active';
+      renderMessageTemplatePreview();
     }
 
     function updateMessageAutomationSummary() {
@@ -1164,7 +1177,7 @@
       const sendTime = automation.send_time || '09:00';
       const upcoming = reservations
         .filter(reservation => Number(reservation.property_id) === propertyId)
-        .filter(reservation => reservation.source !== 'blocked' && !isReservationCancelled(reservation))
+      .filter(reservation => !isBlockingReservationSource(reservation.source) && !isReservationCancelled(reservation))
         .map(reservation => {
           const baseDate = getAutomationBaseDate(reservation, trigger);
           const effectiveOffset = trigger === 'pre_check_in' ? -Math.abs(offsetDays) : offsetDays;
@@ -1202,7 +1215,11 @@
       if (!messageAutomationTableBody) return;
 
       if (!messageAutomations.length) {
-        messageAutomationTableBody.innerHTML = '<tr><td colspan="8">Nenhuma automação cadastrada</td></tr>';
+        messageAutomationTableBody.innerHTML = tableStateRow(
+          8,
+          'Nenhuma automação cadastrada',
+          'Crie um template de boas-vindas, check-in ou checkout para automatizar mensagens aos hóspedes.'
+        );
         updateMessageAutomationSummary();
         renderActivationGuide();
         return;
@@ -1300,7 +1317,10 @@
       if (!messageLogsList) return;
 
       if (!messageLogs.length) {
-        messageLogsList.innerHTML = '<div class="small">Nenhum log de mensagem encontrado para esse filtro.</div>';
+        messageLogsList.innerHTML = compactEmptyState(
+          'Nenhum log de mensagem encontrado',
+          'Quando uma automação agendar ou enviar uma mensagem, o histórico aparece aqui.'
+        );
         messageLogsList.after(renderPaginationControl('messageLogsPagination', messageLogPagination, (page) => {
           messageLogPagination.page = page;
           loadMessageLogs(currentMessageLogFilter);
@@ -1323,6 +1343,9 @@
             <div class="log-meta-box"><strong>Erro</strong><br>${escapeHtml(log.error_message || '-')}</div>
           </div>
           <div class="template-preview">${escapeHtml(log.body_rendered || log.message_text || log.content || 'Sem conteúdo registrado.')}</div>
+          ${['failed', 'needs_contact'].includes(String(log.status || '').toLowerCase())
+            ? `<div class="actions-inline" style="margin-top:10px;"><button type="button" class="btn-secondary" data-log-action="retry-message" data-id="${escapeHtml(log.id)}">Tentar reenviar</button></div>`
+            : ''}
         </div>
       `).join('');
       messageLogsList.after(renderPaginationControl('messageLogsPagination', messageLogPagination, (page) => {
@@ -1759,7 +1782,7 @@
         }));
 
       reservations
-        .filter(reservation => reservation.source !== 'blocked' && !isReservationCancelled(reservation))
+      .filter(reservation => !isBlockingReservationSource(reservation.source) && !isReservationCancelled(reservation))
         .filter(reservation => !reservation.guest_email && !reservation.guest_phone)
         .slice(0, 8)
         .forEach(reservation => items.push({
@@ -1772,7 +1795,7 @@
 
       const duplicateMap = new Map();
       reservations.forEach(reservation => {
-        if (!reservation.guest_name || reservation.source === 'blocked') return;
+      if (!reservation.guest_name || isBlockingReservationSource(reservation.source)) return;
         const key = [reservation.property_id, reservation.guest_name.toLowerCase().trim(), reservation.start_date, reservation.end_date].join('|');
         const list = duplicateMap.get(key) || [];
         list.push(reservation);
@@ -1967,14 +1990,43 @@
       if (messageSendTime) messageSendTime.value = item.send_time || '09:00';
       if (messageTemplate) messageTemplate.value = item.template_text || item.message_template || '';
       if (messageStatus) messageStatus.value = (item.is_active || item.status === 'active') ? 'active' : 'inactive';
+      renderMessageTemplatePreview();
 
       clearMessage('messageAutomationMessage');
       showSection('messages');
       if (messageAutomationFormCard) messageAutomationFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    const messageTemplatePresets = {
+      pre_check_in: 'Olá {nome_hospede}, tudo bem? Sua estadia no {imovel} está chegando. O check-in está previsto para {data_checkin}. Em breve enviaremos as instruções finais.',
+      check_in: 'Olá {nome_hospede}! Hoje é seu check-in no {imovel}. Confira as instruções de acesso e, se precisar de ajuda, responda esta mensagem.',
+      checkout: 'Olá {nome_hospede}, esperamos que tenha aproveitado a estadia no {imovel}. O checkout está previsto para {data_checkout}. Obrigado por escolher nossa hospedagem!'
+    };
+
+    function renderMessageTemplatePreview() {
+      if (!messageTemplatePreview) return;
+      const template = messageTemplate?.value?.trim();
+
+      if (!template) {
+        messageTemplatePreview.textContent = 'Prévia da mensagem aparecerá aqui antes de ativar.';
+        return;
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const checkoutDate = addDaysToDate(today, 3);
+      const preview = template
+        .replaceAll('{nome_hospede}', 'Marina')
+        .replaceAll('{imovel}', 'Apartamento Centro')
+        .replaceAll('{data_checkin}', formatDateBR(today))
+        .replaceAll('{data_checkout}', formatDateBR(checkoutDate ? checkoutDate.toISOString().slice(0, 10) : today));
+
+      messageTemplatePreview.textContent = preview;
+    }
+
     async function saveMessageAutomation() {
       clearMessage('messageAutomationMessage');
+
+      setButtonLoading(saveMessageAutomationBtn, true, editingMessageAutomationId ? 'Salvando...' : 'Criando...');
 
       try {
         const body = {
@@ -1986,33 +2038,29 @@
           is_active: (messageStatus?.value || 'active') === 'active'
         };
 
-        let url = `${API_URL}/message-automations`;
+        let url = '/message-automations';
         let method = 'POST';
 
         if (editingMessageAutomationId) {
-          url = `${API_URL}/message-automations/${editingMessageAutomationId}`;
+          url = `/message-automations/${editingMessageAutomationId}`;
           method = 'PUT';
         }
 
-        const response = await fetch(url, {
+        await apiFetch(url, {
           method,
-          headers: authHeaders(),
-          body: JSON.stringify(body)
+          body,
+          errorMessage: 'Erro ao salvar automação.'
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('messageAutomationMessage', data.error || 'Erro ao salvar automação.', 'error');
-          return;
-        }
-
         showMessage('messageAutomationMessage', editingMessageAutomationId ? 'Automação atualizada com sucesso.' : 'Automação criada com sucesso.', 'success');
+        setButtonLoading(saveMessageAutomationBtn, false);
         resetMessageAutomationForm();
         await loadMessageAutomations();
         await loadMessageLogs();
       } catch (error) {
-        showMessage('messageAutomationMessage', 'Erro ao conectar com o backend.', 'error');
+        showFriendlyError('messageAutomationMessage', error, 'Erro ao salvar automação.');
+      } finally {
+        setButtonLoading(saveMessageAutomationBtn, false);
       }
     }
 
@@ -2105,7 +2153,7 @@
     function renderFinancialReservationOptions(selectedValue = '') {
       const propertyId = Number(financialProperty.value || selectedPropertyId || 0);
       const propertyReservations = reservations
-        .filter(item => Number(item.property_id) === propertyId && item.source !== 'blocked' && !isReservationCancelled(item))
+      .filter(item => Number(item.property_id) === propertyId && !isBlockingReservationSource(item.source) && !isReservationCancelled(item))
         .sort((a, b) => (a.start_date > b.start_date ? 1 : -1));
 
       financialReservation.innerHTML = '<option value="">Sem vincular a reserva</option>';
@@ -2671,6 +2719,7 @@
 
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(loggedUser));
+          sessionExpiredHandled = false;
 
           await enterApp();
           if (hasFullBillingAccess()) {
@@ -2721,6 +2770,7 @@
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(loggedUser));
+        sessionExpiredHandled = false;
 
         await enterApp();
         if (hasFullBillingAccess()) {
@@ -2801,7 +2851,7 @@
       }
     }
 
-    function logout() {
+    function logout(options = {}) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       token = '';
@@ -2827,6 +2877,10 @@
       authCard.classList.remove('hidden');
       app.classList.add('hidden');
       showSection('dashboard');
+
+      if (options.message) {
+        showMessage('authMessage', options.message, options.type || 'warning');
+      }
     }
 
     async function enterApp() {
@@ -3024,6 +3078,117 @@
       }
     }
 
+    function systemStatusLabel(status) {
+      const normalized = String(status || '').toLowerCase();
+      const labels = {
+        ok: 'OK',
+        degraded: 'Degraded',
+        not_configured: 'Nao configurado'
+      };
+
+      return labels[normalized] || (status || '-');
+    }
+
+    function systemStatusBadgeClass(status) {
+      const normalized = String(status || '').toLowerCase();
+      if (normalized === 'ok') return 'status-active';
+      if (normalized === 'degraded') return 'status-inactive';
+      if (normalized === 'not_configured') return 'tag-pending';
+      return 'billing-muted';
+    }
+
+    function systemStatusComponentLabel(name) {
+      const labels = {
+        api: 'API',
+        database: 'Banco MySQL',
+        redis: 'Redis',
+        queue: 'Fila/worker',
+        email: 'E-mail',
+        inbound: 'Inbound'
+      };
+
+      return labels[name] || name;
+    }
+
+    function systemStatusDetails(name, check = {}) {
+      if (name === 'queue' && check.counts) {
+        return `waiting: ${check.counts.waiting || 0}, active: ${check.counts.active || 0}, delayed: ${check.counts.delayed || 0}, failed: ${check.counts.failed || 0}`;
+      }
+
+      if (name === 'email') {
+        return check.enabled ? 'Resend configurado.' : 'Configure RESEND_API_KEY e EMAIL_FROM para envios.';
+      }
+
+      if (name === 'inbound') {
+        return check.enabled
+          ? 'Dominio inbound configurado.'
+          : 'Confira INBOUND_DOMAIN e WEBHOOK_SECRET em producao.';
+      }
+
+      if (check.reason) {
+        return check.message || check.reason;
+      }
+
+      if (name === 'api' && check.uptimeSeconds != null) {
+        return `${check.uptimeSeconds}s de uptime.`;
+      }
+
+      return check.queueName || '-';
+    }
+
+    function renderSystemStatus(data = {}) {
+      const checks = data.checks || {};
+      const overall = data.status || '-';
+      const updatedAt = data.timestamp ? new Date(data.timestamp).toLocaleString('pt-BR') : '-';
+
+      setText('systemStatusOverall', systemStatusLabel(overall));
+      setText('systemStatusRequestId', data.requestId || '-');
+      setText('systemStatusService', data.service || 'api');
+      setText('systemStatusUpdatedAt', `Atualizado em ${updatedAt}`);
+      setText('systemStatusUptime', checks.api?.uptimeSeconds != null ? `${checks.api.uptimeSeconds}s de uptime` : 'Uptime indisponivel.');
+
+      const tbody = document.getElementById('systemStatusTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = Object.entries(checks).map(([name, check]) => `
+        <tr>
+          <td>${escapeHtml(systemStatusComponentLabel(name))}</td>
+          <td><span class="status-badge ${systemStatusBadgeClass(check.status)}">${escapeHtml(systemStatusLabel(check.status))}</span></td>
+          <td>${check.latencyMs == null ? '-' : `${escapeHtml(String(check.latencyMs))}ms`}</td>
+          <td><div class="system-status-detail">${escapeHtml(systemStatusDetails(name, check))}</div></td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadSystemStatus() {
+      clearMessage('systemStatusMessage');
+      const tbody = document.getElementById('systemStatusTableBody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="4">Carregando status...</td></tr>';
+      }
+
+      setButtonLoading(refreshSystemStatusBtn, true, 'Atualizando...');
+
+      try {
+        const data = await apiFetch('/status', {
+          auth: false,
+          errorMessage: 'Nao foi possivel carregar o status do sistema.'
+        });
+
+        renderSystemStatus(data);
+        if (data.status === 'degraded') {
+          showMessage('systemStatusMessage', 'Alguma dependencia esta degradada. Confira os detalhes abaixo.', 'error');
+        }
+      } catch (error) {
+        showMessage('systemStatusMessage', error.message || 'Erro ao conectar com o backend.', 'error');
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="4">Nao foi possivel carregar o status.</td></tr>';
+        }
+      } finally {
+        setButtonLoading(refreshSystemStatusBtn, false);
+      }
+    }
+
     async function runBillingAction(button, endpoint, options = {}) {
       if (!token) return;
       clearMessage('billingMessage');
@@ -3113,16 +3278,9 @@
       clearMessage('syncMessage');
 
       try {
-        const response = await fetch(`${API_URL}/properties`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const data = await apiFetch('/properties', {
+          errorMessage: 'Nao foi possivel carregar os imoveis.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.error || 'Erro ao carregar imóveis');
-          return;
-        }
 
         properties = data;
         renderPropertyList();
@@ -3148,8 +3306,16 @@
           selectedPropertyId = null;
           selectedPropertyInfo.innerHTML = 'Cadastre seu primeiro imóvel para começar a centralizar reservas, calendário e automações.';
           icalLinkBox.innerHTML = 'Depois de cadastrar um imóvel, cole aqui os links iCal do Airbnb ou Booking.';
-          reservationsTableBody.innerHTML = '<tr><td colspan="8">Cadastre um imóvel e conecte o iCal para começar a centralizar reservas.</td></tr>';
-          financialTableBody.innerHTML = '<tr><td colspan="10">Os lançamentos aparecem depois que você cadastrar imóvel e reservas.</td></tr>';
+          reservationsTableBody.innerHTML = tableStateRow(
+            8,
+            'Nenhuma reserva ainda',
+            'Cadastre um imóvel e conecte o iCal para começar a centralizar reservas.'
+          );
+          financialTableBody.innerHTML = tableStateRow(
+            10,
+            'Financeiro aguardando dados',
+            'Os lançamentos aparecem depois que você cadastrar imóvel e reservas.'
+          );
           calendarGrid.innerHTML = '';
           updateSummaryCards({ total_income: 0, total_expense: 0, total_pending: 0, profit: 0 });
           updateSummaryMirrors({ total_income: 0, total_expense: 0, total_pending: 0, profit: 0 });
@@ -3166,7 +3332,7 @@
           renderMessageLogs();
         }
       } catch (error) {
-        alert('Erro ao carregar imóveis');
+        showFriendlyError('propertyMessage', error, 'Nao foi possivel carregar os imoveis.');
       }
     }
 
@@ -3182,12 +3348,99 @@
   return labels[value] || value || 'Não identificado';
 }
 
+function parseAdditionalIcalFeeds(value) {
+  return String(value || '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const parts = line.split('|').map(part => part.trim()).filter(Boolean);
+      const hasExplicitChannel = parts.length > 1;
+      const icalUrl = hasExplicitChannel ? parts.slice(1).join('|') : parts[0];
+      const channel = hasExplicitChannel ? parts[0] : `canal-${index + 1}`;
+      return {
+        channel,
+        ical_url: icalUrl,
+        is_active: true
+      };
+    });
+}
+
+function propertyIcalFeeds(property) {
+  if (Array.isArray(property.ical_feeds) && property.ical_feeds.length) {
+    return property.ical_feeds.filter(feed => feed && feed.ical_url && feed.is_active !== false);
+  }
+
+  return [
+    property.airbnb_ical_url ? { channel: 'airbnb', ical_url: property.airbnb_ical_url } : null,
+    property.booking_ical_url ? { channel: 'booking', ical_url: property.booking_ical_url } : null
+  ].filter(Boolean);
+}
+
+function renderIcalFeedSummary(property) {
+  const feeds = propertyIcalFeeds(property);
+
+  if (!feeds.length) {
+    return '<div class="setup-checklist-note">Nenhum feed iCal conectado.</div>';
+  }
+
+  return '<div class="ical-feed-list">' + feeds.map(feed => {
+    const lastSync = feed.last_synced_at ? formatDateTimeBR(feed.last_synced_at) : 'Ainda não sincronizado';
+    const error = feed.last_error ? 'Erro: ' + feed.last_error : 'Sem erro registrado';
+    return '<div class="ical-feed-item">' +
+      '<strong>' + escapeHtml(platformLabel(feed.channel)) + '</strong>' +
+      '<span>' + escapeHtml(lastSync) + '</span>' +
+      '<small>' + escapeHtml(error) + '</small>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function getPropertySetupItems(property) {
+  const hasBasicData = Boolean(property.name && property.city && property.listing_url);
+  const hasIcalFeed = propertyIcalFeeds(property).length > 0;
+  const hasInboundAlias = Boolean(currentUserDetails?.inbound_alias || loggedUser?.inbound_alias);
+  const hasActiveAutomation = messageAutomations.some(automation => (
+    Number(automation.property_id) === Number(property.id)
+    && (automation.is_active || automation.status === 'active')
+  ));
+
+  return [
+    { label: 'Dados básicos', done: hasBasicData },
+    { label: 'iCal conectado', done: hasIcalFeed },
+    { label: 'E-mail inbound configurado', done: hasInboundAlias },
+    { label: 'Automação ativa', done: hasActiveAutomation }
+  ];
+}
+
+function renderPropertySetupChecklist(property) {
+  const items = getPropertySetupItems(property);
+  const completed = items.filter(item => item.done).length;
+  const complete = completed === items.length;
+
+  return '<div class="setup-checklist">' +
+    '<div class="setup-checklist-head">' +
+      '<strong>' + (complete ? 'Configuração completa' : 'Configuração incompleta') + '</strong>' +
+      '<span>' + completed + '/' + items.length + '</span>' +
+    '</div>' +
+    items.map(item => (
+      '<div class="setup-checklist-item ' + (item.done ? 'done' : 'pending') + '">' +
+        '<span>' + (item.done ? '✓' : '•') + '</span>' +
+        '<small>' + escapeHtml(item.label) + '</small>' +
+      '</div>'
+    )).join('') +
+  '</div>';
+}
+
 function renderPropertyList() {
   propertyList.innerHTML = '';
 
   if (properties.length === 0) {
-    propertyList.innerHTML = '<div class="empty-state"><strong>Cadastre seu primeiro imóvel para começar</strong><br><span>Esse é o primeiro passo para conectar iCal, receber reservas e ativar automações.</span></div>';
+    propertyList.innerHTML = compactEmptyState(
+      'Cadastre seu primeiro imóvel para começar',
+      'Esse é o primeiro passo para conectar iCal, receber reservas e ativar automações.'
+    );
     renderActivationGuide();
+    renderPropertySetupAssistant();
     return;
   }
 
@@ -3207,6 +3460,7 @@ function renderPropertyList() {
       <div class="small"><strong>Plataforma:</strong> ${escapeHtml(listingPlatform)}</div>
       <div class="small"><strong>${escapeHtml(listingCode)}</strong></div>
       <div class="small" style="word-break: break-all;"><strong>Anúncio:</strong> ${escapeHtml(listingUrl)}</div>
+      ${renderPropertySetupChecklist(property)}
     `;
 
     div.addEventListener('click', async () => {
@@ -3221,6 +3475,8 @@ function renderPropertyList() {
         <div><strong>Plataforma:</strong> ${escapeHtml(listingPlatform)}</div>
         <div><strong>${escapeHtml(listingCode)}</strong></div>
         <div style="word-break: break-all;"><strong>Anúncio:</strong> ${escapeHtml(listingUrl)}</div>
+        ${renderPropertySetupChecklist(property)}
+        ${renderIcalFeedSummary(property)}
       `;
 
       renderPropertyList();
@@ -3235,6 +3491,8 @@ function renderPropertyList() {
 
     propertyList.appendChild(div);
   });
+
+  renderPropertySetupAssistant();
 }
 
     function renderPropertySelects() {
@@ -3291,7 +3549,8 @@ function renderPropertyList() {
     country: document.getElementById('propertyCountry').value.trim(),
     listing_url: document.getElementById('propertyListingUrl').value.trim(),
     airbnb_ical_url: document.getElementById('propertyAirbnbIcal').value.trim(),
-    booking_ical_url: document.getElementById('propertyBookingIcal').value.trim()
+    booking_ical_url: document.getElementById('propertyBookingIcal').value.trim(),
+    ical_feeds: parseAdditionalIcalFeeds(document.getElementById('propertyExtraIcalFeeds')?.value)
   };
 
   if (!body.name || !body.city || !body.listing_url) {
@@ -3299,19 +3558,14 @@ function renderPropertyList() {
     return;
   }
 
+  setButtonLoading(createPropertyBtn, true, 'Cadastrando...');
+
   try {
-    const response = await fetch(`${API_URL}/properties`, {
+    await apiFetch('/properties', {
       method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(body)
+      body,
+      errorMessage: 'Erro ao cadastrar imóvel.'
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      showMessage('propertyMessage', data.error || data.details || 'Erro ao cadastrar imóvel', 'error');
-      return;
-    }
 
     showMessage('propertyMessage', 'Imóvel cadastrado com sucesso.', 'success');
 
@@ -3324,10 +3578,14 @@ function renderPropertyList() {
     document.getElementById('propertyListingUrl').value = '';
     document.getElementById('propertyAirbnbIcal').value = '';
     document.getElementById('propertyBookingIcal').value = '';
+    const extraFeedsField = document.getElementById('propertyExtraIcalFeeds');
+    if (extraFeedsField) extraFeedsField.value = '';
 
     await loadProperties();
   } catch (error) {
-    showMessage('propertyMessage', 'Erro ao conectar com o backend.', 'error');
+    showFriendlyError('propertyMessage', error, 'Erro ao cadastrar imóvel.');
+  } finally {
+    setButtonLoading(createPropertyBtn, false);
   }
 }
 
@@ -3525,11 +3783,12 @@ function renderPropertyList() {
       const notes = document.getElementById('reservationNotes').value.trim();
       const type = document.getElementById('reservationType').value;
 
+      setButtonLoading(createReservationBtn, true, 'Salvando...');
+
       try {
-        const response = await fetch(`${API_URL}/reservations`, {
+        await apiFetch('/reservations', {
           method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({
+          body: {
             property_id,
             guest_name,
             guest_email,
@@ -3539,15 +3798,9 @@ function renderPropertyList() {
             total_amount,
             notes,
             type
-          })
+          },
+          errorMessage: 'Erro ao criar reserva.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('reservationMessage', data.error || 'Erro ao criar reserva', 'error');
-          return;
-        }
 
         showMessage('reservationMessage', 'Reserva/bloqueio criado com sucesso.', 'success');
 
@@ -3570,7 +3823,9 @@ function renderPropertyList() {
         await loadFinancialEntries();
         await loadFinancialDashboard();
       } catch (error) {
-        showMessage('reservationMessage', 'Erro ao conectar com o backend.', 'error');
+        showFriendlyError('reservationMessage', error, 'Erro ao criar reserva.');
+      } finally {
+        setButtonLoading(createReservationBtn, false);
       }
     }
 
@@ -3592,22 +3847,14 @@ function renderPropertyList() {
           allParams.set('property_id', String(selectedPropertyId));
         }
 
-        const [pagedResponse, fullResponse] = await Promise.all([
-          fetch(`${API_URL}/reservations?${pagedParams.toString()}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const [data, fullData] = await Promise.all([
+          apiFetch(`/reservations?${pagedParams.toString()}`, {
+            errorMessage: 'Erro ao carregar reservas.'
           }),
-          fetch(`${API_URL}/reservations?${allParams.toString()}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+          apiFetch(`/reservations?${allParams.toString()}`, {
+            errorMessage: 'Erro ao carregar reservas.'
           })
         ]);
-
-        const data = await pagedResponse.json();
-        const fullData = await fullResponse.json();
-
-        if (!pagedResponse.ok || !fullResponse.ok) {
-          alert(data.error || 'Erro ao carregar reservas');
-          return;
-        }
 
         const normalized = normalizePaginatedResponse(data, reservationPagination.limit);
         reservationTableRows = normalized.data;
@@ -3620,7 +3867,7 @@ function renderPropertyList() {
         renderFinancialReservationOptions(financialReservation.value);
         renderDashboardValueBlocks();
       } catch (error) {
-        alert('Erro ao carregar reservas');
+        showFriendlyError('reservationMessage', error, 'Erro ao carregar reservas.');
       }
     }
 
@@ -3639,6 +3886,8 @@ function renderPropertyList() {
         ${escapeHtml(property.city || '')} ${property.state ? '- ' + escapeHtml(property.state) : ''}<br>
         ${escapeHtml(property.address || '')}<br>
         Reservas/bloqueios: <strong>${escapeHtml(reservationPagination.total || reservations.length)}</strong>
+        ${renderPropertySetupChecklist(property)}
+        ${renderIcalFeedSummary(property)}
       `;
 
       if (selectedPropertyBadge) {
@@ -3651,9 +3900,37 @@ function renderPropertyList() {
         : 'iCal não disponível';
     }
 
+    function reservationRange(reservation) {
+      const start = new Date(`${String(reservation.start_date).slice(0, 10)}T00:00:00`).getTime();
+      const end = new Date(`${String(reservation.end_date).slice(0, 10)}T00:00:00`).getTime();
+      return { start, end };
+    }
+
+    function reservationsOverlap(a, b) {
+      const first = reservationRange(a);
+      const second = reservationRange(b);
+      if (!Number.isFinite(first.start) || !Number.isFinite(first.end) || !Number.isFinite(second.start) || !Number.isFinite(second.end)) return false;
+      return first.start < second.end && second.start < first.end;
+    }
+
+    function reservationConflicts(reservation) {
+      if (!reservation || isReservationCancelled(reservation)) return [];
+
+      return reservations.filter(other => (
+        Number(other.id) !== Number(reservation.id)
+        && Number(other.property_id) === Number(reservation.property_id)
+        && !isReservationCancelled(other)
+        && reservationsOverlap(reservation, other)
+      ));
+    }
+
     function renderReservationsTable() {
       if (!reservationTableRows.length) {
-        reservationsTableBody.innerHTML = '<tr><td colspan="8">Nenhuma reserva ainda. Conecte o iCal ou cadastre uma reserva manual para começar.</td></tr>';
+        reservationsTableBody.innerHTML = tableStateRow(
+          8,
+          'Nenhuma reserva encontrada',
+          'Conecte um feed iCal ou cadastre uma reserva manual para acompanhar ocupação, bloqueios e receita.'
+        );
         placePaginationAfter(reservationsTableBody, renderPaginationControl('reservationsPagination', reservationPagination, (page) => {
           reservationPagination.page = page;
           loadReservations();
@@ -3663,11 +3940,12 @@ function renderPropertyList() {
 
       reservationsTableBody.innerHTML = reservationTableRows.map(item => {
         const reservationId = escapeHtml(item.id);
+        const conflicts = reservationConflicts(item);
         return `
-        <tr class="${item.source !== 'blocked' ? 'reservation-row-clickable' : ''} ${Number(selectedReservationId) === Number(item.id) ? 'active-row' : ''} ${isReservationCancelled(item) ? 'reservation-row-cancelled' : ''}" data-id="${reservationId}">
+          <tr class="${!isBlockingReservationSource(item.source) ? 'reservation-row-clickable' : ''} ${conflicts.length ? 'reservation-row-conflict' : ''} ${Number(selectedReservationId) === Number(item.id) ? 'active-row' : ''} ${isReservationCancelled(item) ? 'reservation-row-cancelled' : ''}" data-id="${reservationId}">
           <td>${reservationId}</td>
           <td>${escapeHtml(item.guest_name || '-')}</td>
-          <td>${escapeHtml(sourceLabel(item.source))}</td>
+          <td>${escapeHtml(sourceLabel(item.source))}${conflicts.length ? '<div class="conflict-alert">Conflito de calendário</div>' : ''}</td>
           <td>${escapeHtml(formatDateBR(item.start_date))}</td>
           <td>${escapeHtml(formatDateBR(item.end_date))}</td>
           <td>${escapeHtml(item.total_amount !== null && item.total_amount !== undefined ? formatMoney(item.total_amount) : '-')}</td>
@@ -3675,7 +3953,7 @@ function renderPropertyList() {
           <td>
             <div class="row-actions">
               <button type="button" data-action="view-reservation-details" data-id="${reservationId}">Detalhes</button>
-              ${item.source !== 'blocked'
+              ${!isBlockingReservationSource(item.source)
                 ? `<button type="button" class="btn-secondary" data-action="view-reservation-finance" data-id="${reservationId}">Ver lucro</button>`
                 : ''}
             </div>
@@ -3853,7 +4131,7 @@ function renderPropertyList() {
     }
 
     async function fetchReservationFinanceSafe(reservationId, reservation) {
-      if (!reservation || reservation.source === 'blocked') return { reservation, summary: {}, entries: [] };
+      if (!reservation || isBlockingReservationSource(reservation.source)) return { reservation, summary: {}, entries: [] };
       try {
         const response = await fetch(`${API_URL}/financial/by-reservation/${reservationId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -4038,7 +4316,7 @@ function renderPropertyList() {
     function openCalendarEvent(eventItem) {
       if (!eventItem) return;
 
-      if (eventItem.source === 'blocked' || eventItem.source === 'bloqueio') {
+      if (isBlockingReservationSource(eventItem.source)) {
         selectedReservationId = Number(eventItem.id);
         highlightSelectedReservationRow();
         showSection('reservations');
@@ -4094,12 +4372,15 @@ function renderPropertyList() {
 
         dayEvents.slice(0, 3).forEach(event => {
           const ev = document.createElement('div');
-          ev.className = `event ${sourceClass(event.source)}`;
+          const hasConflict = reservationConflicts(event).length > 0;
+          ev.className = `event ${sourceClass(event.source)} ${hasConflict ? 'calendar-conflict' : ''}`;
           ev.textContent = `${sourceLabel(event.source)} - ${event.guest_name || 'Sem nome'}`;
           ev.style.cursor = 'pointer';
-          ev.title = event.source === 'blocked' || event.source === 'bloqueio'
-            ? 'Clique para abrir o bloqueio na lista'
-            : 'Clique para abrir a reserva no financeiro';
+          ev.title = hasConflict
+            ? 'Conflito de calendário detectado'
+            : isBlockingReservationSource(event.source)
+              ? 'Clique para abrir o bloqueio na lista'
+              : 'Clique para abrir a reserva no financeiro';
           ev.addEventListener('click', (e) => {
             e.stopPropagation();
             updateCalendarSelectionCard(dateStr, dayEvents);
@@ -4132,23 +4413,20 @@ function renderPropertyList() {
         return;
       }
 
+      setButtonLoading(syncPropertyBtn, true, 'Sincronizando...');
+
       try {
-        const response = await fetch(`${API_URL}/sync/${selectedPropertyId}`, {
+        const data = await apiFetch(`/sync/${selectedPropertyId}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          errorMessage: 'Erro ao sincronizar.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('syncMessage', data.message || 'Erro ao sincronizar', 'error');
-          return;
-        }
 
         showMessage('syncMessage', data.message || 'Sincronização concluída.', 'success');
         await loadReservations();
       } catch (error) {
-        showMessage('syncMessage', 'Erro ao conectar com o backend.', 'error');
+        showFriendlyError('syncMessage', error, 'Erro ao sincronizar.');
+      } finally {
+        setButtonLoading(syncPropertyBtn, false);
       }
     }
 
@@ -4165,19 +4443,20 @@ function renderPropertyList() {
       const status = document.getElementById('financialStatus').value;
       const source = document.getElementById('financialSource').value.trim();
 
+      setButtonLoading(createFinancialBtn, true, editingFinancialId ? 'Salvando...' : 'Criando...');
+
       try {
-        let url = `${API_URL}/financial`;
+        let url = '/financial';
         let method = 'POST';
 
         if (editingFinancialId) {
-          url = `${API_URL}/financial/${editingFinancialId}`;
+          url = `/financial/${editingFinancialId}`;
           method = 'PUT';
         }
 
-        const response = await fetch(url, {
+        await apiFetch(url, {
           method,
-          headers: authHeaders(),
-          body: JSON.stringify({
+          body: {
             property_id,
             reservation_id: reservation_id || null,
             type,
@@ -4187,15 +4466,9 @@ function renderPropertyList() {
             entry_date,
             status,
             source
-          })
+          },
+          errorMessage: 'Erro ao salvar lançamento financeiro.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage('financialMessage', data.error || 'Erro ao salvar lançamento financeiro', 'error');
-          return;
-        }
 
         showMessage(
           'financialMessage',
@@ -4204,6 +4477,7 @@ function renderPropertyList() {
         );
 
         const currentReservation = selectedReservationId;
+        setButtonLoading(createFinancialBtn, false);
         resetFinancialForm();
         await loadFinancialSummary();
         await loadFinancialEntries();
@@ -4213,7 +4487,9 @@ function renderPropertyList() {
           await loadReservationFinance(currentReservation);
         }
       } catch (error) {
-        showMessage('financialMessage', 'Erro ao conectar com o backend.', 'error');
+        showFriendlyError('financialMessage', error, 'Erro ao salvar lançamento financeiro.');
+      } finally {
+        setButtonLoading(createFinancialBtn, false);
       }
     }
 
@@ -4260,11 +4536,13 @@ function renderPropertyList() {
         const month = document.getElementById('financialFilterMonth').value;
         const type = document.getElementById('financialFilterType').value;
         const status = document.getElementById('financialFilterStatus').value;
+        const source = financialFilterSource?.value || '';
 
         if (propertyId) params.append('property_id', propertyId);
         if (month) params.append('month', month);
         if (type) params.append('type', type);
         if (status) params.append('status', status);
+        if (source) params.append('source', source);
         params.append('page', String(financialPagination.page || 1));
         params.append('limit', String(financialPagination.limit || 25));
 
@@ -4308,11 +4586,13 @@ function renderPropertyList() {
         const month = document.getElementById('financialFilterMonth').value;
         const type = document.getElementById('financialFilterType').value;
         const status = document.getElementById('financialFilterStatus').value;
+        const source = financialFilterSource?.value || '';
 
         if (propertyId) params.append('property_id', propertyId);
         if (month) params.append('month', month);
         if (type) params.append('type', type);
         if (status) params.append('status', status);
+        if (source) params.append('source', source);
 
         const response = await fetch(`${API_URL}/financial?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -4321,7 +4601,7 @@ function renderPropertyList() {
         const data = await response.json();
 
         if (!response.ok) {
-          financialTableBody.innerHTML = '<tr><td colspan="10">Erro ao carregar lançamentos</td></tr>';
+          financialTableBody.innerHTML = tableStateRow(10, 'Não foi possível carregar lançamentos', 'Tente atualizar a lista em instantes.', 'error');
           return;
         }
 
@@ -4330,13 +4610,17 @@ function renderPropertyList() {
         financialPagination = normalized.pagination;
         renderFinancialTable();
       } catch (error) {
-        financialTableBody.innerHTML = '<tr><td colspan="10">Erro ao carregar lançamentos</td></tr>';
+        financialTableBody.innerHTML = tableStateRow(10, 'Não foi possível carregar lançamentos', 'Tente atualizar a lista em instantes.', 'error');
       }
     }
 
     function renderFinancialTable() {
       if (!financialEntries.length) {
-        financialTableBody.innerHTML = '<tr><td colspan="10">Nenhum lançamento financeiro</td></tr>';
+        financialTableBody.innerHTML = tableStateRow(
+          10,
+          'Nenhum lançamento financeiro',
+          'Registre receitas, despesas ou pagamentos pendentes para enxergar o resultado de cada imóvel.'
+        );
         placePaginationAfter(financialTableBody, renderPaginationControl('financialPagination', financialPagination, (page) => {
           financialPagination.page = page;
           loadFinancialEntries();
@@ -4385,17 +4669,10 @@ function renderPropertyList() {
       if (!confirmed) return;
 
       try {
-        const response = await fetch(`${API_URL}/financial/${id}`, {
+        await apiFetch(`/financial/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          errorMessage: 'Erro ao excluir lançamento.'
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.error || 'Erro ao excluir lançamento');
-          return;
-        }
 
         if (editingFinancialId === Number(id)) {
           resetFinancialForm();
@@ -4409,7 +4686,7 @@ function renderPropertyList() {
           await loadReservationFinance(selectedReservationId);
         }
       } catch (error) {
-        alert('Erro ao conectar com o backend.');
+        showFriendlyError('financialMessage', error, 'Erro ao excluir lançamento.');
       }
     }
 
@@ -4500,13 +4777,41 @@ function renderPropertyList() {
         showSection(button.dataset.sectionJump);
       });
     });
+    propertyAssistantCta?.addEventListener('click', () => {
+      showSection(propertyAssistantCta.dataset.assistantSection || 'properties');
+    });
+    propertyAssistantSteps?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-assistant-section]');
+      if (!button) return;
+      showSection(button.dataset.assistantSection || 'properties');
+    });
 
     saveMessageAutomationBtn.addEventListener('click', saveMessageAutomation);
     cancelEditMessageAutomationBtn.addEventListener('click', () => {
       resetMessageAutomationForm();
       clearMessage('messageAutomationMessage');
     });
+    messageTemplate?.addEventListener('input', renderMessageTemplatePreview);
+    templateQuickActions?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-template-preset]');
+      if (!button || !messageTemplate) return;
+      const preset = messageTemplatePresets[button.dataset.templatePreset];
+      if (!preset) return;
+      messageTemplate.value = preset;
+      renderMessageTemplatePreview();
+      messageTemplate.focus();
+    });
     refreshMessageLogsBtn.addEventListener('click', () => loadMessageLogs(currentMessageLogFilter));
+    messageLogsList?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-log-action="retry-message"]');
+      if (!button) return;
+      try {
+        await runOperationAction(API_URL + '/message-logs/' + button.dataset.id + '/reprocess', 'Mensagem reenfileirada para nova tentativa.', button);
+        await loadMessageLogs(currentMessageLogFilter);
+      } catch (error) {
+        showMessage('messageStatusMessage', error.message || 'Não foi possível tentar reenviar a mensagem.', 'error');
+      }
+    });
 
     operationRefreshBtn?.addEventListener('click', () => loadOperationalDashboard());
     operationApplyFiltersBtn?.addEventListener('click', () => loadOperationalDashboard());
@@ -4608,6 +4913,7 @@ function renderPropertyList() {
     activateBillingBtn?.addEventListener('click', activateBilling);
     cancelBillingBtn?.addEventListener('click', cancelBilling);
     recalculateBillingBtn?.addEventListener('click', recalculateBilling);
+    refreshSystemStatusBtn?.addEventListener('click', () => loadSystemStatus());
     accessRestrictionCta?.addEventListener('click', () => showSection('billing'));
     activationNextCta?.addEventListener('click', (event) => {
       event.stopPropagation();
