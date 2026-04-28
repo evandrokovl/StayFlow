@@ -1,8 +1,8 @@
 (function loadStayFlowApp() {
   const scripts = [
-    'app/modules/apiClient.js',
-    'app/modules/uiHelpers.js',
-    'app/app.js'
+    'app/modules/apiClient.js?v=20260427-1',
+    'app/modules/uiHelpers.js?v=20260427-1',
+    'app/app.js?v=20260427-1'
   ];
 
   function loadScript(src) {

@@ -303,6 +303,10 @@
       return secondDigit === Number(cpf[10]);
     }
 
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+    }
+
     function toggleForgotPasswordPanel(show) {
       if (!forgotPasswordPanel) return;
       forgotPasswordPanel.classList.toggle('hidden', !show);
@@ -2681,8 +2685,18 @@
         return;
       }
 
+      if (!isValidEmail(email)) {
+        showMessage('authMessage', 'Informe um e-mail valido para criar a conta.', 'error');
+        return;
+      }
+
       if (!isValidCpf(cpf)) {
         showMessage('authMessage', 'CPF inválido. Confira os números e tente novamente.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('authMessage', 'A senha precisa ter pelo menos 6 caracteres.', 'error');
         return;
       }
 
@@ -2750,6 +2764,16 @@
         return;
       }
 
+      if (!isValidEmail(email)) {
+        showMessage('authMessage', 'Informe um e-mail valido para entrar.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage('authMessage', 'A senha precisa ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
       try {
         setButtonLoading(loginBtn, true, 'Entrando...');
 
@@ -2789,6 +2813,11 @@
       const email = document.getElementById('forgotPasswordEmail').value.trim();
       if (!email) {
         showMessage('authMessage', 'Informe o e-mail da conta para receber as instruções.', 'error');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        showMessage('authMessage', 'Informe um e-mail valido para recuperar a senha.', 'error');
         return;
       }
 
