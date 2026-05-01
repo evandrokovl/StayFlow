@@ -85,6 +85,9 @@
               event_label: element.textContent.trim(),
               destination: element.getAttribute('href') || ''
             });
+            if (element.dataset.metaLead === 'true' && typeof window.fbq === 'function') {
+              window.fbq('track', 'Lead');
+            }
           });
         });
 
@@ -1355,7 +1358,7 @@
           </div>
 
           <div class="cta-row">
-            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar teste grátis de 15 dias</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click" data-meta-lead="true">Começar teste grátis de 15 dias</a>
             <a class="btn-ghost" href="#telas" data-track="landing_product_preview_click">Ver o StayFlow em ação</a>
           </div>
 
