@@ -27,12 +27,25 @@
   <meta name="theme-color" content="#08101d" />
   <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
   <link rel="apple-touch-icon" href="assets/stayflow-logo.png" />
-  <!-- Preencha os IDs abaixo antes de publicar campanhas: GA4, GTM e Meta Pixel. -->
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '982410001438729');
+    fbq('track', 'PageView');
+  </script>
+  <!-- End Meta Pixel Code -->
+  <!-- Preencha os IDs abaixo antes de publicar campanhas: GA4 e GTM. -->
   <script>
     window.STAYFLOW_TRACKING_CONFIG = {
       ga4Id: '',
-      gtmId: '',
-      metaPixelId: '982410001438729'
+      gtmId: ''
     };
 
     (function () {
@@ -57,18 +70,6 @@
         loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(config.ga4Id));
         window.gtag('js', new Date());
         window.gtag('config', config.ga4Id);
-      }
-
-      if (config.metaPixelId) {
-        window.fbq = window.fbq || function () {
-          window.fbq.callMethod ? window.fbq.callMethod.apply(window.fbq, arguments) : window.fbq.queue.push(arguments);
-        };
-        if (!window.fbq.queue) window.fbq.queue = [];
-        window.fbq.loaded = true;
-        window.fbq.version = '2.0';
-        loadScript('https://connect.facebook.net/en_US/fbevents.js');
-        window.fbq('init', config.metaPixelId);
-        window.fbq('track', 'PageView');
       }
 
       window.trackStayFlowEvent = function (eventName, params = {}) {
