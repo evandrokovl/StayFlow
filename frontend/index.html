@@ -79,16 +79,19 @@
       };
 
       document.addEventListener('DOMContentLoaded', function () {
-        const primaryLeadCta = Array.from(document.querySelectorAll('a.btn[href="/app.html"]'))
-          .find(function (element) {
-            return element.textContent.trim() === 'Começar teste grátis de 15 dias';
-          });
+        const primaryLeadCta = document.querySelector('#primary-lead-cta');
 
         if (primaryLeadCta) {
-          primaryLeadCta.addEventListener('click', function () {
+          primaryLeadCta.addEventListener('click', function (event) {
+            event.preventDefault();
+
             if (typeof window.fbq === 'function') {
               window.fbq('track', 'Lead');
             }
+
+            setTimeout(function () {
+              window.location.href = '/app.html';
+            }, 150);
           });
         }
 
@@ -1368,7 +1371,7 @@
           </div>
 
           <div class="cta-row">
-            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar teste grátis de 15 dias</a>
+            <a id="primary-lead-cta" class="btn" href="/app.html">Começar teste grátis de 15 dias</a>
             <a class="btn-ghost" href="#telas" data-track="landing_product_preview_click">Ver o StayFlow em ação</a>
           </div>
 
