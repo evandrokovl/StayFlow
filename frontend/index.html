@@ -82,16 +82,20 @@
         const primaryLeadCta = document.querySelector('#primary-lead-cta');
 
         if (primaryLeadCta) {
-          primaryLeadCta.addEventListener('click', function (event) {
-            event.preventDefault();
+          primaryLeadCta.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            console.log('CTA clicked - sending Lead event');
 
             if (typeof window.fbq === 'function') {
               window.fbq('track', 'Lead');
+            } else {
+              console.warn('fbq not available');
             }
 
             setTimeout(function () {
               window.location.href = '/app.html';
-            }, 150);
+            }, 400);
           });
         }
 
