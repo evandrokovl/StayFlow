@@ -7,6 +7,16 @@
     const setButtonLoading = stayFlowUi.setButtonLoading;
     const showMessage = stayFlowUi.showMessage;
     const tableStateRow = stayFlowUi.tableStateRow;
+    const ONBOARDING_COMPLETED_KEY = 'stayflow_onboarding_completed';
+    const ONBOARDING_STEPS_KEY = 'stayflow_onboarding_steps';
+    const ONBOARDING_CARD_HIDDEN_KEY = 'stayflow_onboarding_card_hidden';
+    const ONBOARDING_FIRST_ACCESS_KEY = 'stayflow_onboarding_first_access';
+    const ONBOARDING_STEP_KEYS = [
+      'property_created',
+      'ical_connected',
+      'email_configured',
+      'automation_enabled'
+    ];
 
     function getStoredUser() {
       const rawUser = localStorage.getItem('user');
@@ -58,6 +68,7 @@
     let currentUserDetails = null;
     let onboardingStep = 1;
     let onboardingPropertyId = null;
+    let onboardingDismissedThisSession = false;
     let billingOverview = null;
     let billingPayments = [];
     let billingAccessState = {
@@ -148,7 +159,14 @@
     const onboardingBackBtn = document.getElementById('onboardingBackBtn');
     const onboardingNextBtn = document.getElementById('onboardingNextBtn');
     const onboardingSkipBtn = document.getElementById('onboardingSkipBtn');
+    const onboardingSkipSecondaryBtn = document.getElementById('onboardingSkipSecondaryBtn');
+    const onboardingCompleteBtn = document.getElementById('onboardingCompleteBtn');
     const onboardingIntegrationEmailText = document.getElementById('onboardingIntegrationEmailText');
+    const onboardingProgressCard = document.getElementById('onboardingProgressCard');
+    const onboardingProgressCardText = document.getElementById('onboardingProgressCardText');
+    const onboardingProgressCardBar = document.getElementById('onboardingProgressCardBar');
+    const continueOnboardingCardBtn = document.getElementById('continueOnboardingCardBtn');
+    const hideOnboardingCardBtn = document.getElementById('hideOnboardingCardBtn');
     const refreshMyInfoBtn = document.getElementById('refreshMyInfoBtn');
     const copyMyIntegrationEmailBtn = document.getElementById('copyMyIntegrationEmailBtn');
     const openOnboardingBtn = document.getElementById('openOnboardingBtn');
@@ -163,7 +181,6 @@
     const accessRestrictionTitle = document.getElementById('accessRestrictionTitle');
     const accessRestrictionText = document.getElementById('accessRestrictionText');
     const accessRestrictionCta = document.getElementById('accessRestrictionCta');
-    const activationNextCta = document.getElementById('activationNextCta');
     const propertyAssistantTitle = document.getElementById('propertyAssistantTitle');
     const propertyAssistantSubtitle = document.getElementById('propertyAssistantSubtitle');
     const propertyAssistantProgressBar = document.getElementById('propertyAssistantProgressBar');
@@ -233,7 +250,7 @@
       if (section === 'system-status') {
         loadSystemStatus();
       }
-      renderActivationGuide();
+      renderOnboardingProgressCard();
       renderPropertySetupAssistant();
     }
 
@@ -323,6 +340,43 @@
       return `stayflow:${suffix}:${userId}`;
     }
 
+    function isSetupModalCompleted() {
+      return localStorage.getItem(ONBOARDING_COMPLETED_KEY) === 'true';
+    }
+
+    function isSetupProgressCardHidden() {
+      return localStorage.getItem(ONBOARDING_CARD_HIDDEN_KEY) === 'true';
+    }
+
+    function hideSetupProgressCard() {
+      localStorage.setItem(ONBOARDING_CARD_HIDDEN_KEY, 'true');
+      renderOnboardingProgressCard();
+    }
+
+    function markSetupModalCompleted() {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      localStorage.setItem(ONBOARDING_STEPS_KEY, JSON.stringify(ONBOARDING_STEP_KEYS));
+      localStorage.removeItem(ONBOARDING_CARD_HIDDEN_KEY);
+      localStorage.removeItem(ONBOARDING_FIRST_ACCESS_KEY);
+      markOnboardingDone();
+      renderOnboardingProgressCard();
+    }
+
+    function getStoredOnboardingSteps() {
+      try {
+        const steps = JSON.parse(localStorage.getItem(ONBOARDING_STEPS_KEY) || '[]');
+        return Array.isArray(steps) ? steps.filter(step => ONBOARDING_STEP_KEYS.includes(step)) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function setStoredOnboardingSteps(steps) {
+      const uniqueSteps = [...new Set(steps)].filter(step => ONBOARDING_STEP_KEYS.includes(step));
+      localStorage.setItem(ONBOARDING_STEPS_KEY, JSON.stringify(uniqueSteps));
+      return uniqueSteps;
+    }
+
     function getOnboardingState() {
       return localStorage.getItem(onboardingStorageKey('onboardingState')) || 'not_started';
     }
@@ -332,23 +386,44 @@
     }
 
     function getOnboardingProgress() {
+      const storedSteps = getStoredOnboardingSteps();
       try {
-        return JSON.parse(localStorage.getItem(onboardingStorageKey('onboardingProgress')) || '{}');
+        const legacyProgress = JSON.parse(localStorage.getItem(onboardingStorageKey('onboardingProgress')) || '{}');
+        return {
+          ...legacyProgress,
+          property_created: storedSteps.includes('property_created') || Boolean(legacyProgress.property_created),
+          ical_connected: storedSteps.includes('ical_connected') || Boolean(legacyProgress.ical_connected || legacyProgress.calendar_connected),
+          email_configured: storedSteps.includes('email_configured') || Boolean(legacyProgress.email_configured || (legacyProgress.notifications_seen && legacyProgress.email_copied)),
+          automation_enabled: storedSteps.includes('automation_enabled') || Boolean(legacyProgress.automation_enabled || legacyProgress.automation_step_completed)
+        };
       } catch (error) {
-        return {};
+        return {
+          property_created: storedSteps.includes('property_created'),
+          ical_connected: storedSteps.includes('ical_connected'),
+          email_configured: storedSteps.includes('email_configured'),
+          automation_enabled: storedSteps.includes('automation_enabled')
+        };
       }
     }
 
     function updateOnboardingProgress(patch = {}) {
       const progress = { ...getOnboardingProgress(), ...patch };
+      const canonicalProgress = {
+        property_created: Boolean(progress.property_created),
+        ical_connected: Boolean(progress.ical_connected || progress.calendar_connected),
+        email_configured: Boolean(progress.email_configured || (progress.notifications_seen && progress.email_copied)),
+        automation_enabled: Boolean(progress.automation_enabled || progress.automation_step_completed)
+      };
+      setStoredOnboardingSteps(ONBOARDING_STEP_KEYS.filter(step => canonicalProgress[step]));
       localStorage.setItem(onboardingStorageKey('onboardingProgress'), JSON.stringify(progress));
       renderMyInfo();
-      renderActivationGuide();
+      renderOnboardingProgressCard();
       applyBillingAccessControls();
       return progress;
     }
 
     function isOnboardingDone() {
+      if (isSetupModalCompleted()) return true;
       const completed = getOnboardingState() === 'completed' || localStorage.getItem(onboardingStorageKey('onboardingDone')) === '1';
       return completed && canCompleteOnboarding();
     }
@@ -378,9 +453,9 @@
       const progress = getOnboardingProgress();
       return {
         hasProperty: properties.length > 0 || Boolean(progress.property_created),
-        hasIcal: hasConnectedIcal() || Boolean(progress.calendar_connected),
-        notificationsUnderstood: Boolean(progress.notifications_seen && progress.email_copied),
-        automationStepCompleted: Boolean(progress.automation_step_completed) || hasActiveAutomation()
+        hasIcal: hasConnectedIcal() || Boolean(progress.ical_connected),
+        notificationsUnderstood: Boolean(progress.email_configured),
+        automationStepCompleted: Boolean(progress.automation_enabled) || hasActiveAutomation()
       };
     }
 
@@ -390,7 +465,8 @@
     }
 
     function shouldShowOnboarding() {
-      return token && !isOnboardingDone() && !isOnboardingSkipped() && !canCompleteOnboarding();
+      const shouldAutoOpen = localStorage.getItem(ONBOARDING_FIRST_ACCESS_KEY) === 'true' || getOnboardingState() === 'not_started';
+      return token && shouldAutoOpen && !onboardingDismissedThisSession && !isOnboardingDone() && !canCompleteOnboarding();
     }
 
     function updateOnboardingIntegrationEmail() {
@@ -402,6 +478,10 @@
 
     function renderOnboardingStep() {
       if (!onboardingShell) return;
+      if (!document.querySelector('[data-onboarding-step]')) {
+        updateOnboardingIntegrationEmail();
+        return;
+      }
 
       const titles = {
         1: ['Bem-vindo ao StayFlow', 'Um setup rápido para chegar ao primeiro valor sem se perder no sistema.'],
@@ -437,18 +517,22 @@
     function openOnboarding(step = 1) {
       onboardingStep = step;
       if (!isOnboardingDone()) setOnboardingState('in_progress');
+      onboardingDismissedThisSession = false;
       if (onboardingShell) onboardingShell.classList.remove('hidden');
       renderOnboardingStep();
     }
 
     function closeOnboarding() {
+      onboardingDismissedThisSession = true;
       if (onboardingShell) onboardingShell.classList.add('hidden');
       clearMessage('onboardingMessage');
     }
 
     function maybeOpenOnboarding() {
+      renderOnboardingProgressCard();
       if (shouldShowOnboarding()) {
         openOnboarding(getSuggestedOnboardingStep());
+        localStorage.removeItem(ONBOARDING_FIRST_ACCESS_KEY);
       }
     }
 
@@ -504,79 +588,25 @@
       ];
     }
 
-    function getStepStateClass(step, index, firstPendingIndex) {
-      if (step.done) return 'completed';
-      if (index === firstPendingIndex) return 'current';
-      return 'pending';
-    }
+    function renderOnboardingProgressCard() {
+      if (!onboardingProgressCard) return;
 
-    function activationStepStatusLabel(step, index, firstPendingIndex) {
-      if (step.done) return 'Conclu\u00eddo';
-      if (index === firstPendingIndex) return 'Em progresso';
-      return 'Pendente';
-    }
+      if (isOnboardingDone() || isSetupProgressCardHidden()) {
+        onboardingProgressCard.classList.add('hidden');
+        return;
+      }
 
-    function renderActivationGuide() {
       const steps = getActivationSteps();
       const completed = steps.filter(step => step.done).length;
       const percent = Math.round((completed / steps.length) * 100);
-      const firstPendingIndex = steps.findIndex(step => !step.done);
-      const nextStep = firstPendingIndex >= 0 ? steps[firstPendingIndex] : {
-        title: 'StayFlow pronto para operar',
-        description: 'Sua configura\u00e7\u00e3o principal est\u00e1 conclu\u00edda. Agora acompanhe reservas, mensagens e resultados.',
-        section: 'operations',
-        cta: 'Ver opera\u00e7\u00e3o'
-      };
-      const contextNotes = {
-        property: 'Primeiro crie o im\u00f3vel principal. Ele vira o contexto para reservas, calend\u00e1rio, financeiro e automa\u00e7\u00f5es.',
-        ical: 'Agora conecte pelo menos um iCal. Isso ajuda a centralizar disponibilidade e reduzir conflito de datas.',
-        email: 'Cadastre o e-mail do StayFlow nas plataformas para identificar reservas, altera\u00e7\u00f5es e cancelamentos automaticamente.',
-        automation: 'Com im\u00f3vel, calend\u00e1rio e e-mail configurados, ative uma automa\u00e7\u00e3o inicial para reduzir trabalho manual.',
-        done: 'Configura\u00e7\u00e3o principal conclu\u00edda. A partir daqui, acompanhe opera\u00e7\u00e3o, reservas e mensagens pelo painel.'
-      };
 
-      const setText = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-      };
-      const setWidth = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.style.width = `${value}%`;
-      };
-
-      setText('activationProgressPercent', `${percent}%`);
-      setText('activationProgressText', `${completed} de ${steps.length} conclu\u00eddos`);
-      setText('activationNextTitle', nextStep.title);
-      setText('activationNextDescription', nextStep.description);
-      setText('activationContextNote', contextNotes[nextStep.key] || contextNotes.done);
-      setWidth('activationProgressBar', percent);
-
-      const dashboardSecondaryContent = document.getElementById('dashboardSecondaryContent');
-      if (dashboardSecondaryContent) {
-        dashboardSecondaryContent.classList.toggle('dashboard-secondary-muted', completed < steps.length);
+      if (onboardingProgressCardText) {
+        onboardingProgressCardText.textContent = `${completed} de ${steps.length} etapas concluídas`;
       }
-
-      if (activationNextCta) {
-        activationNextCta.textContent = nextStep.cta || 'Continuar';
-        activationNextCta.dataset.activationSection = nextStep.section;
+      if (onboardingProgressCardBar) {
+        onboardingProgressCardBar.style.width = `${percent}%`;
       }
-
-      const stepsHtml = steps.map((step, index) => {
-        const state = getStepStateClass(step, index, firstPendingIndex);
-        return `
-          <button type="button" class="activation-step-card ${state}" data-activation-section="${step.section}">
-            <span class="activation-step-number">${step.done ? '&check;' : index + 1}</span>
-            <span>
-              <strong>${escapeHtml(step.title)}</strong>
-              <small>${escapeHtml(step.description)}</small>
-            </span>
-            <em>${escapeHtml(activationStepStatusLabel(step, index, firstPendingIndex))}</em>
-          </button>
-        `;
-      }).join('');
-
-      const activationStepsGrid = document.getElementById('activationStepsGrid');
-      if (activationStepsGrid) activationStepsGrid.innerHTML = stepsHtml;
+      onboardingProgressCard.classList.remove('hidden');
     }
 
     function getPropertyAssistantSteps(property) {
@@ -640,17 +670,6 @@
           <small>${escapeHtml(step.description)}</small>
         </button>
       `).join('');
-    }
-
-    function goToActivationSection(section) {
-      if (!section || !canAccessSection(section)) {
-        showSection(preferredSectionForBillingAccess());
-        return;
-      }
-      showSection(section);
-      if (section === 'my-info') {
-        copyIntegrationEmail('myInfoMessage');
-      }
     }
 
     async function copyTextToClipboard(text) {
@@ -1225,7 +1244,6 @@
           'Crie um template de boas-vindas, check-in ou checkout para automatizar mensagens aos hóspedes.'
         );
         updateMessageAutomationSummary();
-        renderActivationGuide();
         return;
       }
 
@@ -1254,7 +1272,6 @@
       }).join('');
 
       updateMessageAutomationSummary();
-      renderActivationGuide();
     }
 
     function messageLogStatusLabel(status) {
@@ -2903,6 +2920,9 @@
         accessStatus: 'FULL'
       };
 
+      window.location.href = '/login.html';
+      return;
+
       authCard.classList.remove('hidden');
       app.classList.add('hidden');
       showSection('dashboard');
@@ -2913,7 +2933,7 @@
     }
 
     async function enterApp() {
-      authCard.classList.add('hidden');
+      authCard?.classList.add('hidden');
       app.classList.remove('hidden');
       userInfo.textContent = loggedUser
         ? `Logado como ${loggedUser.name} (${loggedUser.email})`
@@ -2931,6 +2951,8 @@
       if (canAccessMyInfo()) {
         loadMyInfo({ silent: true });
       }
+
+      maybeOpenOnboarding();
     }
 
     async function loadMyInfo(options = {}) {
@@ -3468,7 +3490,6 @@ function renderPropertyList() {
       'Cadastre seu primeiro imóvel para começar',
       'Esse é o primeiro passo para conectar iCal, receber reservas e ativar automações.'
     );
-    renderActivationGuide();
     renderPropertySetupAssistant();
     return;
   }
@@ -4814,6 +4835,8 @@ function renderPropertyList() {
       if (!button) return;
       showSection(button.dataset.assistantSection || 'properties');
     });
+    continueOnboardingCardBtn?.addEventListener('click', () => openOnboarding(getSuggestedOnboardingStep()));
+    hideOnboardingCardBtn?.addEventListener('click', hideSetupProgressCard);
 
     saveMessageAutomationBtn.addEventListener('click', saveMessageAutomation);
     cancelEditMessageAutomationBtn.addEventListener('click', () => {
@@ -4921,9 +4944,23 @@ function renderPropertyList() {
       }
     });
     onboardingSkipBtn?.addEventListener('click', () => {
-      markOnboardingSkipped();
       closeOnboarding();
       showSection('dashboard');
+    });
+    onboardingSkipSecondaryBtn?.addEventListener('click', () => {
+      closeOnboarding();
+      showSection('dashboard');
+    });
+    onboardingCompleteBtn?.addEventListener('click', () => {
+      markSetupModalCompleted();
+      closeOnboarding();
+      showSection('dashboard');
+    });
+    onboardingShell?.addEventListener('click', (event) => {
+      const actionButton = event.target.closest('[data-onboarding-action]');
+      if (!actionButton) return;
+      closeOnboarding();
+      showSection(actionButton.dataset.onboardingAction || 'dashboard');
     });
     document.querySelectorAll('[data-copy-integration-email]').forEach(button => {
       button.addEventListener('click', async () => {
@@ -4944,16 +4981,6 @@ function renderPropertyList() {
     recalculateBillingBtn?.addEventListener('click', recalculateBilling);
     refreshSystemStatusBtn?.addEventListener('click', () => loadSystemStatus());
     accessRestrictionCta?.addEventListener('click', () => showSection('billing'));
-    activationNextCta?.addEventListener('click', (event) => {
-      event.stopPropagation();
-      goToActivationSection(activationNextCta.dataset.activationSection);
-    });
-    document.addEventListener('click', (event) => {
-      const activationButton = event.target.closest('[data-activation-section]');
-      if (!activationButton) return;
-      goToActivationSection(activationButton.dataset.activationSection);
-    });
-
     if (messageLogFilters) {
       messageLogFilters.addEventListener('click', (event) => {
         const button = event.target.closest('[data-log-filter]');
@@ -4963,8 +4990,8 @@ function renderPropertyList() {
       });
     }
 
-    loginBtn.addEventListener('click', login);
-    registerBtn.addEventListener('click', registerUser);
+    loginBtn?.addEventListener('click', login);
+    registerBtn?.addEventListener('click', registerUser);
     showForgotPasswordBtn?.addEventListener('click', () => toggleForgotPasswordPanel(true));
     hideForgotPasswordBtn?.addEventListener('click', () => toggleForgotPasswordPanel(false));
     forgotPasswordBtn?.addEventListener('click', requestPasswordReset);
@@ -5043,4 +5070,6 @@ function renderPropertyList() {
           loadProperties();
         }
       });
+    } else {
+      window.location.replace('/login.html');
     }

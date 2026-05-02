@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comecar Teste Gratis | StayFlow</title>
+  <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
+  <link rel="stylesheet" href="app/styles.css" />
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '982410001438729');
+    fbq('track', 'PageView');
+  </script>
+  <!-- End Meta Pixel Code -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead');
+        console.log('Lead event sent from cadastro.html');
+      }
+    });
+  </script>
+</head>
+<body class="auth-page">
+  <main class="auth-screen">
+    <section class="card auth-page-card" aria-labelledby="registerTitle">
+      <div class="auth-brand">
+        <img src="assets/stayflow-logo.png" alt="StayFlow" />
+        <div class="brand-kicker">Sistema de gestao de imoveis por temporada</div>
+      </div>
+
+      <div class="auth-panel auth-page-panel">
+        <div class="auth-panel-heading">
+          <h1 id="registerTitle">Comecar teste gratis</h1>
+          <div class="small">Crie sua conta e organize sua operacao em poucos minutos.</div>
+          <div class="trial-note">Teste gratis por 15 dias.</div>
+        </div>
+
+        <div class="grid">
+          <label class="form-field">
+            <span>Nome</span>
+            <input type="text" id="registerName" placeholder="Nome completo" autocomplete="name" />
+          </label>
+          <label class="form-field">
+            <span>E-mail</span>
+            <input type="email" id="registerEmail" placeholder="voce@email.com" autocomplete="email" />
+          </label>
+          <label class="form-field">
+            <span>CPF</span>
+            <input type="text" id="registerCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" />
+          </label>
+          <label class="form-field">
+            <span>Senha</span>
+            <input type="password" id="registerPassword" placeholder="Minimo de 6 caracteres" autocomplete="new-password" />
+          </label>
+          <button class="btn-secondary" id="registerBtn" type="button">Comecar teste gratis</button>
+        </div>
+
+        <div class="auth-page-links">
+          <a href="/login.html">Ja tenho conta. Entrar</a>
+        </div>
+
+        <div id="authMessage"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app/modules/apiClient.js?v=20260427-1"></script>
+  <script src="app/modules/uiHelpers.js?v=20260427-1"></script>
+  <script src="app/auth.js?v=20260501-1"></script>
+</body>
+</html>

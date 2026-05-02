@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recuperar Senha | StayFlow</title>
+  <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
+  <link rel="stylesheet" href="app/styles.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-screen">
+    <section class="card auth-page-card" aria-labelledby="forgotPasswordTitle">
+      <div class="auth-brand">
+        <img src="assets/stayflow-logo.png" alt="StayFlow" />
+        <div class="brand-kicker">Sistema de gestao de imoveis por temporada</div>
+      </div>
+
+      <div class="auth-panel auth-page-panel">
+        <div class="auth-panel-heading">
+          <h1 id="forgotPasswordTitle">Recuperar senha</h1>
+          <div class="small">Informe o e-mail da conta. Se ele existir, enviaremos instrucoes para redefinicao.</div>
+        </div>
+
+        <div class="grid">
+          <label class="form-field">
+            <span>E-mail</span>
+            <input type="email" id="forgotPasswordEmail" placeholder="voce@email.com" autocomplete="email" />
+          </label>
+          <button class="btn-secondary" id="forgotPasswordBtn" type="button">Enviar instrucoes</button>
+        </div>
+
+        <div class="grid reset-password-box hidden" id="resetPasswordBox">
+          <label class="form-field">
+            <span>Token de redefinicao</span>
+            <input type="text" id="resetToken" placeholder="Cole o token recebido por e-mail" autocomplete="off" />
+          </label>
+          <label class="form-field">
+            <span>Nova senha</span>
+            <input type="password" id="resetPassword" placeholder="Minimo de 6 caracteres" autocomplete="new-password" />
+          </label>
+          <button class="btn-success" id="resetPasswordBtn" type="button">Redefinir senha</button>
+        </div>
+
+        <div class="auth-page-links">
+          <a href="/login.html">Voltar para login</a>
+        </div>
+
+        <div id="authMessage"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app/modules/apiClient.js?v=20260427-1"></script>
+  <script src="app/modules/uiHelpers.js?v=20260427-1"></script>
+  <script src="app/auth.js?v=20260501-1"></script>
+</body>
+</html>

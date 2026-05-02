@@ -29,14 +29,6 @@
 
     gtag('config', 'AW-18115139390');
   </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (typeof window.fbq === 'function') {
-        window.fbq('track', 'Lead');
-        console.log('Lead event sent from app.html');
-      }
-    });
-  </script>
 </head>
 <body>
   <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
@@ -75,93 +67,6 @@
     </aside>
 
     <main class="content" id="mainContent" tabindex="-1">
-      <div class="auth-wrap">
-        <div class="card" id="authCard">
-          <div class="auth-brand">
-            <img src="assets/stayflow-logo.png" alt="StayFlow" />
-            <div class="brand-kicker">Sistema de gestão de imóveis por temporada</div>
-          </div>
-
-          <div class="grid grid-2 auth-grid">
-            <div class="auth-panel">
-              <div class="auth-panel-heading">
-                <h2>Entrar</h2>
-                <div class="small">Acesse sua operação com segurança.</div>
-              </div>
-              <div class="grid">
-                <label class="form-field">
-                  <span>E-mail</span>
-                  <input type="email" id="loginEmail" placeholder="voce@email.com" autocomplete="email" />
-                </label>
-                <label class="form-field">
-                  <span>Senha</span>
-                  <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" />
-                </label>
-                <button id="loginBtn" type="button">Entrar</button>
-                <button class="auth-link-button" id="showForgotPasswordBtn" type="button">Esqueci minha senha</button>
-              </div>
-            </div>
-
-            <div class="auth-panel">
-              <div class="auth-panel-heading">
-                <h2>Cadastrar usuário</h2>
-                <div class="small">CPF obrigatório para proteger a conta e evitar duplicidade.</div>
-                <div class="trial-note">Teste grátis ativo por 15 dias. Próximo passo após cadastro: configurar seu primeiro imóvel.</div>
-              </div>
-              <div class="grid">
-                <label class="form-field">
-                  <span>Nome</span>
-                  <input type="text" id="registerName" placeholder="Nome completo" autocomplete="name" />
-                </label>
-                <label class="form-field">
-                  <span>E-mail</span>
-                  <input type="email" id="registerEmail" placeholder="voce@email.com" autocomplete="email" />
-                </label>
-                <label class="form-field">
-                  <span>CPF</span>
-                  <input type="text" id="registerCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" />
-                </label>
-                <label class="form-field">
-                  <span>Senha</span>
-                  <input type="password" id="registerPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
-                </label>
-                <button class="btn-secondary" id="registerBtn" type="button">Cadastrar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="auth-reset-panel hidden" id="forgotPasswordPanel">
-            <div class="auth-panel-heading">
-              <h2>Recuperar senha</h2>
-              <div class="small">Informe o e-mail da conta. Se ele existir, enviaremos um link seguro para redefinição.</div>
-            </div>
-            <div class="grid grid-2 auth-reset-grid">
-              <label class="form-field">
-                <span>E-mail da conta</span>
-                <input type="email" id="forgotPasswordEmail" placeholder="voce@email.com" autocomplete="email" />
-              </label>
-              <div class="auth-reset-actions">
-                <button class="btn-secondary" id="forgotPasswordBtn" type="button">Enviar instruções</button>
-                <button class="auth-link-button" id="hideForgotPasswordBtn" type="button">Voltar ao login</button>
-              </div>
-            </div>
-            <div class="grid grid-2 auth-reset-grid reset-password-box">
-              <label class="form-field">
-                <span>Token de redefinição</span>
-                <input type="text" id="resetToken" placeholder="Cole o token recebido por e-mail" autocomplete="off" />
-              </label>
-              <label class="form-field">
-                <span>Nova senha</span>
-                <input type="password" id="resetPassword" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
-              </label>
-              <button class="btn-success" id="resetPasswordBtn" type="button">Redefinir senha</button>
-            </div>
-          </div>
-
-          <div id="authMessage"></div>
-        </div>
-      </div>
-
       <div id="app" class="hidden">
         <div class="app-main">
           <div class="card">
@@ -185,173 +90,57 @@
             <button type="button" id="accessRestrictionCta">Ver cobrança</button>
           </div>
 
-          <div class="onboarding-shell hidden" id="onboardingShell">
-            <div class="onboarding-card">
-              <div class="onboarding-top">
+          <div class="onboarding-shell hidden" id="onboardingShell" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-describedby="onboardingSubtitle">
+            <div class="onboarding-card setup-modal-card">
+              <div class="setup-modal-header">
                 <div>
                   <div class="brand-kicker">Configuração guiada</div>
-                  <h2 id="onboardingTitle">Bem-vindo ao StayFlow</h2>
-                  <div class="small" id="onboardingSubtitle">Em poucos minutos você deixa sua operação pronta para acompanhar reservas, calendários e mensagens.</div>
+                  <h2 id="onboardingTitle">Vamos configurar seu primeiro imóvel?</h2>
+                  <div class="small" id="onboardingSubtitle">Leva menos de 5 minutos e você já começa a automatizar tudo.</div>
                 </div>
-                <button type="button" class="auth-link-button" id="onboardingSkipBtn">Pular por agora</button>
+                <button type="button" class="setup-modal-close" id="onboardingSkipBtn" aria-label="Pular configuração">×</button>
               </div>
 
-              <div class="onboarding-progress">
-                <div class="onboarding-progress-meta">
-                  <span id="onboardingStepText">Etapa 1 de 5</span>
-                  <span id="onboardingProgressPercent">20%</span>
-                </div>
-                <div class="onboarding-progress-track">
-                  <div id="onboardingProgressBar"></div>
-                </div>
+              <div class="setup-modal-steps" aria-label="Etapas de configuração guiada">
+                <article class="setup-modal-step">
+                  <span>1</span>
+                  <div>
+                    <h3>Criar imóvel</h3>
+                    <p>Cadastre o imóvel principal para centralizar reservas, calendário e financeiro.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" data-onboarding-action="properties">Configurar</button>
+                </article>
+                <article class="setup-modal-step">
+                  <span>2</span>
+                  <div>
+                    <h3>Conectar calendário (iCal)</h3>
+                    <p>Adicione o link iCal do Airbnb, Booking ou outro canal para sincronizar datas.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" data-onboarding-action="properties">Configurar</button>
+                </article>
+                <article class="setup-modal-step">
+                  <span>3</span>
+                  <div>
+                    <h3>Configurar e-mail StayFlow</h3>
+                    <p>Use o e-mail de integração para receber reservas e alterações das plataformas.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" data-onboarding-action="my-info">Configurar</button>
+                </article>
+                <article class="setup-modal-step">
+                  <span>4</span>
+                  <div>
+                    <h3>Ativar automação</h3>
+                    <p>Crie a primeira mensagem automática para reduzir tarefas manuais.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" data-onboarding-action="messages">Configurar</button>
+                </article>
               </div>
 
-              <div class="onboarding-body">
-                <div class="onboarding-step" data-onboarding-step="1">
-                  <div class="onboarding-hero">
-                    <div>
-                      <h3>Vamos chegar ao primeiro valor rápido.</h3>
-                      <p>O StayFlow funciona melhor quando já conhece seu primeiro imóvel, seus calendários e o e-mail de notificações das plataformas.</p>
-                    </div>
-                    <div class="onboarding-benefits">
-                      <div><strong>1</strong><span>Centralize reservas</span></div>
-                      <div><strong>2</strong><span>Evite conflitos de calendário</span></div>
-                      <div><strong>3</strong><span>Prepare automações</span></div>
-                    </div>
-                  </div>
-                </div>
+              <div id="onboardingMessage" class="setup-modal-message"></div>
 
-                <div class="onboarding-step hidden" data-onboarding-step="2">
-                  <div class="grid grid-2">
-                    <div>
-                      <h3>Cadastre seu primeiro imóvel</h3>
-                      <p class="small">Use o link do anúncio para ajudar o StayFlow a identificar reservas recebidas por e-mail.</p>
-                    </div>
-                    <div class="onboarding-form">
-                      <label class="form-field"><span>Nome do imóvel</span><input type="text" id="onboardingPropertyName" placeholder="Ex: Studio Vista Mar" /></label>
-                      <label class="form-field"><span>Cidade</span><input type="text" id="onboardingPropertyCity" placeholder="Ex: Rio de Janeiro" /></label>
-                      <label class="form-field"><span>URL do anúncio</span><input type="text" id="onboardingListingUrl" placeholder="Link do Airbnb, Booking ou outra plataforma" /></label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="3">
-                  <div class="onboarding-section-heading">
-                    <h3>Conecte calendário e e-mail do StayFlow</h3>
-                    <p class="small">Configure os dois canais essenciais: o iCal mantém sua agenda sincronizada e o e-mail do StayFlow ajuda a identificar reservas, alterações e cancelamentos automaticamente.</p>
-                  </div>
-
-                  <div class="integration-concept-grid">
-                    <div class="concept-card">
-                      <span>Calendário iCal</span>
-                      <strong>Sincroniza disponibilidade</strong>
-                      <p>Use os links iCal do Airbnb e Booking para manter datas bloqueadas e reduzir conflitos de calendário.</p>
-                    </div>
-                    <div class="concept-card">
-                      <span>E-mail do StayFlow</span>
-                      <strong>Recebe eventos das plataformas</strong>
-                      <p>Cadastre este e-mail nas notificações para o StayFlow reconhecer novas reservas, mudanças e cancelamentos.</p>
-                    </div>
-                  </div>
-
-                  <div class="integration-email-callout">
-                    <div>
-                      <span class="small">E-mail do StayFlow para notificações</span>
-                      <strong id="onboardingIntegrationEmailText">Carregando e-mail...</strong>
-                      <p>Cadastre este e-mail nas notificações do Airbnb e Booking para o StayFlow identificar reservas, alterações e cancelamentos automaticamente.</p>
-                    </div>
-                    <div class="integration-email-actions">
-                      <button type="button" class="btn-secondary" data-copy-integration-email>Copiar e-mail</button>
-                      <button type="button" class="auth-link-button" id="onboardingEmailUnderstoodBtn">Já entendi</button>
-                    </div>
-                  </div>
-
-                  <div class="integration-guide-label">1. Pegue o link iCal de calendário</div>
-                  <div class="ical-guide-grid">
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Airbnb</span><small>Link iCal</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Entre no anúncio que será conectado ao StayFlow.</span></div>
-                        <div><strong>2</strong><span>Abra a área de calendário ou disponibilidade.</span></div>
-                        <div><strong>3</strong><span>Localize a opção de exportar ou compartilhar calendário.</span></div>
-                        <div><strong>4</strong><span>Copie o link iCal gerado pelo Airbnb.</span></div>
-                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
-                      </div>
-                      <label class="form-field"><span>iCal Airbnb</span><input type="text" id="onboardingAirbnbIcal" placeholder="https://www.airbnb.com/calendar/ical/..." /></label>
-                    </div>
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Booking</span><small>Link iCal</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Entre na extranet ou painel do Booking.</span></div>
-                        <div><strong>2</strong><span>Abra a área de calendário ou sincronização.</span></div>
-                        <div><strong>3</strong><span>Localize o link iCal do imóvel.</span></div>
-                        <div><strong>4</strong><span>Copie o link indicado pela plataforma.</span></div>
-                        <div><strong>5</strong><span>Cole esse link no campo abaixo.</span></div>
-                      </div>
-                      <label class="form-field"><span>iCal Booking</span><input type="text" id="onboardingBookingIcal" placeholder="https://admin.booking.com/hotel/..." /></label>
-                    </div>
-                  </div>
-
-                  <div class="integration-guide-label">2. Cadastre o e-mail do StayFlow nas notificações</div>
-                  <div class="ical-guide-grid notification-guide-grid">
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Airbnb</span><small>E-mail</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Abra as configurações da conta ou do anúncio.</span></div>
-                        <div><strong>2</strong><span>Procure notificações, contatos ou mensagens por e-mail.</span></div>
-                        <div><strong>3</strong><span>Adicione o e-mail do StayFlow como destinatário quando disponível.</span></div>
-                        <div><strong>4</strong><span>Salve para que eventos cheguem automaticamente ao StayFlow.</span></div>
-                      </div>
-                    </div>
-                    <div class="ical-guide-card">
-                      <div class="guide-card-title"><span>Booking</span><small>E-mail</small></div>
-                      <div class="visual-steps">
-                        <div><strong>1</strong><span>Acesse a extranet do Booking.</span></div>
-                        <div><strong>2</strong><span>Procure conta, contatos ou notificações por e-mail.</span></div>
-                        <div><strong>3</strong><span>Inclua o e-mail do StayFlow como contato de notificações.</span></div>
-                        <div><strong>4</strong><span>Mantenha esse e-mail ativo para receber reservas e alterações.</span></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div id="onboardingCalendarFeedback" class="small"></div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="4">
-                  <div class="grid grid-2">
-                    <div>
-                      <h3>Ative sua primeira automação</h3>
-                      <p class="small">Comece com uma mensagem simples de pré-check-in. Você pode editar tudo depois na aba Automação de mensagens.</p>
-                      <label class="automation-toggle-card">
-                        <input type="checkbox" id="onboardingEnableAutomation" checked />
-                        <span><strong>Ativar automação inicial</strong><small>Preparar mensagem de pré-check-in para hóspedes futuros.</small></span>
-                      </label>
-                    </div>
-                    <div class="message-preview-card">
-                      <span class="small">Preview</span>
-                      <p>Olá {nome_hospede}, seu check-in está chegando. Em breve enviaremos as informações do imóvel {nome_imovel} para deixar sua chegada tranquila.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="onboarding-step hidden" data-onboarding-step="5">
-                  <div class="onboarding-complete">
-                    <div class="complete-mark">✓</div>
-                    <h3>Sua conta está pronta para operar</h3>
-                    <p>Você já conectou o caminho essencial: imóvel, calendário, e-mail do StayFlow e automação inicial. Agora o painel passa a ser sua central de operação.</p>
-                    <div class="onboarding-benefits">
-                      <div><strong>✓</strong><span>Imóvel inicial criado</span></div>
-                      <div><strong>✓</strong><span>Calendário e e-mail entendidos</span></div>
-                      <div><strong>✓</strong><span>Painel liberado</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="onboardingMessage"></div>
-
-              <div class="onboarding-actions">
-                <button type="button" class="btn-secondary hidden" id="onboardingBackBtn" aria-label="Voltar etapa do onboarding">Voltar</button>
-                <button type="button" id="onboardingNextBtn" aria-label="Avançar etapa do onboarding">Começar configuração</button>
+              <div class="setup-modal-actions">
+                <button type="button" class="auth-link-button" id="onboardingSkipSecondaryBtn">Pular por enquanto</button>
+                <button type="button" id="onboardingCompleteBtn">Já configurei tudo</button>
               </div>
             </div>
           </div>
@@ -370,31 +159,24 @@
               </div>
             </div>
 
-            <div class="activation-panel" id="activationPanel">
-              <div class="activation-panel-hero">
+            <div class="setup-progress-card hidden" id="onboardingProgressCard">
+              <div class="setup-progress-main">
                 <div>
-                  <div class="brand-kicker">Ativação guiada</div>
-                  <h2>Automatize em 4 passos</h2>
-                  <p>Configure o caminho principal para o StayFlow identificar reservas, sincronizar calendários e enviar mensagens sem trabalho manual.</p>
+                  <div class="brand-kicker">Configuração pendente</div>
+                  <h3>Configuração pendente</h3>
+                  <p>Complete a configuração para automatizar suas reservas.</p>
                 </div>
-                <div class="activation-score">
-                  <span id="activationProgressPercent">0%</span>
-                  <small id="activationProgressText">0 de 4 concluídos</small>
+                <div class="setup-progress-meta">
+                  <strong id="onboardingProgressCardText">0 de 4 etapas concluídas</strong>
+                  <div class="setup-progress-track" aria-hidden="true">
+                    <span id="onboardingProgressCardBar"></span>
+                  </div>
                 </div>
               </div>
-              <div class="activation-track"><span id="activationProgressBar"></span></div>
-              <div class="activation-next-card">
-                <div>
-                  <span>Próxima ação recomendada</span>
-                  <strong id="activationNextTitle">Criar o primeiro imóvel</strong>
-                  <small id="activationNextDescription">Cadastre o imóvel principal para liberar calendário, reservas e automações.</small>
-                </div>
-                <button type="button" id="activationNextCta">Começar agora</button>
+              <div class="setup-progress-actions">
+                <button type="button" id="continueOnboardingCardBtn">Continuar configuração</button>
+                <button type="button" class="auth-link-button" id="hideOnboardingCardBtn">Ocultar</button>
               </div>
-              <div class="activation-context-note" id="activationContextNote">
-                Comece pelo imóvel principal. Depois o StayFlow guia você para calendário, e-mail de integração e automação.
-              </div>
-              <div class="activation-steps-grid" id="activationStepsGrid"></div>
             </div>
 
             <div class="property-assistant-card" id="propertySetupAssistant">

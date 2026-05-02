@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar | StayFlow</title>
+  <link rel="icon" type="image/png" href="assets/stayflow-logo.png" />
+  <link rel="stylesheet" href="app/styles.css" />
+</head>
+<body class="auth-page">
+  <main class="auth-screen">
+    <section class="card auth-page-card" aria-labelledby="loginTitle">
+      <div class="auth-brand">
+        <img src="assets/stayflow-logo.png" alt="StayFlow" />
+        <div class="brand-kicker">Sistema de gestao de imoveis por temporada</div>
+      </div>
+
+      <div class="auth-panel auth-page-panel">
+        <div class="auth-panel-heading">
+          <h1 id="loginTitle">Entrar</h1>
+          <div class="small">Acesse sua operacao com seguranca.</div>
+        </div>
+
+        <div class="grid">
+          <label class="form-field">
+            <span>E-mail</span>
+            <input type="email" id="loginEmail" placeholder="voce@email.com" autocomplete="email" />
+          </label>
+          <label class="form-field">
+            <span>Senha</span>
+            <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password" />
+          </label>
+          <button id="loginBtn" type="button">Entrar</button>
+        </div>
+
+        <div class="auth-page-links">
+          <a href="/recuperar-senha.html">Esqueci minha senha</a>
+          <a href="/cadastro.html">Nao tenho conta. Comecar teste gratis</a>
+        </div>
+
+        <div id="authMessage"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app/modules/apiClient.js?v=20260427-1"></script>
+  <script src="app/modules/uiHelpers.js?v=20260427-1"></script>
+  <script src="app/auth.js?v=20260501-1"></script>
+</body>
+</html>
