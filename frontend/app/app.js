@@ -7,6 +7,7 @@
     const setButtonLoading = stayFlowUi.setButtonLoading;
     const showMessage = stayFlowUi.showMessage;
     const tableStateRow = stayFlowUi.tableStateRow;
+    const SUPPORT_EMAIL = 'suporte@stayflowapp.online';
     const ONBOARDING_COMPLETED_KEY = 'stayflow_onboarding_completed';
     const ONBOARDING_STEPS_KEY = 'stayflow_onboarding_steps';
     const ONBOARDING_CARD_HIDDEN_KEY = 'stayflow_onboarding_card_hidden';
@@ -181,19 +182,64 @@
     const accessRestrictionTitle = document.getElementById('accessRestrictionTitle');
     const accessRestrictionText = document.getElementById('accessRestrictionText');
     const accessRestrictionCta = document.getElementById('accessRestrictionCta');
-    const propertyAssistantTitle = document.getElementById('propertyAssistantTitle');
-    const propertyAssistantSubtitle = document.getElementById('propertyAssistantSubtitle');
-    const propertyAssistantProgressBar = document.getElementById('propertyAssistantProgressBar');
-    const propertyAssistantSteps = document.getElementById('propertyAssistantSteps');
-    const propertyAssistantCta = document.getElementById('propertyAssistantCta');
     const reservationDetailsCard = document.getElementById('reservationDetailsCard');
     const reservationDetailsContent = document.getElementById('reservationDetailsContent');
     const closeReservationDetailsBtn = document.getElementById('closeReservationDetailsBtn');
+    const helpFloatingBtn = document.getElementById('helpFloatingBtn');
+    const helpQuickMenu = document.getElementById('helpQuickMenu');
+    const helpFaqModal = document.getElementById('helpFaqModal');
+    const helpSupportModal = document.getElementById('helpSupportModal');
+    const helpSuggestionModal = document.getElementById('helpSuggestionModal');
+    const helpFaqList = document.getElementById('helpFaqList');
+    const sendSupportRequestBtn = document.getElementById('sendSupportRequestBtn');
+    const sendSuggestionBtn = document.getElementById('sendSuggestionBtn');
 
     const pageTitle = document.getElementById('pageTitle');
     const selectedPropertyBadge = document.getElementById('selectedPropertyBadge');
     const navButtons = document.querySelectorAll('[data-section-btn]');
     const sectionJumpButtons = document.querySelectorAll('[data-section-jump]');
+    const helpFaqGroups = [
+      {
+        theme: 'Começando',
+        items: [
+          ['Como cadastrar meu primeiro imóvel?', 'Abra Imóveis, preencha os dados principais e salve. Depois conecte iCal e automações.'],
+          ['Como conectar Airbnb ou Booking via iCal?', 'Copie o link iCal da plataforma e cole no imóvel correspondente no StayFlow.'],
+          ['Quanto tempo leva para sincronizar as reservas?', 'Normalmente alguns minutos após salvar o iCal. Use Sincronizar imóvel para tentar manualmente.']
+        ]
+      },
+      {
+        theme: 'Automação',
+        items: [
+          ['Como criar uma mensagem automática?', 'Vá em Automação de mensagens, escolha imóvel, gatilho, horário e salve o modelo.'],
+          ['As mensagens são enviadas por WhatsApp ou e-mail?', 'Nesta versão, o fluxo é focado em e-mail. WhatsApp ainda não está integrado.'],
+          ['Quando uma mensagem automática é enviada?', 'Ela segue o gatilho configurado, como check-in, checkout ou dias antes da reserva.']
+        ]
+      },
+      {
+        theme: 'Reservas',
+        items: [
+          ['Por que uma reserva não apareceu?', 'Confira se o iCal está correto e se a plataforma já publicou a reserva no calendário.'],
+          ['O que faço se uma reserva veio duplicada?', 'Verifique se o mesmo calendário foi cadastrado mais de uma vez no imóvel.'],
+          ['Como o StayFlow ajuda a evitar conflitos de calendário?', 'Ele centraliza reservas importadas por iCal para facilitar a conferência de disponibilidade.']
+        ]
+      },
+      {
+        theme: 'Financeiro',
+        items: [
+          ['O StayFlow calcula lucro?', 'Sim. O painel cruza receitas e despesas registradas para mostrar o resultado do período.'],
+          ['Como uma receita é vinculada a uma reserva?', 'Ao lançar receita, selecione a reserva relacionada quando ela estiver disponível.'],
+          ['Posso lançar despesas manualmente?', 'Sim. Use Financeiro para registrar custos, taxas, manutenção e outras saídas.']
+        ]
+      },
+      {
+        theme: 'Conta e cobrança',
+        items: [
+          ['Como funciona o teste grátis de 15 dias?', 'Você pode testar os recursos principais durante o trial antes de ativar a assinatura.'],
+          ['O que acontece se o pagamento atrasar?', 'A conta pode ficar limitada até a regularização da cobrança.'],
+          ['Posso cancelar minha assinatura?', 'Sim. A área Assinatura e Cobrança reúne as ações disponíveis para a sua conta.']
+        ]
+      }
+    ];
 
     function setActiveNav(section) {
       navButtons.forEach(button => {
@@ -251,7 +297,95 @@
         loadSystemStatus();
       }
       renderOnboardingProgressCard();
-      renderPropertySetupAssistant();
+    }
+
+    function renderHelpFaq() {
+      if (!helpFaqList || helpFaqList.dataset.rendered === 'true') return;
+
+      helpFaqList.innerHTML = helpFaqGroups.map((group, groupIndex) => `
+        <section class="help-faq-group">
+          <h3>${escapeHtml(group.theme)}</h3>
+          <div class="help-faq-items">
+            ${group.items.map(([question, answer], itemIndex) => {
+              const id = `help-faq-${groupIndex}-${itemIndex}`;
+              return `
+                <div class="help-faq-item">
+                  <button type="button" class="help-faq-question" aria-expanded="false" aria-controls="${id}">
+                    <span>${escapeHtml(question)}</span>
+                    <strong>+</strong>
+                  </button>
+                  <div class="help-faq-answer hidden" id="${id}">
+                    ${escapeHtml(answer)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      `).join('');
+      helpFaqList.dataset.rendered = 'true';
+    }
+
+    function setHelpMenuOpen(open) {
+      if (!helpQuickMenu || !helpFloatingBtn) return;
+      helpQuickMenu.classList.toggle('hidden', !open);
+      helpFloatingBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function helpModalByType(type) {
+      if (type === 'faq') return helpFaqModal;
+      if (type === 'support') return helpSupportModal;
+      if (type === 'suggestion') return helpSuggestionModal;
+      return null;
+    }
+
+    function openHelpModal(type) {
+      if (type === 'faq') renderHelpFaq();
+      setHelpMenuOpen(false);
+      const modal = helpModalByType(type);
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeHelpModal(type) {
+      const modal = helpModalByType(type);
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function openSupportMailto(kind, subject, body) {
+      const mailSubject = encodeURIComponent(subject);
+      const userLine = loggedUser ? `\n\nUsuário: ${loggedUser.name || '-'} <${loggedUser.email || '-'}>` : '';
+      const mailBody = encodeURIComponent(`${body}${userLine}`);
+      window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${mailSubject}&body=${mailBody}`;
+    }
+
+    function sendSupportRequest() {
+      const subject = document.getElementById('supportSubject')?.value.trim() || '';
+      const message = document.getElementById('supportMessage')?.value.trim() || '';
+
+      if (!subject || !message) {
+        showMessage('supportFallbackMessage', 'Preencha assunto e mensagem para enviar ao suporte.', 'error');
+        return;
+      }
+
+      openSupportMailto('support', `[Suporte StayFlow] ${subject}`, message);
+      showMessage('supportFallbackMessage', `Abrimos seu e-mail para enviar a solicitação para ${SUPPORT_EMAIL}.`, 'success');
+    }
+
+    function sendSuggestion() {
+      const suggestion = document.getElementById('suggestionText')?.value.trim() || '';
+      const impact = document.getElementById('suggestionImpact')?.value.trim() || '';
+
+      if (!suggestion) {
+        showMessage('suggestionFallbackMessage', 'Descreva a melhoria que você gostaria de sugerir.', 'error');
+        return;
+      }
+
+      const body = [
+        `Sugestão: ${suggestion}`,
+        impact ? `Impacto esperado: ${impact}` : ''
+      ].filter(Boolean).join('\n\n');
+      openSupportMailto('suggestion', '[Sugestão StayFlow] Melhoria de produto', body);
+      showMessage('suggestionFallbackMessage', `Abrimos seu e-mail para enviar a sugestão para ${SUPPORT_EMAIL}.`, 'success');
     }
 
     function updateSummaryMirrors(data) {
@@ -601,75 +735,12 @@
       const percent = Math.round((completed / steps.length) * 100);
 
       if (onboardingProgressCardText) {
-        onboardingProgressCardText.textContent = `${completed} de ${steps.length} etapas concluídas`;
+        onboardingProgressCardText.textContent = `Configuração pendente · ${completed}/${steps.length} etapas concluídas`;
       }
       if (onboardingProgressCardBar) {
         onboardingProgressCardBar.style.width = `${percent}%`;
       }
       onboardingProgressCard.classList.remove('hidden');
-    }
-
-    function getPropertyAssistantSteps(property) {
-      const hasProperty = Boolean(property);
-      const hasIcal = hasProperty && propertyIcalFeeds(property).length > 0;
-      const hasInboundAlias = Boolean(currentUserDetails?.inbound_alias || loggedUser?.inbound_alias);
-      const hasAutomation = hasProperty && messageAutomations.some(automation => (
-        Number(automation.property_id) === Number(property.id)
-        && (automation.is_active || automation.status === 'active')
-      ));
-      const hasImportedReservation = hasProperty && reservations.some(reservation => (
-        Number(reservation.property_id) === Number(property.id)
-        && !isBlockingReservationSource(reservation.source)
-      ));
-
-      return [
-        { title: 'Criar imóvel', description: 'Cadastre dados básicos e link do anúncio.', done: hasProperty, section: 'properties' },
-        { title: 'Conectar iCal', description: 'Adicione Airbnb, Booking ou outros canais por feed iCal.', done: hasIcal, section: 'properties' },
-        { title: 'Configurar e-mail inbound', description: 'Use o e-mail do StayFlow nas notificações das plataformas.', done: hasInboundAlias, section: 'my-info' },
-        { title: 'Criar primeira automação', description: 'Ative um template para pré-check-in, check-in ou checkout.', done: hasAutomation, section: 'messages' },
-        { title: 'Ver primeira reserva importada', description: 'Sincronize o calendário e confira a reserva no painel.', done: hasImportedReservation, section: 'reservations' }
-      ];
-    }
-
-    function renderPropertySetupAssistant() {
-      if (!propertyAssistantSteps) return;
-
-      const property = properties.find(item => Number(item.id) === Number(selectedPropertyId)) || properties[0] || null;
-      const steps = getPropertyAssistantSteps(property);
-      const completed = steps.filter(step => step.done).length;
-      const percent = Math.round((completed / steps.length) * 100);
-      const nextStep = steps.find(step => !step.done) || {
-        title: 'Imóvel pronto para operar',
-        description: 'A configuração principal deste imóvel está completa.',
-        section: 'operations'
-      };
-
-      if (propertyAssistantTitle) {
-        propertyAssistantTitle.textContent = property
-          ? `Setup guiado: ${property.name}`
-          : 'Configure um imóvel para começar';
-      }
-
-      if (propertyAssistantSubtitle) {
-        propertyAssistantSubtitle.textContent = property
-          ? `${completed} de ${steps.length} etapas concluídas para este imóvel.`
-          : 'Crie o primeiro imóvel para liberar o checklist guiado.';
-      }
-
-      if (propertyAssistantProgressBar) propertyAssistantProgressBar.style.width = `${percent}%`;
-
-      if (propertyAssistantCta) {
-        propertyAssistantCta.textContent = nextStep.done ? 'Ver operação' : nextStep.title;
-        propertyAssistantCta.dataset.assistantSection = nextStep.section;
-      }
-
-      propertyAssistantSteps.innerHTML = steps.map((step, index) => `
-        <button type="button" class="property-assistant-step ${step.done ? 'completed' : step === nextStep ? 'current' : 'pending'}" data-assistant-section="${step.section}">
-          <span>${step.done ? '&check;' : index + 1}</span>
-          <strong>${escapeHtml(step.title)}</strong>
-          <small>${escapeHtml(step.description)}</small>
-        </button>
-      `).join('');
     }
 
     async function copyTextToClipboard(text) {
@@ -3490,7 +3561,6 @@ function renderPropertyList() {
       'Cadastre seu primeiro imóvel para começar',
       'Esse é o primeiro passo para conectar iCal, receber reservas e ativar automações.'
     );
-    renderPropertySetupAssistant();
     return;
   }
 
@@ -3542,7 +3612,6 @@ function renderPropertyList() {
     propertyList.appendChild(div);
   });
 
-  renderPropertySetupAssistant();
 }
 
     function renderPropertySelects() {
@@ -4827,14 +4896,6 @@ function renderPropertyList() {
         showSection(button.dataset.sectionJump);
       });
     });
-    propertyAssistantCta?.addEventListener('click', () => {
-      showSection(propertyAssistantCta.dataset.assistantSection || 'properties');
-    });
-    propertyAssistantSteps?.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-assistant-section]');
-      if (!button) return;
-      showSection(button.dataset.assistantSection || 'properties');
-    });
     continueOnboardingCardBtn?.addEventListener('click', () => openOnboarding(getSuggestedOnboardingStep()));
     hideOnboardingCardBtn?.addEventListener('click', hideSetupProgressCard);
 
@@ -4981,6 +5042,40 @@ function renderPropertyList() {
     recalculateBillingBtn?.addEventListener('click', recalculateBilling);
     refreshSystemStatusBtn?.addEventListener('click', () => loadSystemStatus());
     accessRestrictionCta?.addEventListener('click', () => showSection('billing'));
+    helpFloatingBtn?.addEventListener('click', () => {
+      setHelpMenuOpen(helpQuickMenu?.classList.contains('hidden') !== false);
+    });
+    helpQuickMenu?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-help-open]');
+      if (!button) return;
+      openHelpModal(button.dataset.helpOpen);
+    });
+    document.querySelectorAll('[data-help-close]').forEach(button => {
+      button.addEventListener('click', () => closeHelpModal(button.dataset.helpClose));
+    });
+    [helpFaqModal, helpSupportModal, helpSuggestionModal].forEach(modal => {
+      modal?.addEventListener('click', (event) => {
+        if (event.target === modal) modal.classList.add('hidden');
+      });
+    });
+    helpFaqList?.addEventListener('click', (event) => {
+      const button = event.target.closest('.help-faq-question');
+      if (!button) return;
+      const answer = document.getElementById(button.getAttribute('aria-controls'));
+      const isOpen = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      button.querySelector('strong').textContent = isOpen ? '+' : '−';
+      answer?.classList.toggle('hidden', isOpen);
+    });
+    sendSupportRequestBtn?.addEventListener('click', sendSupportRequest);
+    sendSuggestionBtn?.addEventListener('click', sendSuggestion);
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      setHelpMenuOpen(false);
+      closeHelpModal('faq');
+      closeHelpModal('support');
+      closeHelpModal('suggestion');
+    });
     if (messageLogFilters) {
       messageLogFilters.addEventListener('click', (event) => {
         const button = event.target.closest('[data-log-filter]');

@@ -1189,14 +1189,43 @@
       gap: 18px;
       margin-top: 26px;
     }
-    .faq-item h3 {
-      margin: 0 0 10px;
-      font-size: 1.1rem;
+    .faq-theme {
+      padding: 18px;
+    }
+    .faq-theme h3 {
+      margin: 0 0 12px;
+      color: #dbeafe;
+      font-size: 1.05rem;
+    }
+    .faq-item {
+      border-top: 1px solid rgba(148, 163, 184, .12);
+      padding: 10px 0;
+    }
+    .faq-item:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .faq-item summary {
+      cursor: pointer;
+      color: #f8fafc;
+      font-weight: 800;
+      list-style: none;
+    }
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+    .faq-item summary::after {
+      content: "+";
+      float: right;
+      color: #93c5fd;
+    }
+    .faq-item[open] summary::after {
+      content: "−";
     }
     .faq-item p {
-      margin: 0;
+      margin: 8px 0 0;
       color: var(--muted);
-      line-height: 1.75;
+      line-height: 1.6;
     }
 
     .cta-box {
@@ -1882,29 +1911,35 @@
         </div>
 
         <div class="faq-grid">
-          <div class="card faq-item">
-            <h3>O que é o StayFlow?</h3>
-            <p>O StayFlow é um software para Airbnb e aluguel por temporada que centraliza reservas, calendários, mensagens, financeiro e cobrança em um painel simples.</p>
+          <div class="card faq-theme">
+            <h3>Começando</h3>
+            <details class="faq-item"><summary>Como cadastrar meu primeiro imóvel?</summary><p>Crie sua conta, abra Imóveis e preencha os dados principais do imóvel.</p></details>
+            <details class="faq-item"><summary>Como conectar Airbnb ou Booking via iCal?</summary><p>Copie o link iCal da plataforma e cole no imóvel correspondente.</p></details>
+            <details class="faq-item"><summary>Quanto tempo leva para sincronizar as reservas?</summary><p>Normalmente alguns minutos após salvar o iCal.</p></details>
           </div>
-          <div class="card faq-item">
-            <h3>O StayFlow sincroniza Airbnb e Booking?</h3>
-            <p>Sim. O StayFlow usa links iCal para sincronizar calendário Airbnb, Booking e reservas diretas em uma agenda centralizada.</p>
+          <div class="card faq-theme">
+            <h3>Automação</h3>
+            <details class="faq-item"><summary>Como criar uma mensagem automática?</summary><p>No app, escolha imóvel, gatilho, horário e salve o modelo.</p></details>
+            <details class="faq-item"><summary>As mensagens são enviadas por WhatsApp ou e-mail?</summary><p>Nesta versão, o fluxo é focado em e-mail. WhatsApp ainda não está integrado.</p></details>
+            <details class="faq-item"><summary>Quando uma mensagem automática é enviada?</summary><p>Ela segue o gatilho configurado, como check-in, checkout ou dias antes da reserva.</p></details>
           </div>
-          <div class="card faq-item">
-            <h3>Preciso de API do Airbnb para começar?</h3>
-            <p>Não. O fluxo inicial usa cadastro de imóvel, links iCal e e-mail do StayFlow para centralizar eventos importantes sem setup pesado.</p>
+          <div class="card faq-theme">
+            <h3>Reservas</h3>
+            <details class="faq-item"><summary>Por que uma reserva não apareceu?</summary><p>Confira se o iCal está correto e se a plataforma já publicou a reserva.</p></details>
+            <details class="faq-item"><summary>O que faço se uma reserva veio duplicada?</summary><p>Verifique se o mesmo calendário foi cadastrado mais de uma vez.</p></details>
+            <details class="faq-item"><summary>Como o StayFlow ajuda a evitar conflitos de calendário?</summary><p>Ele centraliza reservas importadas por iCal para facilitar a conferência.</p></details>
           </div>
-          <div class="card faq-item">
-            <h3>Para quem o StayFlow é indicado?</h3>
-            <p>Ele é indicado para anfitriões, gestores e pequenas operações que querem organizar imóveis de temporada sem depender de planilhas e conferências manuais.</p>
+          <div class="card faq-theme">
+            <h3>Financeiro</h3>
+            <details class="faq-item"><summary>O StayFlow calcula lucro?</summary><p>Sim. O painel cruza receitas e despesas registradas.</p></details>
+            <details class="faq-item"><summary>Como uma receita é vinculada a uma reserva?</summary><p>Ao lançar receita, selecione a reserva relacionada quando ela estiver disponível.</p></details>
+            <details class="faq-item"><summary>Posso lançar despesas manualmente?</summary><p>Sim. Use Financeiro para registrar custos, taxas e manutenção.</p></details>
           </div>
-          <div class="card faq-item">
-            <h3>O StayFlow automatiza mensagens para hóspedes?</h3>
-            <p>Sim. Você pode organizar automações de mensagens, acompanhar disparos e reduzir comunicações repetitivas com hóspedes.</p>
-          </div>
-          <div class="card faq-item">
-            <h3>Como funciona a cobrança?</h3>
-            <p>Depois do trial de 15 dias, o plano base custa R$ 49,90 por mês e inclui 1 imóvel. Cada imóvel adicional custa R$ 29,90 por mês.</p>
+          <div class="card faq-theme">
+            <h3>Conta e cobrança</h3>
+            <details class="faq-item"><summary>Como funciona o teste grátis de 15 dias?</summary><p>Você testa os recursos principais antes de ativar a assinatura.</p></details>
+            <details class="faq-item"><summary>O que acontece se o pagamento atrasar?</summary><p>A conta pode ficar limitada até a regularização da cobrança.</p></details>
+            <details class="faq-item"><summary>Posso cancelar minha assinatura?</summary><p>Sim. A área Assinatura e Cobrança reúne as ações disponíveis.</p></details>
           </div>
         </div>
       </div>
@@ -1981,42 +2016,122 @@
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "O que é o StayFlow?",
+              "name": "Como cadastrar meu primeiro imóvel?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "O StayFlow é um software para Airbnb e aluguel por temporada que centraliza reservas, calendários, mensagens, financeiro e cobrança em um painel simples."
+                "text": "Crie sua conta, abra Imóveis e preencha os dados principais do imóvel."
               }
             },
             {
               "@type": "Question",
-              "name": "O StayFlow sincroniza Airbnb e Booking?",
+              "name": "Como conectar Airbnb ou Booking via iCal?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Sim. O StayFlow usa links iCal para sincronizar calendário Airbnb, Booking e reservas diretas em uma agenda centralizada."
+                "text": "Copie o link iCal da plataforma e cole no imóvel correspondente."
               }
             },
             {
               "@type": "Question",
-              "name": "Preciso de API do Airbnb para começar?",
+              "name": "Quanto tempo leva para sincronizar as reservas?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Não. O fluxo inicial usa cadastro de imóvel, links iCal e e-mail do StayFlow para centralizar eventos importantes sem setup pesado."
+                "text": "Normalmente alguns minutos após salvar o iCal."
               }
             },
             {
               "@type": "Question",
-              "name": "Para quem o StayFlow é indicado?",
+              "name": "Como criar uma mensagem automática?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Ele é indicado para anfitriões, gestores e pequenas operações que querem organizar imóveis de temporada sem depender de planilhas e conferências manuais."
+                "text": "No app, escolha imóvel, gatilho, horário e salve o modelo."
               }
             },
             {
               "@type": "Question",
-              "name": "O StayFlow automatiza mensagens para hóspedes?",
+              "name": "As mensagens são enviadas por WhatsApp ou e-mail?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Sim. Você pode organizar automações de mensagens, acompanhar disparos e reduzir comunicações repetitivas com hóspedes."
+                "text": "Nesta versão, o fluxo é focado em e-mail. WhatsApp ainda não está integrado."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Quando uma mensagem automática é enviada?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ela segue o gatilho configurado, como check-in, checkout ou dias antes da reserva."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Por que uma reserva não apareceu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Confira se o iCal está correto e se a plataforma já publicou a reserva."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "O que faço se uma reserva veio duplicada?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Verifique se o mesmo calendário foi cadastrado mais de uma vez."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Como o StayFlow ajuda a evitar conflitos de calendário?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ele centraliza reservas importadas por iCal para facilitar a conferência."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "O StayFlow calcula lucro?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sim. O painel cruza receitas e despesas registradas."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Como uma receita é vinculada a uma reserva?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ao lançar receita, selecione a reserva relacionada quando ela estiver disponível."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Posso lançar despesas manualmente?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sim. Use Financeiro para registrar custos, taxas e manutenção."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Como funciona o teste grátis de 15 dias?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Você testa os recursos principais antes de ativar a assinatura."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "O que acontece se o pagamento atrasar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A conta pode ficar limitada até a regularização da cobrança."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Posso cancelar minha assinatura?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sim. A área Assinatura e Cobrança reúne as ações disponíveis."
               }
             }
           ]

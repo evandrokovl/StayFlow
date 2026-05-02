@@ -159,37 +159,15 @@
               </div>
             </div>
 
-            <div class="setup-progress-card hidden" id="onboardingProgressCard">
-              <div class="setup-progress-main">
-                <div>
-                  <div class="brand-kicker">Configuração pendente</div>
-                  <h3>Configuração pendente</h3>
-                  <p>Complete a configuração para automatizar suas reservas.</p>
-                </div>
-                <div class="setup-progress-meta">
-                  <strong id="onboardingProgressCardText">0 de 4 etapas concluídas</strong>
-                  <div class="setup-progress-track" aria-hidden="true">
-                    <span id="onboardingProgressCardBar"></span>
-                  </div>
+            <div class="setup-progress-bar hidden" id="onboardingProgressCard">
+              <div class="setup-progress-line">
+                <span id="onboardingProgressCardText">Configuração pendente · 0/4 etapas concluídas</span>
+                <div class="setup-progress-track" aria-hidden="true">
+                  <span id="onboardingProgressCardBar"></span>
                 </div>
               </div>
-              <div class="setup-progress-actions">
-                <button type="button" id="continueOnboardingCardBtn">Continuar configuração</button>
-                <button type="button" class="auth-link-button" id="hideOnboardingCardBtn">Ocultar</button>
-              </div>
-            </div>
-
-            <div class="property-assistant-card" id="propertySetupAssistant">
-              <div class="section-heading">
-                <div>
-                  <div class="brand-kicker">Assistente por imóvel</div>
-                  <h3 id="propertyAssistantTitle">Configure um imóvel para começar</h3>
-                  <div class="small" id="propertyAssistantSubtitle">O progresso acompanha dados reais do painel e não bloqueia o uso do sistema.</div>
-                </div>
-                <button type="button" class="btn-secondary" id="propertyAssistantCta">Abrir próxima etapa</button>
-              </div>
-              <div class="property-assistant-progress"><span id="propertyAssistantProgressBar"></span></div>
-              <div class="property-assistant-steps" id="propertyAssistantSteps"></div>
+              <button type="button" class="setup-progress-continue" id="continueOnboardingCardBtn">Continuar</button>
+              <button type="button" class="setup-progress-close" id="hideOnboardingCardBtn" aria-label="Ocultar configuração pendente">×</button>
             </div>
 
             <div class="dashboard-kpi-grid">
@@ -1179,6 +1157,79 @@
               </div>
             </div>
           </section>
+        </div>
+
+        <div class="help-widget" id="helpWidget">
+          <button type="button" class="help-floating-btn" id="helpFloatingBtn" aria-expanded="false" aria-controls="helpQuickMenu">? Ajuda</button>
+          <div class="help-quick-menu hidden" id="helpQuickMenu" aria-label="Menu de ajuda">
+            <button type="button" data-help-open="faq">Ver FAQ</button>
+            <button type="button" data-help-open="support">Falar com suporte</button>
+            <button type="button" data-help-open="suggestion">Sugerir melhoria</button>
+          </div>
+        </div>
+
+        <div class="help-modal hidden" id="helpFaqModal" role="dialog" aria-modal="true" aria-labelledby="helpFaqTitle">
+          <div class="help-modal-card help-faq-card">
+            <div class="help-modal-header">
+              <div>
+                <div class="brand-kicker">Central de ajuda</div>
+                <h2 id="helpFaqTitle">FAQ StayFlow</h2>
+                <p>Respostas rápidas para operar reservas, automações, financeiro e conta.</p>
+              </div>
+              <button type="button" class="help-modal-close" data-help-close="faq" aria-label="Fechar FAQ">×</button>
+            </div>
+            <div class="help-faq-list" id="helpFaqList"></div>
+          </div>
+        </div>
+
+        <div class="help-modal hidden" id="helpSupportModal" role="dialog" aria-modal="true" aria-labelledby="helpSupportTitle">
+          <div class="help-modal-card">
+            <div class="help-modal-header">
+              <div>
+                <div class="brand-kicker">Suporte</div>
+                <h2 id="helpSupportTitle">Falar com suporte</h2>
+                <p>Descreva o que aconteceu para prepararmos o atendimento.</p>
+              </div>
+              <button type="button" class="help-modal-close" data-help-close="support" aria-label="Fechar suporte">×</button>
+            </div>
+            <div class="grid">
+              <label class="form-field">
+                <span>Assunto</span>
+                <input type="text" id="supportSubject" placeholder="Ex: Reserva não sincronizou" />
+              </label>
+              <label class="form-field">
+                <span>Mensagem</span>
+                <textarea id="supportMessage" placeholder="Conte em poucas linhas o que você precisa resolver."></textarea>
+              </label>
+              <button type="button" id="sendSupportRequestBtn">Enviar solicitação</button>
+              <div id="supportFallbackMessage"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-modal hidden" id="helpSuggestionModal" role="dialog" aria-modal="true" aria-labelledby="helpSuggestionTitle">
+          <div class="help-modal-card">
+            <div class="help-modal-header">
+              <div>
+                <div class="brand-kicker">Produto</div>
+                <h2 id="helpSuggestionTitle">Sugerir melhoria</h2>
+                <p>Envie uma ideia simples para evoluirmos o StayFlow.</p>
+              </div>
+              <button type="button" class="help-modal-close" data-help-close="suggestion" aria-label="Fechar sugestão">×</button>
+            </div>
+            <div class="grid">
+              <label class="form-field">
+                <span>Qual melhoria você gostaria de sugerir?</span>
+                <textarea id="suggestionText" placeholder="Ex: Quero filtrar reservas por canal no dashboard."></textarea>
+              </label>
+              <label class="form-field">
+                <span>Impacto esperado ou problema resolvido (opcional)</span>
+                <textarea id="suggestionImpact" placeholder="Ex: Isso reduziria conferências manuais no fim do mês."></textarea>
+              </label>
+              <button type="button" id="sendSuggestionBtn">Enviar sugestão</button>
+              <div id="suggestionFallbackMessage"></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
