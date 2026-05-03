@@ -29,55 +29,31 @@ const errorMiddleware = require('./middlewares/errorMiddleware');
 const app = express();
 
 app.disable('x-powered-by');
-app.use(requestIdMiddleware);
 
-const allowedCorsOrigins = Array.from(new Set([
-  'https://app.stayflowapp.online',
-  'https://www.stayflowapp.online',
+const allowedCorsOrigins = [
   'https://stayflowapp.online',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  ...(env.IS_PRODUCTION ? [] : ['null']),
-  ...env.CORS_ORIGINS
-]));
+  'https://www.stayflowapp.online',
+  'https://app.stayflowapp.online'
+];
 
 const corsOptions = {
-  origin(origin, callback) {
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (allowedCorsOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Origem nao permitida pelo CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
-  exposedHeaders: ['X-Request-Id'],
+  origin: allowedCorsOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200
 };
 
-function setCorsHeaders(req, res, next) {
-  const origin = req.headers.origin;
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
-  if (origin && allowedCorsOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Vary', 'Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', corsOptions.methods.join(','));
-    res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(','));
-    res.header('Access-Control-Expose-Headers', corsOptions.exposedHeaders.join(','));
-  }
+app.use((req, res, next) => {
+  console.log('Origin:', req.headers.origin);
+  next();
+});
 
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-
-  return next();
-}
+app.use(express.json({ limit: '2mb' }));
+app.use(requestIdMiddleware);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -92,11 +68,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
-
-app.use(setCorsHeaders);
-app.use(cors(corsOptions));
-
-app.use(express.json({ limit: '2mb' }));
 
 app.use('/auth', authRoutes);
 app.use('/ical', icalRoutes);
