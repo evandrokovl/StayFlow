@@ -3,9 +3,9 @@ const asaasService = require('./asaasService');
 const logger = require('../utils/logger');
 
 const PLAN = {
-  code: 'STAYFLOW_BASE',
-  name: 'StayFlow Base',
-  basePrice: 49.90,
+  code: 'STAYFLOW_STARTER',
+  name: 'StayFlow Starter',
+  basePrice: 19.90,
   includedProperties: 1,
   additionalPropertyPrice: 29.90,
   currency: 'BRL',
@@ -357,13 +357,28 @@ async function recalculateUserPlan(userId) {
     `
     UPDATE user_billing
     SET
+      plan_code = ?,
+      plan_name = ?,
+      base_price = ?,
+      included_properties = ?,
+      additional_property_price = ?,
       active_properties_count = ?,
       additional_properties_count = ?,
       calculated_amount = ?,
       updated_at = NOW()
     WHERE user_id = ?
     `,
-    [plan.activePropertiesCount, plan.additionalPropertiesCount, plan.calculatedAmount, userId]
+    [
+      PLAN.code,
+      PLAN.name,
+      PLAN.basePrice,
+      PLAN.includedProperties,
+      PLAN.additionalPropertyPrice,
+      plan.activePropertiesCount,
+      plan.additionalPropertiesCount,
+      plan.calculatedAmount,
+      userId
+    ]
   );
 
   await pool.query(

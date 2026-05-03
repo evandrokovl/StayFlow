@@ -3111,7 +3111,7 @@
       const nextDate = subscription.next_due_date || subscription.remote_next_due_date || billing.next_billing_date;
       const nextAmount = subscription.value || currentAmount;
 
-      setText('billingPlanName', billing.plan_name || 'StayFlow Base');
+      setText('billingPlanName', billing.plan_name || 'StayFlow Starter');
       setText('billingPlanStatus', billingStatusLabel(planStatus));
       setText('billingTrialDays', trial.days_remaining == null ? '-' : String(trial.days_remaining));
       setText('billingTrialEndsAt', formatBillingDate(trial.ends_at || billing.trial_ends_at));

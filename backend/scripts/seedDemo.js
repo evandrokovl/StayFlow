@@ -39,7 +39,7 @@ async function ensureDemoUser(connection) {
         trial_starts_at = COALESCE(trial_starts_at, NOW()),
         trial_ends_at = DATE_ADD(NOW(), INTERVAL 15 DAY),
         access_expires_at = DATE_ADD(NOW(), INTERVAL 15 DAY),
-        current_plan_amount = 49.90
+        current_plan_amount = 19.90
       WHERE id = ?
       `,
       ['Usuario Demo StayFlow', DEMO_CPF, passwordHash, 'demo-stayflow', users[0].id]
@@ -61,7 +61,7 @@ async function ensureDemoUser(connection) {
       trial_ends_at,
       access_expires_at,
       current_plan_amount
-    ) VALUES (?, ?, ?, ?, ?, 'TRIAL', NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 49.90)
+    ) VALUES (?, ?, ?, ?, ?, 'TRIAL', NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 19.90)
     `,
     ['Usuario Demo StayFlow', DEMO_EMAIL, DEMO_CPF, passwordHash, 'demo-stayflow']
   );
@@ -80,9 +80,14 @@ async function ensureUserBilling(connection, userId) {
       `
       UPDATE user_billing
       SET
+        plan_code = 'STAYFLOW_STARTER',
+        plan_name = 'StayFlow Starter',
+        base_price = 19.90,
+        included_properties = 1,
+        additional_property_price = 29.90,
         active_properties_count = 2,
         additional_properties_count = 1,
-        calculated_amount = 79.80,
+        calculated_amount = 49.80,
         subscription_status = 'TRIAL',
         access_status = 'FULL',
         trial_started_at = COALESCE(trial_started_at, NOW()),
@@ -99,6 +104,11 @@ async function ensureUserBilling(connection, userId) {
     `
     INSERT INTO user_billing (
       user_id,
+      plan_code,
+      plan_name,
+      base_price,
+      included_properties,
+      additional_property_price,
       active_properties_count,
       additional_properties_count,
       calculated_amount,
@@ -107,7 +117,7 @@ async function ensureUserBilling(connection, userId) {
       next_billing_date,
       subscription_status,
       access_status
-    ) VALUES (?, 2, 1, 79.80, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 'TRIAL', 'FULL')
+    ) VALUES (?, 'STAYFLOW_STARTER', 'StayFlow Starter', 19.90, 1, 29.90, 2, 1, 49.80, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 'TRIAL', 'FULL')
     `,
     [userId]
   );

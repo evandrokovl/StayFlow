@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { srcPath, resetBackendModules, mockModule, withRoute, requestJson } = require('./helpers');
 
-test('billing calcula plano base e imoveis adicionais', () => {
+test('billing calcula Plano Starter e imoveis adicionais', () => {
   resetBackendModules();
 
   mockModule(srcPath('config', 'database.js'), {});
@@ -15,11 +15,11 @@ test('billing calcula plano base e imoveis adicionais', () => {
 
   const billingService = require(srcPath('services', 'billingService.js'));
 
-  assert.equal(billingService.calculatePlanValue(0).calculatedAmount, 49.9);
+  assert.equal(billingService.calculatePlanValue(0).calculatedAmount, 19.9);
   assert.equal(billingService.calculatePlanValue(0).additionalPropertiesCount, 0);
-  assert.equal(billingService.calculatePlanValue(1).calculatedAmount, 49.9);
+  assert.equal(billingService.calculatePlanValue(1).calculatedAmount, 19.9);
   assert.equal(billingService.calculatePlanValue(1).additionalPropertiesCount, 0);
-  assert.equal(billingService.calculatePlanValue(3).calculatedAmount, 109.7);
+  assert.equal(billingService.calculatePlanValue(3).calculatedAmount, 79.7);
   assert.equal(billingService.calculatePlanValue(3).additionalPropertiesCount, 2);
 
   resetBackendModules();
