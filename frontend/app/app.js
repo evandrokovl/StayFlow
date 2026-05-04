@@ -403,7 +403,7 @@
     }
 
     function showFriendlyError(targetId, error, fallback) {
-      showMessage(targetId, error?.message || fallback || 'Nao foi possivel concluir a acao agora.', 'error');
+      showMessage(targetId, error?.message || fallback || 'Não foi possível concluir a ação agora.', 'error');
     }
 
     function handleSessionExpired(message) {
@@ -3205,7 +3205,7 @@
       const labels = {
         ok: 'OK',
         degraded: 'Degraded',
-        not_configured: 'Nao configurado'
+        not_configured: 'Não configurado'
       };
 
       return labels[normalized] || (status || '-');
@@ -3294,7 +3294,7 @@
       try {
         const data = await apiFetch('/status', {
           auth: false,
-          errorMessage: 'Nao foi possivel carregar o status do sistema.'
+          errorMessage: 'Não foi possível carregar o status do sistema.'
         });
 
         renderSystemStatus(data);
@@ -3304,7 +3304,7 @@
       } catch (error) {
         showMessage('systemStatusMessage', error.message || 'Erro ao conectar com o backend.', 'error');
         if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="4">Nao foi possivel carregar o status.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4">Não foi possível carregar o status.</td></tr>';
         }
       } finally {
         setButtonLoading(refreshSystemStatusBtn, false);
@@ -3401,7 +3401,7 @@
 
       try {
         const data = await apiFetch('/properties', {
-          errorMessage: 'Nao foi possivel carregar os imoveis.'
+          errorMessage: 'Não foi possível carregar os imóveis.'
         });
 
         properties = data;
@@ -3454,7 +3454,7 @@
           renderMessageLogs();
         }
       } catch (error) {
-        showFriendlyError('propertyMessage', error, 'Nao foi possivel carregar os imoveis.');
+        showFriendlyError('propertyMessage', error, 'Não foi possível carregar os imóveis.');
       }
     }
 
