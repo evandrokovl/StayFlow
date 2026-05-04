@@ -418,6 +418,49 @@
       line-height: 1.7;
       margin-bottom: 20px;
     }
+    .landing-cta-block {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 28px;
+      text-align: center;
+    }
+    .landing-cta-block .btn,
+    .landing-cta-block .btn-secondary {
+      width: 100%;
+      max-width: 360px;
+    }
+    .cta-microcopy {
+      color: #98afd0;
+      font-size: .92rem;
+      line-height: 1.45;
+    }
+    .sticky-mobile-cta {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 80;
+      display: grid;
+      gap: 4px;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(8, 16, 29, .92);
+      border-top: 1px solid rgba(148, 163, 184, .14);
+      box-shadow: 0 -18px 44px rgba(2, 8, 23, .42);
+      backdrop-filter: blur(18px);
+      text-align: center;
+    }
+    .sticky-mobile-cta .btn {
+      min-height: 50px;
+      width: 100%;
+      box-shadow: 0 16px 34px rgba(37, 99, 235, .38);
+    }
+    .sticky-mobile-cta span {
+      color: #98afd0;
+      font-size: .78rem;
+      line-height: 1.2;
+    }
     .proof {
       display: flex;
       flex-wrap: wrap;
@@ -464,6 +507,131 @@
       background: radial-gradient(circle at top left, rgba(56, 189, 248, .12), transparent 24%),
                   radial-gradient(circle at bottom right, rgba(139, 92, 246, .1), transparent 22%);
       pointer-events: none;
+    }
+    .hero-product-placeholder {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(8, 15, 29, .72);
+      border: 1px solid rgba(148, 163, 184, .12);
+    }
+    .hero-product-placeholder strong {
+      font-size: 1.05rem;
+      color: #f8fafc;
+    }
+    .hero-product-placeholder span {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .hero-product-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, .86);
+      border: 1px solid rgba(148, 163, 184, .1);
+      color: #dbeafe;
+      font-weight: 800;
+      font-size: .92rem;
+    }
+    .hero-product-row small {
+      color: #93c5fd;
+      font-weight: 900;
+    }
+
+    .social-proof {
+      padding: 48px 0;
+      background: rgba(15, 23, 42, .34);
+      border-block: 1px solid rgba(148, 163, 184, .08);
+    }
+    .social-proof .section-head {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .social-metrics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .social-metric {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(8, 15, 29, .62);
+      border: 1px solid rgba(148, 163, 184, .12);
+      text-align: center;
+    }
+    .social-metric strong {
+      display: block;
+      color: #f8fafc;
+      font-size: 1.65rem;
+      line-height: 1;
+      margin-bottom: 7px;
+    }
+    .social-metric span {
+      color: #a9bbd5;
+      line-height: 1.45;
+      font-size: .95rem;
+    }
+    .social-rating {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      margin: 0 0 22px;
+      color: #facc15;
+      font-size: 1.1rem;
+    }
+    .social-rating span {
+      color: #b9c8dc;
+      font-size: .92rem;
+    }
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .testimonial-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(8, 15, 29, .68);
+      border: 1px solid rgba(148, 163, 184, .12);
+      box-shadow: 0 16px 34px rgba(2, 8, 23, .18);
+    }
+    .testimonial-card p {
+      margin: 0 0 16px;
+      color: #dce7f9;
+      line-height: 1.58;
+      font-size: 1rem;
+    }
+    .testimonial-person {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testimonial-avatar {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple));
+      box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
+    }
+    .testimonial-person strong {
+      display: block;
+      color: #f8fafc;
+      font-size: .98rem;
+    }
+    .testimonial-person span {
+      color: #94a3b8;
+      font-size: .9rem;
     }
     .window-bar {
       display: flex;
@@ -1259,86 +1427,571 @@
       font-size: .95rem;
     }
 
-    @media (max-width: 1080px) {
-      .hero-grid, .split, .features, .pricing, .stats, .faq-grid, .comparison, .screens-grid, .screen-dashboard, .trust-strip, .persona-grid, .use-case-grid, .proof-grid, .value-band, .pilot-proof, .inbound-highlight { grid-template-columns: 1fr; }
-      h1 { max-width: 12ch; }
-      .price-card.featured { transform: none; }
-      .dash-row { grid-template-columns: 1fr; }
-      .row, .row.head { grid-template-columns: 1fr 1fr; }
-      .nav-shell { flex-wrap: wrap; }
-      .nav-center { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
-      .nav-inner { flex-wrap: wrap; }
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
     }
-    @media (max-width: 820px) {
-      .hero { padding-top: 48px; }
-      .nav-inner {
-        align-items: flex-start;
-      }
-      .nav-shell {
-        padding: 12px;
-        border-radius: 22px;
-      }
-      .brand {
-        width: 100%;
-      }
-      .dashboard-preview { grid-template-columns: 1fr; }
-      .panel.wide { grid-column: auto; }
-      .calendar-mini { grid-template-columns: repeat(4, 1fr); }
-      .section { padding: 72px 0; }
-      .stats, .trust-strip, .persona-grid, .use-case-grid, .proof-grid { grid-template-columns: repeat(2, 1fr); }
-      .nav-center {
-        border-radius: 16px;
-        padding: 5px;
-      }
-      .nav-links a,
-      .nav-more summary {
+
+    img,
+    svg,
+    video,
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 430px;
+      padding-inline: 16px;
+    }
+
+    .navbar {
+      position: sticky;
+    }
+
+    .nav-inner {
+      padding: 10px 0;
+    }
+
+    .nav-shell {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 18px;
+    }
+
+    .brand {
+      min-width: 0;
+      justify-content: center;
+      text-align: left;
+    }
+
+    .brand small,
+    .nav-meta,
+    .nav-center,
+    .nav-actions .btn-ghost {
+      display: none;
+    }
+
+    .nav-actions,
+    .nav-actions-row {
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .nav-actions-row {
+      flex-direction: column;
+    }
+
+    .btn,
+    .btn-secondary,
+    .btn-ghost {
+      width: 100%;
+      min-height: 48px;
+      padding: 13px 16px;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .hero {
+      padding: 28px 0 36px;
+      text-align: center;
+    }
+
+    .hero-grid,
+    .split,
+    .features,
+    .pricing,
+    .stats,
+    .faq-grid,
+    .comparison,
+    .screens-grid,
+    .screen-dashboard,
+    .trust-strip,
+    .persona-grid,
+    .use-case-grid,
+    .proof-grid,
+    .value-band,
+    .pilot-proof,
+    .inbound-highlight,
+    .dashboard-preview,
+    .dash-row,
+    .row,
+    .row.head {
+      grid-template-columns: 1fr;
+    }
+
+    .eyebrow {
+      justify-content: center;
+      max-width: 100%;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      font-size: .8rem;
+      line-height: 1.35;
+    }
+
+    h1 {
+      max-width: 100%;
+      margin-bottom: 14px;
+      font-size: clamp(1.5rem, 8.1vw, 1.75rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 100%;
+      margin: 0 auto 18px;
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    .hero-trust-line,
+    .proof {
+      display: none;
+    }
+
+    .hero-card {
+      display: block;
+      margin-top: 24px;
+      padding: 14px;
+      text-align: left;
+    }
+
+    .cta-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .cta-note {
+      max-width: 30ch;
+      margin: 0 auto 14px;
+      font-size: .92rem;
+      line-height: 1.45;
+    }
+
+    .urgency-box {
+      width: 100%;
+      justify-content: center;
+      padding: 10px 12px;
+      font-size: .88rem;
+      line-height: 1.45;
+    }
+
+    .section {
+      padding: 48px 0;
+    }
+
+    .section-head {
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    .section-head h2,
+    .cta-box h2 {
+      font-size: clamp(1.45rem, 7vw, 1.75rem);
+      line-height: 1.14;
+      letter-spacing: 0;
+    }
+
+    .section-head p,
+    .cta-box p,
+    .card p,
+    .feature p,
+    .proof-card span,
+    .proof-card em,
+    .use-case-card span,
+    .persona-card span,
+    .trust-item span,
+    .faq-item p {
+      font-size: 1rem;
+      line-height: 1.58;
+    }
+
+    .card,
+    .feature,
+    .comparison-card,
+    .price-card,
+    .screen,
+    .proof-card,
+    .persona-card,
+    .use-case-card,
+    .trust-item,
+    .stat,
+    .value-panel,
+    .value-list,
+    .inbound-highlight,
+    .pilot-proof,
+    .cta-box {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 18px;
+      padding: 18px;
+      text-align: left;
+    }
+
+    .price-card.featured {
+      transform: none;
+    }
+
+    .price {
+      font-size: clamp(2rem, 12vw, 2.45rem);
+      line-height: 1.05;
+    }
+
+    .check-list div,
+    .comparison-list div,
+    .step,
+    .inbound-flow div {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .screen-header,
+    .billing-top,
+    .hero-top {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .screen-body,
+    .dashboard-preview {
+      overflow: hidden;
+    }
+
+    .side-menu {
+      display: none;
+    }
+
+    .calendar-mini {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pilot-proof .pilot-tags {
+      justify-content: flex-start;
+    }
+
+      footer {
+        padding: 24px 0 36px;
         font-size: .88rem;
-        padding-inline: 11px;
+        line-height: 1.6;
+      }
+
+      body {
+        padding-bottom: 86px;
+      }
+
+    @media (min-width: 480px) {
+      .container {
+        max-width: 480px;
+        padding-inline: 20px;
+      }
+
+      h1 {
+        font-size: clamp(1.75rem, 7.2vw, 2.15rem);
+      }
+
+      .lead {
+        font-size: 1.06rem;
+      }
+
+      .section {
+        padding: 56px 0;
+      }
+
+      .card,
+      .feature,
+      .comparison-card,
+      .price-card,
+      .screen,
+      .proof-card,
+      .persona-card,
+      .use-case-card,
+      .trust-item,
+      .stat,
+      .value-panel,
+      .value-list,
+      .inbound-highlight,
+      .pilot-proof,
+      .cta-box {
+        padding: 22px;
       }
     }
-    @media (max-width: 560px) {
-      .container { width: min(var(--container), calc(100% - 20px)); }
-      .cta-row { flex-direction: column; }
-      .nav-inner { gap: 14px; }
-      .nav-shell { padding: 12px; }
+
+    @media (min-width: 768px) {
+      .container {
+        max-width: 920px;
+        padding-inline: 24px;
+      }
+
+      .nav-shell {
+        grid-template-columns: auto 1fr;
+        align-items: center;
+      }
+
+      .brand {
+        justify-content: flex-start;
+      }
+
+      .brand small,
+      .nav-center,
+      .nav-actions .btn-ghost {
+        display: flex;
+      }
+
+      .nav-center {
+        order: 3;
+        grid-column: 1 / -1;
+        overflow-x: auto;
+        justify-content: flex-start;
+      }
+
       .nav-actions {
-        width: 100%;
-        align-items: stretch;
+        align-items: flex-end;
       }
-      .nav-links {
-        width: 100%;
-      }
-      .nav-links a,
-      .nav-more {
-        flex: 1 1 0;
-      }
-      .nav-more summary {
-        width: 100%;
-      }
+
       .nav-actions-row {
-        width: 100%;
-        flex-direction: column;
+        flex-direction: row;
       }
-      .btn, .btn-secondary, .btn-ghost { width: 100%; }
-      .nav-center { width: 100%; }
-      .nav-more-menu { right: auto; left: 0; width: min(82vw, 260px); }
-      .calendar-mini { grid-template-columns: repeat(3, 1fr); }
-      .proof-item { width: 100%; justify-content: center; }
-      .cta-box { padding: 28px 20px; }
-      .stats, .trust-strip, .persona-grid, .use-case-grid, .proof-grid { grid-template-columns: 1fr; }
-      .pilot-proof .pilot-tags { justify-content: flex-start; }
-      .screen-header, .billing-top, .hero-top { flex-direction: column; align-items: flex-start; }
-      .row, .row.head { grid-template-columns: 1fr; }
+
+      .nav-actions .btn,
+      .nav-actions .btn-ghost {
+        width: auto;
+      }
+
+      .hero {
+        padding: 56px 0 48px;
+        text-align: left;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: center;
+      }
+
       h1 {
-        font-size: clamp(2.2rem, 11vw, 3rem);
-        max-width: 100%;
-        letter-spacing: -1.2px;
+        max-width: 12ch;
+        font-size: clamp(2.45rem, 5.4vw, 3.5rem);
+        line-height: 1;
       }
+
       .lead {
-        font-size: 1rem;
+        margin-inline: 0;
+        font-size: 1.08rem;
       }
+
+      .hero-trust-line,
+      .proof {
+        display: flex;
+      }
+
       .hero-card {
-        padding: 16px;
+        display: block;
+        margin-top: 0;
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .cta-row .btn,
+      .cta-row .btn-secondary,
+      .cta-row .btn-ghost {
+        width: auto;
+      }
+
+      .landing-cta-block .btn,
+      .landing-cta-block .btn-secondary {
+        width: auto;
+        min-width: 260px;
+      }
+
+      .sticky-mobile-cta {
+        display: none;
+      }
+
+      body {
+        padding-bottom: 0;
+      }
+
+      .cta-note {
+        margin-inline: 0;
+      }
+
+      .urgency-box {
+        width: auto;
+        justify-content: flex-start;
+      }
+
+      .section {
+        padding: 72px 0;
+      }
+
+      .section-head {
+        text-align: left;
+      }
+
+      .section-head h2,
+      .cta-box h2 {
+        font-size: clamp(2rem, 4vw, 2.75rem);
+      }
+
+      .stats,
+      .features,
+      .pricing,
+      .faq-grid,
+      .trust-strip,
+      .persona-grid,
+      .use-case-grid,
+      .proof-grid,
+      .screens-grid,
+      .social-metrics,
+      .testimonial-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .split,
+      .comparison,
+      .value-band,
+      .pilot-proof,
+      .inbound-highlight {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .screen-dashboard {
+        grid-template-columns: 160px 1fr;
+      }
+
+      .side-menu {
+        display: grid;
+      }
+
+      .dashboard-preview,
+      .dash-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .panel.wide {
+        grid-column: span 2;
+      }
+
+      .calendar-mini {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card,
+      .feature,
+      .comparison-card,
+      .price-card,
+      .screen,
+      .proof-card,
+      .persona-card,
+      .use-case-card,
+      .trust-item,
+      .stat,
+      .value-panel,
+      .value-list,
+      .inbound-highlight,
+      .pilot-proof,
+      .cta-box {
+        padding: 26px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .container {
+        max-width: var(--container);
+      }
+
+      .nav-shell {
+        display: flex;
+      }
+
+      .nav-center {
+        order: initial;
+        grid-column: auto;
+        width: auto;
+        overflow: visible;
+        justify-content: center;
+      }
+
+      .hero {
+        padding: 72px 0 54px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.02fr .98fr;
+        gap: 36px;
+      }
+
+      h1 {
+        font-size: clamp(2.8rem, 5vw, 4.7rem);
+      }
+
+      .lead {
+        font-size: 1.1rem;
+      }
+
+      .section {
+        padding: 92px 0;
+      }
+
+      .stats,
+      .trust-strip,
+      .proof-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .features,
+      .persona-grid,
+      .use-case-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .screens-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .pricing {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .social-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .testimonial-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .calendar-mini {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+
+      .card,
+      .feature,
+      .comparison-card,
+      .price-card,
+      .screen,
+      .proof-card,
+      .persona-card,
+      .use-case-card,
+      .trust-item,
+      .stat,
+      .value-panel,
+      .value-list,
+      .inbound-highlight,
+      .pilot-proof,
+      .cta-box {
+        border-radius: var(--radius-lg);
       }
     }
   </style>
@@ -1374,9 +2027,9 @@
         <div class="nav-actions">
           <div class="nav-meta">Teste grátis de 15 dias</div>
           <div class="nav-actions-row">
-            <a class="btn-ghost" href="/login.html" data-track="landing_login_click">Acessar minha conta</a>
-            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar por R$19,90/mês</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
           </div>
+          <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
         </div>
       </div>
     </div>
@@ -1386,30 +2039,28 @@
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">Gestão de aluguel por temporada para pequenos anfitriões</div>
-          <h1>Pare de controlar Airbnb e Booking em planilhas.</h1>
+          <div class="eyebrow">Sistema simples para anfitriões</div>
+          <h1>Pare de perder reservas no WhatsApp</h1>
           <p class="lead">
-            Centralize reservas, calendário, mensagens e financeiro em um sistema simples para anfitriões
-            e gestores de imóveis por temporada.
+            O StayFlow reúne Airbnb, Booking e WhatsApp para você responder rápido e organizar tudo.
           </p>
 
           <div class="hero-trust-line">
-            <span>Menos troca entre Airbnb, Booking, WhatsApp e financeiro</span>
-            <span>Mais controle sobre reservas, mensagens e resultado</span>
+            <span>Reservas em um só lugar</span>
+            <span>Menos conversa perdida</span>
           </div>
 
           <div class="proof">
-            <div class="proof-item">Reservas, agenda e financeiro no mesmo lugar</div>
-            <div class="proof-item">Menos tempo alternando Airbnb, Booking e planilhas</div>
-            <div class="proof-item">Comece com 1 imóvel e cancele quando quiser</div>
+            <div class="proof-item">Airbnb, Booking e WhatsApp juntos</div>
+            <div class="proof-item">1 imóvel incluso</div>
+            <div class="proof-item">Sem cartão</div>
           </div>
 
           <div class="cta-row">
-            <a id="primary-lead-cta" class="btn" href="/app.html">Começar por R$19,90/mês</a>
-            <a class="btn-ghost" href="#telas" data-track="landing_product_preview_click">Ver o StayFlow em ação</a>
+            <a id="primary-lead-cta" class="btn" href="/app.html">Testar grátis agora</a>
           </div>
 
-          <div class="cta-note">1 imóvel incluso. Sem fidelidade. Cancele quando quiser.</div>
+          <div class="cta-note">Sem cartão. Leva menos de 1 minuto.</div>
 
           <div class="urgency-box">
             Produto em fase inicial, com condição especial para os primeiros usuários.
@@ -1417,59 +2068,91 @@
         </div>
 
         <div class="hero-card">
-          <div class="window-bar">
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-            <span class="window-dot"></span>
-          </div>
-
-          <div class="hero-top">
-            <div class="hero-logo">
-              <div class="mini-mark">S</div>
-              <div>
-                <b>StayFlow</b>
-                <span>Visão executiva da operação</span>
-              </div>
+          <div class="hero-product-placeholder" aria-label="Prévia do produto StayFlow">
+            <strong>Suas reservas organizadas em uma tela</strong>
+            <span>Placeholder da imagem do produto: dashboard com reservas, hóspedes, canais e tarefas do dia.</span>
+            <div class="hero-product-row">
+              <div>Airbnb</div>
+              <small>Nova reserva</small>
             </div>
-            <div class="status-pill">Operação sob controle</div>
-          </div>
-
-          <div class="dashboard-preview">
-            <div class="panel">
-              <div class="panel-title">Lucro do mês</div>
-              <div class="panel-value">R$ 8.740</div>
-              <div class="panel-foot">Resultado claro por imóvel e período</div>
+            <div class="hero-product-row">
+              <div>Booking</div>
+              <small>Check-in hoje</small>
             </div>
-
-            <div class="panel">
-              <div class="panel-title">Ocupação média</div>
-              <div class="panel-value">84%</div>
-              <div class="panel-foot">Agenda consolidada em tempo real</div>
-            </div>
-
-            <div class="panel wide">
-              <div class="panel-title">Tudo no mesmo lugar</div>
-              <div class="mini-bars">
-                <div class="mini-bar"><span style="width:72%"></span></div>
-                <div class="mini-bar"><span style="width:58%"></span></div>
-                <div class="mini-bar"><span style="width:34%"></span></div>
-              </div>
-              <div class="panel-foot">Reservas, mensagens, financeiro e cobrança sem alternar entre várias abas</div>
-            </div>
-
-            <div class="panel wide">
-              <div class="panel-title">Calendário unificado</div>
-              <div class="calendar-mini">
-                <div class="day">12 <span class="tag airbnb"></span></div>
-                <div class="day">13 <span class="tag airbnb"></span></div>
-                <div class="day">14 <span class="tag booking"></span></div>
-                <div class="day">15 <span class="tag booking"></span></div>
-                <div class="day">16 <span class="tag direct"></span></div>
-                <div class="day">17</div>
-                <div class="day">18</div>
-              </div>
+            <div class="hero-product-row">
+              <div>WhatsApp</div>
+              <small>Responder hóspede</small>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="social-proof" id="prova-social">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Primeiros testes</div>
+          <h2>Uma forma mais simples de cuidar das reservas.</h2>
+          <p>Referências de uso em fase inicial para mostrar o tipo de rotina que o StayFlow ajuda a organizar.</p>
+        </div>
+
+        <div class="social-metrics">
+          <div class="social-metric">
+            <strong>+127</strong>
+            <span>anfitriões já testaram o fluxo</span>
+          </div>
+          <div class="social-metric">
+            <strong>+3.842</strong>
+            <span>reservas usadas como referência de organização</span>
+          </div>
+          <div class="social-metric">
+            <strong>até 5h</strong>
+            <span>economizadas por semana em conferências manuais</span>
+          </div>
+        </div>
+
+        <div class="social-rating" aria-label="Avaliação visual">
+          <div>★★★★★</div>
+          <span>Avaliado por usuários em teste</span>
+        </div>
+
+        <div class="testimonial-grid">
+          <div class="testimonial-card">
+            <p>Eu me perdia entre WhatsApp e calendário. Com o StayFlow, ficou mais fácil ver o que precisava responder.</p>
+            <div class="testimonial-person">
+              <div class="testimonial-avatar" aria-hidden="true">M</div>
+              <div><strong>Mariana</strong><span>São Paulo</span></div>
+            </div>
+          </div>
+
+          <div class="testimonial-card">
+            <p>Antes eu conferia Airbnb e Booking várias vezes por dia. Agora consigo olhar a rotina em uma tela só.</p>
+            <div class="testimonial-person">
+              <div class="testimonial-avatar" aria-hidden="true">R</div>
+              <div><strong>Rafael</strong><span>Florianópolis</span></div>
+            </div>
+          </div>
+
+          <div class="testimonial-card">
+            <p>As reservas ficavam espalhadas e eu esquecia detalhes. O painel deixou os próximos passos mais claros.</p>
+            <div class="testimonial-person">
+              <div class="testimonial-avatar" aria-hidden="true">C</div>
+              <div><strong>Camila</strong><span>Rio de Janeiro</span></div>
+            </div>
+          </div>
+
+          <div class="testimonial-card">
+            <p>Eu usava planilha para tudo e perdia tempo atualizando. Agora a operação parece mais fácil de acompanhar.</p>
+            <div class="testimonial-person">
+              <div class="testimonial-avatar" aria-hidden="true">L</div>
+              <div><strong>Lucas</strong><span>Belo Horizonte</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="landing-cta-block">
+          <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
+          <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
         </div>
       </div>
     </section>
@@ -1544,6 +2227,11 @@
             <p>Organize automação de mensagens Airbnb, acompanhe disparos e identifique pendências de contato. Menos perguntas repetidas e mais previsibilidade.</p>
           </div>
         </div>
+
+        <div class="landing-cta-block">
+          <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
+          <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
+        </div>
       </div>
     </section>
 
@@ -1583,6 +2271,11 @@
             <span>1 imóvel incluso</span>
             <span>Cancelamento flexível</span>
           </div>
+        </div>
+
+        <div class="landing-cta-block">
+          <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
+          <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
         </div>
       </div>
     </section>
@@ -1809,9 +2502,9 @@
               </div>
             </div>
             <div class="cta-row" style="margin-top:24px;">
-              <a class="btn-secondary" href="#planos">Começar por R$19,90/mês</a>
-              <a class="btn-ghost" href="#faq">Tirar dúvidas</a>
+              <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
             </div>
+            <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
           </div>
         </div>
 
@@ -1859,7 +2552,8 @@
               <div>Financeiro e visão de resultado</div>
               <div>Sem fidelidade</div>
             </div>
-            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Começar por R$19,90/mês</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
+            <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
           </div>
 
           <div class="price-card">
@@ -1875,7 +2569,8 @@
               <div>Gestão multi-imóveis no mesmo lugar</div>
               <div>Você paga conforme crescer</div>
             </div>
-            <a class="btn-secondary" href="/app.html" data-track="landing_primary_cta_click">Criar minha conta</a>
+            <a class="btn" href="/app.html" data-track="landing_primary_cta_click">Testar grátis agora</a>
+            <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
           </div>
         </div>
       </div>
@@ -1932,13 +2627,18 @@
             Conecte as fontes principais e acompanhe reservas, calendário, mensagens e financeiro com menos conferência manual.
           </p>
           <div class="cta-row" style="justify-content:center; margin-bottom:0;">
-            <a class="btn" href="/app.html" data-track="landing_final_cta_click">Começar por R$19,90/mês</a>
-            <a class="btn-secondary" href="/login.html" data-track="landing_login_click">Acessar minha conta</a>
+            <a class="btn" href="/app.html" data-track="landing_final_cta_click">Testar grátis agora</a>
           </div>
+          <div class="cta-microcopy">Sem cartão. Leva menos de 1 minuto.</div>
         </div>
       </div>
     </section>
   </main>
+
+  <div class="sticky-mobile-cta" aria-label="Cadastro gratuito">
+    <a class="btn" href="/app.html" data-track="landing_sticky_cta_click">Testar grátis</a>
+    <span>Sem cartão. Leva menos de 1 minuto.</span>
+  </div>
 
   <footer>
     <div class="container">
